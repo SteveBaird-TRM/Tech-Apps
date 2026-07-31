@@ -155,6 +155,17 @@ body {
   font-weight: 600;
 }
 
+.btn-danger {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
 .view-toggle {
   display: flex;
   border: 1px solid var(--border);
@@ -416,18 +427,6 @@ body {
 
 .edit-btn:hover { color: var(--accent); }
 
-.delete-btn {
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 0 4px;
-  line-height: 1;
-}
-
-.delete-btn:hover { color: var(--danger); }
-
 .row-track {
   position: relative;
   flex: 1;
@@ -562,6 +561,10 @@ body {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
+}
+
+.edit-dialog-actions-spacer {
+  flex: 1;
 }
 
 .display-dialog {
@@ -761,11 +764,10 @@ body {
     zoom: var(--print-scale, 1);
   }
 
-  .delete-btn, .edit-btn, .resize-handle, .col-resize-handle { display: none !important; }
+  .edit-btn, .resize-handle, .col-resize-handle { display: none !important; }
 }
 
 .view-only .resize-handle { display: none; }
 .view-only .bar { cursor: default; }
-.view-only .edit-btn,
-.view-only .delete-btn { display: none; }
+.view-only .edit-btn { display: none; }
 

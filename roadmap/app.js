@@ -84,6 +84,7 @@
   const editPhaseInput = document.getElementById('edit-phase');
   const editColorPresetsEl = document.getElementById('edit-color-presets');
   const editCancelBtn = document.getElementById('edit-cancel-btn');
+  const editDeleteBtn = document.getElementById('edit-delete-btn');
   const zoomInBtn = document.getElementById('zoom-in-btn');
   const zoomOutBtn = document.getElementById('zoom-out-btn');
   const zoomLevelEl = document.getElementById('zoom-level');
@@ -861,17 +862,9 @@
       editBtn.type = 'button';
       editBtn.className = 'edit-btn';
       editBtn.textContent = '✎';
-      editBtn.title = 'Edit name, start date, duration, color, capability, and phase';
+      editBtn.title = 'Edit task';
       editBtn.addEventListener('click', () => openEditDialog(task));
       label.appendChild(editBtn);
-
-      const delBtn = document.createElement('button');
-      delBtn.type = 'button';
-      delBtn.className = 'delete-btn';
-      delBtn.textContent = '×';
-      delBtn.title = 'Delete task';
-      delBtn.addEventListener('click', () => deleteTask(task.id));
-      label.appendChild(delBtn);
 
       row.appendChild(label);
 
@@ -1188,6 +1181,15 @@
   buildColorPresets();
 
   editCancelBtn.addEventListener('click', () => editDialog.close());
+
+  editDeleteBtn.addEventListener('click', () => {
+    const task = tasks.find((t) => t.id === editingTaskId);
+    if (!task) return;
+    const confirmed = window.confirm(`Delete "${task.name || 'Untitled'}"? This cannot be undone.`);
+    if (!confirmed) return;
+    editDialog.close();
+    deleteTask(task.id);
+  });
 
   editForm.addEventListener('submit', (e) => {
     e.preventDefault();
