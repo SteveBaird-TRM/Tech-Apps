@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Roadmap vs Schedule Comparison</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Roadmap vs Schedule Comparison</h1>
+    <div class="topbar-actions">
+      <span id="file-status" class="file-status">Connecting...</span>
+      <span id="save-status" class="save-status"></span>
+      <div class="legend" aria-label="Legend">
+        <span class="legend-item"><span class="legend-swatch legend-swatch-bar"></span>Roadmap</span>
+        <span class="legend-item"><span class="legend-swatch legend-swatch-line"></span>Schedule A</span>
+      </div>
+      <div class="zoom-toggle" role="group" aria-label="Timeline zoom">
+        <button type="button" id="zoom-out-btn" class="zoom-btn" title="Zoom out">−</button>
+        <span id="zoom-level" class="zoom-level">100%</span>
+        <button type="button" id="zoom-in-btn" class="zoom-btn" title="Zoom in">+</button>
+      </div>
+      <button type="button" id="filter-btn" class="btn" title="Choose which projects are shown">Filter</button>
+      <button type="button" id="theme-toggle-btn" class="btn" title="Toggle light/dark theme">Theme</button>
+    </div>
+  </header>
+
+  <dialog id="filter-dialog" class="edit-dialog filter-dialog">
+    <h2>Filter Projects</h2>
+    <p class="filter-hint">Only checked projects are shown on the timeline.</p>
+    <div class="filter-actions-row">
+      <button type="button" id="filter-select-all-btn" class="btn">Select All</button>
+      <button type="button" id="filter-select-none-btn" class="btn">Select None</button>
+    </div>
+    <div id="filter-project-list" class="filter-project-list"></div>
+    <div class="edit-dialog-actions">
+      <button type="button" id="filter-cancel-btn" class="btn">Cancel</button>
+      <button type="button" id="filter-apply-btn" class="btn btn-primary">OK</button>
+    </div>
+  </dialog>
+
+  <main class="compare-wrap">
+    <div id="empty-state" class="empty-state">
+      <p>Loading comparison...</p>
+    </div>
+    <div id="table-scroll" class="table-scroll" hidden>
+      <div class="table-inner">
+        <div id="today-line" class="today-line" hidden></div>
+        <table id="compare-table" class="compare-table">
+          <colgroup id="col-group"></colgroup>
+          <thead>
+            <tr id="month-row" class="month-row"></tr>
+            <tr id="week-row" class="week-row"></tr>
+          </thead>
+          <tbody id="compare-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>window.AUTH_REQUIREMENTS = [
+    { project: 'roadmap-db', role: 'viewer' },
+    { project: 'schedule-a-db-v2', role: 'viewer' }
+  ];</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="auth-gate.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

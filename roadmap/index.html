@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Technology Roadmap</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1 id="page-title">Technology Roadmap</h1>
+    <div class="topbar-actions">
+      <span id="file-status" class="file-status">Connecting...</span>
+      <span id="save-status" class="save-status"></span>
+      <div class="timeline-start-group" role="group" aria-label="Timeline start date">
+        <label for="timeline-start-input">Start</label>
+        <input type="date" id="timeline-start-input" class="timeline-start-input" title="Tasks starting before this date are clipped to show only their remaining duration; tasks that end before this date are hidden" />
+      </div>
+      <div class="view-toggle" role="group" aria-label="Timeline view">
+        <button type="button" class="view-btn" data-view="week">Week</button>
+        <button type="button" class="view-btn" data-view="month">Month</button>
+        <button type="button" class="view-btn" data-view="quarter">Quarter</button>
+      </div>
+      <div class="zoom-toggle" role="group" aria-label="Timeline zoom">
+        <button type="button" id="zoom-out-btn" class="zoom-btn" title="Zoom out">−</button>
+        <span id="zoom-level" class="zoom-level">100%</span>
+        <button type="button" id="zoom-in-btn" class="zoom-btn" title="Zoom in">+</button>
+      </div>
+      <button id="autosort-btn" class="btn" disabled>Auto Sort</button>
+      <button id="filter-btn" class="btn" title="Filter which task bars are shown, by capability and color">Filter</button>
+      <button id="display-btn" class="btn" title="Change label, density, and theme display options">Display</button>
+      <button id="cleanup-btn" class="btn" disabled title="Find tasks that have already finished and remove them">Data Clean Up</button>
+      <button id="export-btn" class="btn" disabled title="Export the roadmap as JSON, CSV, PNG, or PDF">Export</button>
+      <button id="add-task-btn" class="btn btn-primary" disabled>+ Project</button>
+    </div>
+  </header>
+
+  <div id="unsupported-banner" class="banner" hidden></div>
+
+  <main class="gantt-wrap">
+    <div id="empty-state" class="empty-state">
+      <p>Loading roadmap...</p>
+    </div>
+    <div id="gantt" class="gantt" hidden>
+      <div class="gantt-header-row">
+        <div class="label-col label-col-header">
+          Task
+          <div id="label-col-resize-handle" class="col-resize-handle" title="Drag to resize the Task column"></div>
+        </div>
+        <div id="sprint-header" class="timeline-track timeline-header"></div>
+      </div>
+      <div id="task-rows" class="task-rows"></div>
+      <div id="today-line" class="today-line" hidden></div>
+    </div>
+  </main>
+
+  <dialog id="edit-dialog" class="edit-dialog">
+    <form id="edit-form">
+      <h2>Edit Task</h2>
+      <label>Name
+        <input type="text" id="edit-name" />
+      </label>
+      <label>Start date (snaps to the start of the week)
+        <input type="date" id="edit-start" />
+      </label>
+      <label>Duration (weeks)
+        <input type="number" id="edit-duration" min="1" step="1" />
+      </label>
+      <label>Capability
+        <select id="edit-capability">
+          <option value="">—</option>
+          <option value="Customer Service">Customer Service</option>
+          <option value="Fulfilment">Fulfilment</option>
+          <option value="Payment">Payment</option>
+          <option value="Production">Production</option>
+          <option value="Sales">Sales</option>
+          <option value="Self Serve">Self Serve</option>
+          <option value="Technology">Technology</option>
+          <option value="UX and UI">UX and UI</option>
+          <option value="Verfication">Verfication</option>
+        </select>
+      </label>
+      <label>Phase
+        <select id="edit-phase">
+          <option value="Not Started">Not Started</option>
+          <option value="Discovery">Discovery</option>
+          <option value="Build">Build</option>
+          <option value="Test">Test</option>
+          <option value="Complete">Complete</option>
+        </select>
+      </label>
+      <label>Bar color
+        <input type="color" id="edit-color" />
+      </label>
+      <div id="edit-color-presets" class="color-presets"></div>
+      <div class="edit-dialog-actions">
+        <button type="button" id="edit-cancel-btn" class="btn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="display-dialog" class="edit-dialog display-dialog">
+    <h2>Display</h2>
+    <div class="display-group">
+      <span class="display-group-label">Label</span>
+      <div class="view-toggle" role="group" aria-label="Task bar label">
+        <button type="button" class="view-btn" data-group="label" data-value="off">Off</button>
+        <button type="button" class="view-btn" data-group="label" data-value="weeks">Weeks</button>
+        <button type="button" class="view-btn" data-group="label" data-value="dates">Dates</button>
+      </div>
+    </div>
+    <div class="display-group">
+      <span class="display-group-label">Density</span>
+      <div class="view-toggle" role="group" aria-label="Row density">
+        <button type="button" class="view-btn" data-group="density" data-value="narrow">Narrow</button>
+        <button type="button" class="view-btn" data-group="density" data-value="normal">Normal</button>
+        <button type="button" class="view-btn" data-group="density" data-value="wide">Wide</button>
+      </div>
+    </div>
+    <div class="display-group">
+      <span class="display-group-label">Theme</span>
+      <div class="view-toggle" role="group" aria-label="Color theme">
+        <button type="button" class="view-btn" data-group="theme" data-value="dark">Dark</button>
+        <button type="button" class="view-btn" data-group="theme" data-value="light">Light</button>
+      </div>
+    </div>
+    <div class="edit-dialog-actions">
+      <button type="button" id="display-close-btn" class="btn">Close</button>
+    </div>
+  </dialog>
+
+  <dialog id="filter-dialog" class="edit-dialog filter-dialog">
+    <h2>Filter</h2>
+    <p class="filter-hint">Show tasks matching the selected capability, phase, and color. Nothing selected in a group shows all.</p>
+    <div class="filter-groups">
+      <div class="filter-group">
+        <span class="display-group-label">Capability</span>
+        <div id="filter-capability-list" class="filter-capability-list"></div>
+      </div>
+      <div class="filter-group">
+        <span class="display-group-label">Phase</span>
+        <div id="filter-phase-list" class="filter-capability-list"></div>
+      </div>
+      <div class="filter-group">
+        <span class="display-group-label">Color</span>
+        <div id="filter-color-list" class="filter-color-list"></div>
+      </div>
+    </div>
+    <div class="edit-dialog-actions">
+      <button type="button" id="filter-clear-btn" class="btn">Clear</button>
+      <button type="button" id="filter-close-btn" class="btn btn-primary">Close</button>
+    </div>
+  </dialog>
+
+  <dialog id="cleanup-dialog" class="edit-dialog cleanup-dialog">
+    <h2>Data Clean Up</h2>
+    <p class="cleanup-warning"><strong>Don't forget to take a back up!</strong></p>
+    <p id="cleanup-hint" class="filter-hint">These tasks have already finished. Remove them?</p>
+    <ul id="cleanup-task-list" class="cleanup-task-list"></ul>
+    <div class="edit-dialog-actions">
+      <button type="button" id="cleanup-cancel-btn" class="btn">Cancel</button>
+      <button type="button" id="cleanup-ok-btn" class="btn btn-primary">OK</button>
+    </div>
+  </dialog>
+
+  <dialog id="export-dialog" class="edit-dialog export-dialog">
+    <h2>Export</h2>
+    <div class="export-grid">
+      <button type="button" id="export-json-btn" class="export-option">
+        <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 6 4 12 9 18"></polyline>
+          <polyline points="15 6 20 12 15 18"></polyline>
+          <line x1="13" y1="4" x2="11" y2="20"></line>
+        </svg>
+        <span>JSON</span>
+      </button>
+      <button type="button" id="export-csv-btn" class="export-option">
+        <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+          <line x1="3" y1="15" x2="21" y2="15"></line>
+          <line x1="9" y1="4" x2="9" y2="20"></line>
+          <line x1="15" y1="4" x2="15" y2="20"></line>
+        </svg>
+        <span>CSV</span>
+      </button>
+      <button type="button" id="export-png-btn" class="export-option">
+        <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+          <circle cx="9" cy="10" r="1.75"></circle>
+          <path d="M3 17l5.5-5.5a1.5 1.5 0 0 1 2.1 0L15 16l1.9-1.9a1.5 1.5 0 0 1 2.1 0L21 16.2"></path>
+        </svg>
+        <span>PNG</span>
+      </button>
+      <button type="button" id="export-pdf-btn" class="export-option">
+        <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 3h7l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path>
+          <polyline points="14 3 14 8 19 8"></polyline>
+          <line x1="8" y1="13" x2="16" y2="13"></line>
+          <line x1="8" y1="16.5" x2="16" y2="16.5"></line>
+          <line x1="8" y1="20" x2="12.5" y2="20"></line>
+        </svg>
+        <span>PDF</span>
+      </button>
+    </div>
+    <div class="edit-dialog-actions">
+      <button type="button" id="export-close-btn" class="btn">Close</button>
+    </div>
+  </dialog>
+
+  <script>window.AUTH_REQUIREMENTS = [{ project: 'roadmap-db', role: 'viewer' }];</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="auth-gate.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

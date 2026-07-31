@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 32.000187 24"
+   x="0px"
+   y="0px"
+   version="1.1"
+   id="svg7"
+   sodipodi:docname="favicon.svg"
+   width="32.000187"
+   height="24"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs7" />
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="20.975"
+     inkscape:cx="14.326579"
+     inkscape:cy="9.034565"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg7" />
+  <title
+     id="title1">request</title>
+  <path
+     d="M 9.4248814e-5,3.2 V 20.8 A 3.1757,3.1757 0 0 0 3.1431942,24 H 28.856994 a 3.1757,3.1757 0 0 0 3.1431,-3.2 V 3.2 A 3.1757,3.1757 0 0 0 28.856994,0 H 3.1431942 A 3.1757,3.1757 0 0 0 9.4248814e-5,3.2 Z M 30.000094,20.8 a 1.1741,1.1741 0 0 1 -1.1431,1.2 H 3.1431942 a 1.1741,1.1741 0 0 1 -1.1431,-1.2 V 3.2 A 1.1738,1.1738 0 0 1 3.1431942,2 H 28.856994 a 1.1738,1.1738 0 0 1 1.1431,1.2 z"
+     id="path1"
+     style="fill:#0055d4" />
+  <text
+     x="9.4148811e-05"
+     y="43"
+     fill="#000000"
+     font-size="5px"
+     font-weight="bold"
+     font-family="'Helvetica Neue', Helvetica, Arial-Unicode, Arial, Sans-serif"
+     id="text6">Created by Iqbal Widianto</text>
+  <text
+     x="9.4148811e-05"
+     y="48"
+     fill="#000000"
+     font-size="5px"
+     font-weight="bold"
+     font-family="'Helvetica Neue', Helvetica, Arial-Unicode, Arial, Sans-serif"
+     id="text7">from the Noun Project</text>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>request</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <rect
+     style="fill:#ff3300;fill-opacity:1;stroke-width:1;paint-order:markers fill stroke"
+     id="rect1"
+     width="5.9999995"
+     height="6"
+     x="4.0000939"
+     y="3.9999058"
+     rx="1.2667484"
+     ry="1.2473397" />
+  <rect
+     style="fill:#33cc66;fill-opacity:1;stroke-width:1;paint-order:markers fill stroke"
+     id="rect1-8"
+     width="5.9999995"
+     height="6"
+     x="12.000094"
+     y="3.9999058"
+     rx="1.2667484"
+     ry="1.2473397" />
+  <rect
+     style="fill:#ffcc00;stroke-width:1;paint-order:markers fill stroke"
+     id="rect1-8-2"
+     width="5.9999995"
+     height="6"
+     x="12.000094"
+     y="11.999906"
+     rx="1.2667484"
+     ry="1.2473397"
+     inkscape:transform-center-x="9.0010732"
+     inkscape:transform-center-y="7.8548692" />
+  <rect
+     style="fill:#33cc66;fill-opacity:1;stroke-width:1;paint-order:markers fill stroke"
+     id="rect1-8-3"
+     width="5.9999995"
+     height="6"
+     x="4.0000939"
+     y="11.999906"
+     rx="1.2667484"
+     ry="1.2473397" />
+</svg>

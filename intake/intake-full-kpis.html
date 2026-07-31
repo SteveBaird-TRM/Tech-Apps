@@ -1,0 +1,1120 @@
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delivery KPIs</title>
+<link rel="icon" type="image/svg+xml" href="kpi-favicon.svg">
+<style>
+  :root {
+    --bg: #EAEDF1;
+    --surface: #FFFFFF;
+    --surface-alt: #F2F4F7;
+    --border: #DBE0E7;
+    --text: #191D23;
+    --text-muted: #5E6572;
+    --text-faint: #9BA1AC;
+    --accent: #0E7A6C;
+    --accent-contrast: #FFFFFF;
+    --accent-tint: #0E7A6C1A;
+    --shadow: 0 1px 2px rgba(20, 24, 30, 0.06), 0 1px 1px rgba(20, 24, 30, 0.04);
+
+    --status-good: #33CC66;
+    --status-warning: #FF9900;
+    --status-critical: #FF3300;
+
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171C;
+      --surface: #1C2027;
+      --surface-alt: #20242C;
+      --border: #2C313B;
+      --text: #E8EAED;
+      --text-muted: #99A0AC;
+      --text-faint: #6B717C;
+      --accent: #3FC7B3;
+      --accent-contrast: #0A1512;
+      --accent-tint: #3FC7B326;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171C;
+    --surface: #1C2027;
+    --surface-alt: #20242C;
+    --border: #2C313B;
+    --text: #E8EAED;
+    --text-muted: #99A0AC;
+    --text-faint: #6B717C;
+    --accent: #3FC7B3;
+    --accent-contrast: #0A1512;
+    --accent-tint: #3FC7B326;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+  :root[data-theme="light"] {
+    --bg: #EAEDF1;
+    --surface: #FFFFFF;
+    --surface-alt: #F2F4F7;
+    --border: #DBE0E7;
+    --text: #191D23;
+    --text-muted: #5E6572;
+    --text-faint: #9BA1AC;
+    --accent: #0E7A6C;
+    --accent-contrast: #FFFFFF;
+    --accent-tint: #0E7A6C1A;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    padding-top: 34px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .app {
+    height: calc(100vh - 34px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex: none;
+    flex-wrap: wrap;
+  }
+  .topbar h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: 0.2px;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .topbar .sub {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-left: 10px;
+  }
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .file-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    margin-right: 2px;
+  }
+  .btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 7px 13px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 120ms ease, border-color 120ms ease;
+  }
+  .btn:hover { background: var(--surface-alt); }
+
+  .toast {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease;
+    z-index: 50;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    max-width: 1100px;
+  }
+  .tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--tile-status-color, var(--border));
+    border-radius: 10px;
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+  }
+  .tile-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .tile-value {
+    font-family: var(--font-body);
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--text);
+  }
+  .tile-value .unit {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-left: 6px;
+  }
+  .tile-empty .tile-value {
+    color: var(--text-faint);
+  }
+  .tile-caption {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-faint);
+    line-height: 1.4;
+  }
+  .meter {
+    position: relative;
+    margin: 14px 0 2px;
+  }
+  .meter-track {
+    display: flex;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--border);
+  }
+  .meter-segment {
+    height: 100%;
+  }
+  .meter-critical { background: var(--status-critical); }
+  .meter-warning { background: var(--status-warning); }
+  .meter-good { background: var(--status-good); }
+  .meter-marker {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 2px;
+    height: 14px;
+    background: var(--text);
+    border-radius: 1px;
+    transform: translate(-50%, -50%);
+  }
+  .tile-mini {
+    padding: 14px 16px 10px;
+  }
+  .tile-mini-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 0;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+  }
+  .tile-mini-row:first-of-type {
+    border-top: none;
+  }
+  .tile-mini-row .k {
+    color: var(--text-muted);
+  }
+  .tile-mini-row .v {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+  }
+  .btn-primary:hover { filter: brightness(1.06); }
+  #btnExportTxt { display: none; }
+  .main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+  .tiles-col {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+  .summary-panel {
+    flex: 0 0 380px;
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .summary-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    flex: none;
+    flex-wrap: wrap;
+  }
+  .summary-head h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 17px;
+    margin: 0;
+  }
+  .summary-head-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .summary-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 20px 28px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .summary-body h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 18px;
+    margin: 0 0 12px;
+  }
+  .summary-body h4 {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 20px 0 8px;
+  }
+  .summary-body h4:first-child {
+    margin-top: 0;
+  }
+  .summary-body p {
+    margin: 0 0 12px;
+  }
+  .summary-body ul, .summary-body ol {
+    margin: 0 0 12px;
+    padding-left: 20px;
+  }
+  .summary-body li {
+    margin-bottom: 4px;
+  }
+  .summary-body strong {
+    font-weight: 600;
+  }
+  .summary-empty {
+    color: var(--text-faint);
+    font-size: 13px;
+  }
+  .tiles-col.hide-captions .tile-caption {
+    display: none;
+  }
+</style>
+</head><body>
+
+<div class="app">
+  <div class="topbar">
+    <div>
+      <h1>Delivery KPIs</h1><span class="sub">Today's delivery pipeline metrics</span>
+    </div>
+    <div class="topbar-actions">
+      <span class="file-status" id="syncStatusLabel"></span>
+      <button class="btn" id="btnRefresh">Refresh</button>
+      <button class="btn" id="btnToggleCaptions">Hide Descriptions</button>
+      <button class="btn" id="btnLoadExport">Load JSON Export</button>
+      <button class="btn" id="btnExportTxt">Export MD</button>
+      <input type="file" id="importInput" accept="application/json" style="display:none;">
+      <input type="file" id="templateInput" accept=".md,text/markdown" style="display:none;">
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="tiles-col">
+      <div class="tiles" id="tiles"></div>
+    </div>
+    <div class="summary-panel">
+      <div class="summary-head">
+        <h2>Management Summary</h2>
+        <div class="summary-head-actions">
+          <button class="btn" id="btnLoadTemplate">Template</button>
+          <button class="btn btn-primary" id="btnCopySummary">Copy</button>
+        </div>
+      </div>
+      <div class="summary-body" id="summaryBody"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>window.AUTH_REQUIREMENTS = [{ project: 'intake', role: 'viewer' }];</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-gate.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var TABLE = "intake_cards";
+  var sb = window.sbClient;
+
+  var STORAGE_KEY = "intake-tracker-v1"; // local cache only, used if Supabase is unreachable
+  var DB_NAME = "intake-tracker-fs";
+  var DB_STORE = "handles";
+  var FS_SUPPORTED = typeof window.showOpenFilePicker === "function";
+
+  var snapshotName = null;
+  var lastCards = [];
+  var lastTemplateText = null;
+  var lastSummaryText = "";
+  var templatePickPurpose = null; // "export" | "panel"
+
+  function daysAgo(n) {
+    var d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - n);
+    return d;
+  }
+
+  var CURRENT_WINDOW = { from: daysAgo(92), to: daysAgo(0) };
+  var PRIOR_WINDOW = { from: daysAgo(122), to: daysAgo(30) };
+
+  var KPIS = [
+    {
+      id: "in-process",
+      label: "In Process",
+      IN_PROCESS_INTAKE: ["TechHub", "Meeting", "Technology", "Bug"],
+      thresholds: { good: 95, warning: 80 },
+      showMeter: true,
+      compute: function (cards, window) {
+        window = window || CURRENT_WINDOW;
+        var inProcessIntake = this.IN_PROCESS_INTAKE;
+        var total = 0;
+        var inProcess = 0;
+        cards.forEach(function (c) {
+          if (!c.dateReceived) return;
+          var received = new Date(c.dateReceived + "T00:00:00");
+          if (isNaN(received.getTime()) || received < window.from || received > window.to) return;
+          total++;
+          if (inProcessIntake.indexOf(c.intake) !== -1) inProcess++;
+        });
+        if (total === 0) return null;
+        return { pct: (inProcess / total) * 100, inProcess: inProcess, total: total };
+      },
+      render: function (result) {
+        if (!result) {
+          return {
+            value: "—",
+            unit: "",
+            caption: "No requests received in the last 92 days."
+          };
+        }
+        return {
+          value: Math.round(result.pct) + "%",
+          unit: "",
+          caption: result.inProcess + " of " + result.total + " requests received · last 92 days · TechHub, Meeting, Technology, Bug vs Out of Process"
+        };
+      },
+      status: function (result) {
+        if (!result) return null;
+        if (result.pct >= this.thresholds.good) return "good";
+        if (result.pct >= this.thresholds.warning) return "warning";
+        return "critical";
+      }
+    },
+    {
+      id: "responsiveness",
+      label: "Responsiveness",
+      thresholds: { good: 22, warning: 28 },
+      showMeter: true,
+      meterOptions: { max: 45, direction: "lower-better" },
+      meterValue: function (result) { return result.value; },
+      compute: function (cards, window) {
+        window = window || CURRENT_WINDOW;
+        var diffs = [];
+        cards.forEach(function (c) {
+          if (!c.dateReceived || !c.dateIpaSent) return;
+          var received = new Date(c.dateReceived + "T00:00:00");
+          var ipaSent = new Date(c.dateIpaSent + "T00:00:00");
+          if (isNaN(received.getTime()) || isNaN(ipaSent.getTime())) return;
+          if (received < window.from || received > window.to) return;
+          diffs.push((ipaSent - received) / 86400000);
+        });
+        if (diffs.length === 0) return null;
+        var avg = diffs.reduce(function (a, b) { return a + b; }, 0) / diffs.length;
+        return { value: avg, count: diffs.length };
+      },
+      render: function (result) {
+        if (!result) {
+          return {
+            value: "—",
+            unit: "",
+            caption: "No requests received in the last 92 days have an IPA sent date yet."
+          };
+        }
+        return {
+          value: result.value.toFixed(1),
+          unit: "days avg",
+          caption: "Received → IPA sent · last 92 days · based on " + result.count + " request" + (result.count === 1 ? "" : "s")
+        };
+      },
+      status: function (result) {
+        if (!result) return null;
+        if (result.value < this.thresholds.good) return "good";
+        if (result.value <= this.thresholds.warning) return "warning";
+        return "critical";
+      }
+    },
+    {
+      id: "thinking",
+      label: "Big Thinking",
+      thresholds: { good: 25, warning: 12 },
+      showMeter: true,
+      compute: function (cards, window) {
+        window = window || CURRENT_WINDOW;
+        var total = 0;
+        var big = 0;
+        cards.forEach(function (c) {
+          if (!c.dateReceived) return;
+          var received = new Date(c.dateReceived + "T00:00:00");
+          if (isNaN(received.getTime()) || received < window.from || received > window.to) return;
+          total++;
+          if (c.bigThinking) big++;
+        });
+        if (total === 0) return null;
+        return { pct: (big / total) * 100, big: big, total: total };
+      },
+      render: function (result) {
+        if (!result) {
+          return {
+            value: "—",
+            unit: "",
+            caption: "No requests received in the last 92 days."
+          };
+        }
+        return {
+          value: Math.round(result.pct) + "%",
+          unit: "",
+          caption: result.big + " of " + result.total + " requests · last 92 days · Big Thinking applied"
+        };
+      },
+      status: function (result) {
+        if (!result) return null;
+        if (result.pct >= this.thresholds.good) return "good";
+        if (result.pct >= this.thresholds.warning) return "warning";
+        return "critical";
+      }
+    },
+    {
+      id: "defined-benefit",
+      label: "Defined Benefit",
+      thresholds: { good: 90, warning: 80 },
+      showMeter: true,
+      compute: function (cards, window) {
+        window = window || CURRENT_WINDOW;
+        var total = 0;
+        var defined = 0;
+        cards.forEach(function (c) {
+          if (!c.dateBusinessCaseReceived) return;
+          var businessCase = new Date(c.dateBusinessCaseReceived + "T00:00:00");
+          if (isNaN(businessCase.getTime()) || businessCase < window.from || businessCase > window.to) return;
+          total++;
+          if (c.definedBusinessBenefit) defined++;
+        });
+        if (total === 0) return null;
+        return { pct: (defined / total) * 100, defined: defined, total: total };
+      },
+      render: function (result) {
+        if (!result) {
+          return {
+            value: "—",
+            unit: "",
+            caption: "No requests with a business case received in the last 92 days."
+          };
+        }
+        return {
+          value: Math.round(result.pct) + "%",
+          unit: "",
+          caption: result.defined + " of " + result.total + " requests · last 92 days (by business case received) · Business Benefit defined"
+        };
+      },
+      status: function (result) {
+        if (!result) return null;
+        if (result.pct >= this.thresholds.good) return "good";
+        if (result.pct >= this.thresholds.warning) return "warning";
+        return "critical";
+      }
+    },
+    {
+      id: "on-time-releases",
+      label: "On Time Releases",
+      thresholds: { good: 90, warning: 80 },
+      showMeter: true,
+      compute: function (cards, window) {
+        window = window || CURRENT_WINDOW;
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        var total = 0;
+        var onTime = 0;
+        cards.forEach(function (c) {
+          if (!c.promiseDate) return;
+          var promise = new Date(c.promiseDate + "T00:00:00");
+          if (isNaN(promise.getTime())) return;
+          var anchor, isOnTime;
+          if (c.releaseDate) {
+            var release = new Date(c.releaseDate + "T00:00:00");
+            if (isNaN(release.getTime())) return;
+            anchor = release;
+            isOnTime = release <= promise;
+          } else {
+            if (promise >= today) return; // not yet due — can't judge yet
+            anchor = promise;
+            isOnTime = false; // past-due promise date with no release is a fail
+          }
+          if (anchor < window.from || anchor > window.to) return;
+          total++;
+          if (isOnTime) onTime++;
+        });
+        if (total === 0) return null;
+        return { pct: (onTime / total) * 100, onTime: onTime, total: total };
+      },
+      render: function (result) {
+        if (!result) {
+          return {
+            value: "—",
+            unit: "",
+            caption: "No requests released or overdue in the last 92 days with a promise date."
+          };
+        }
+        return {
+          value: Math.round(result.pct) + "%",
+          unit: "",
+          caption: result.onTime + " of " + result.total + " requests · last 92 days (by release/due date) · delivered on or before promise date"
+        };
+      },
+      status: function (result) {
+        if (!result) return null;
+        if (result.pct >= this.thresholds.good) return "good";
+        if (result.pct >= this.thresholds.warning) return "warning";
+        return "critical";
+      }
+    }
+  ];
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function toast(msg) {
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove("show"); }, 2600);
+  }
+
+  function loadCardsFromLocalStorage() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function idbOpen() {
+    return new Promise(function (resolve, reject) {
+      var req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = function () {
+        req.result.createObjectStore(DB_STORE);
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+
+  function idbGet(key) {
+    return idbOpen().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(DB_STORE, "readonly");
+        var req = tx.objectStore(DB_STORE).get(key);
+        req.onsuccess = function () { resolve(req.result || null); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  function idbSet(key, value) {
+    return idbOpen().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(DB_STORE, "readwrite");
+        tx.objectStore(DB_STORE).put(value, key);
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+
+  function fetchCardsFromSupabase() {
+    return sb.from(TABLE).select("id, data").then(function (res) {
+      if (res.error) throw res.error;
+      var cards = res.data.map(function (row) {
+        var card = Object.assign({}, row.data);
+        card.id = row.id;
+        return card;
+      });
+      cards.sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
+      return cards;
+    });
+  }
+
+  function cacheCardsLocally(cards) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+    } catch (e) { /* ignore quota errors */ }
+  }
+
+  function buildMeterHtml(value, thresholds, opts) {
+    opts = opts || {};
+    var max = opts.max || 100;
+    var zones = opts.direction === "lower-better"
+      ? [
+          { cls: "meter-good", upTo: thresholds.good },
+          { cls: "meter-warning", upTo: thresholds.warning },
+          { cls: "meter-critical", upTo: max }
+        ]
+      : [
+          { cls: "meter-critical", upTo: thresholds.warning },
+          { cls: "meter-warning", upTo: thresholds.good },
+          { cls: "meter-good", upTo: max }
+        ];
+    var last = 0;
+    var segmentsHtml = zones.map(function (z) {
+      var width = Math.max(0, ((z.upTo - last) / max) * 100);
+      last = z.upTo;
+      return '<div class="meter-segment ' + z.cls + '" style="width:' + width + '%"></div>';
+    }).join("");
+    var markerPos = Math.max(0, Math.min(100, (value / max) * 100));
+    return '<div class="meter">' +
+      '<div class="meter-track">' + segmentsHtml + "</div>" +
+      '<div class="meter-marker" style="left:' + markerPos + '%"></div>' +
+    "</div>";
+  }
+
+  function renderTiles(cards) {
+    lastCards = cards;
+    var container = document.getElementById("tiles");
+    container.innerHTML = "";
+    KPIS.forEach(function (kpi) {
+      if (kpi.hideTile) return;
+      var result = kpi.compute(cards);
+      var view = kpi.render(result);
+      var status = kpi.status ? kpi.status(result) : null;
+      var tile = document.createElement("div");
+      tile.className = "tile" + (result ? "" : " tile-empty");
+      if (status) tile.style.setProperty("--tile-status-color", "var(--status-" + status + ")");
+      tile.innerHTML =
+        '<div class="tile-label">' + escapeHtml(kpi.label) + "</div>" +
+        '<div class="tile-value">' + escapeHtml(view.value) +
+          (view.unit ? ' <span class="unit">' + escapeHtml(view.unit) + "</span>" : "") +
+        "</div>" +
+        (kpi.showMeter && result ? buildMeterHtml(kpi.meterValue ? kpi.meterValue(result) : result.pct, kpi.thresholds, kpi.meterOptions) : "") +
+        '<div class="tile-caption">' + escapeHtml(view.caption) + "</div>";
+      container.appendChild(tile);
+    });
+    container.appendChild(buildPriorTile(cards));
+    renderSummaryPanel();
+  }
+
+  function buildPriorTile(cards) {
+    var tile = document.createElement("div");
+    tile.className = "tile tile-mini";
+    var rowsHtml = KPIS.filter(function (kpi) {
+      return !kpi.hideTile;
+    }).map(function (kpi) {
+      var result = kpi.compute(cards, PRIOR_WINDOW);
+      var view = kpi.render(result);
+      var value = view.value + (view.unit ? " " + view.unit : "");
+      return '<div class="tile-mini-row"><span class="k">' + escapeHtml(kpi.label) + '</span>' +
+        '<span class="v">' + escapeHtml(value) + "</span></div>";
+    }).join("");
+    tile.innerHTML = '<div class="tile-label">30 days ago</div>' + rowsHtml;
+    return tile;
+  }
+
+  function updateStatusLabel(status) {
+    var label = document.getElementById("syncStatusLabel");
+    if (!label) return;
+    if (snapshotName) {
+      label.textContent = "Viewing snapshot: " + snapshotName + " (Refresh to return to live data)";
+      return;
+    }
+    if (status === "synced") label.textContent = "Synced with Supabase";
+    else if (status === "offline") label.textContent = "Offline — showing cached copy";
+    else if (status === "loading") label.textContent = "Loading…";
+  }
+
+  function loadFromBestSource() {
+    snapshotName = null;
+    updateStatusLabel("loading");
+    fetchCardsFromSupabase().then(function (cards) {
+      renderTiles(cards);
+      cacheCardsLocally(cards);
+      updateStatusLabel("synced");
+    }).catch(function (err) {
+      toast("Couldn't load from Supabase: " + err.message);
+      renderTiles(loadCardsFromLocalStorage());
+      updateStatusLabel("offline");
+    });
+  }
+
+  document.getElementById("btnRefresh").addEventListener("click", function () {
+    loadFromBestSource();
+    toast("Refreshed");
+  });
+
+  var CAPTIONS_HIDDEN_KEY = "intake-kpis-hide-captions";
+
+  function setCaptionsHidden(hidden) {
+    var tilesCol = document.querySelector(".tiles-col");
+    var btn = document.getElementById("btnToggleCaptions");
+    tilesCol.classList.toggle("hide-captions", hidden);
+    btn.textContent = hidden ? "Show Descriptions" : "Hide Descriptions";
+    try { localStorage.setItem(CAPTIONS_HIDDEN_KEY, hidden ? "1" : "0"); } catch (e) { /* ignore quota errors */ }
+  }
+
+  document.getElementById("btnToggleCaptions").addEventListener("click", function () {
+    var tilesCol = document.querySelector(".tiles-col");
+    setCaptionsHidden(!tilesCol.classList.contains("hide-captions"));
+  });
+
+  var captionsHiddenInitial = false;
+  try { captionsHiddenInitial = localStorage.getItem(CAPTIONS_HIDDEN_KEY) === "1"; } catch (e) { /* ignore */ }
+  setCaptionsHidden(captionsHiddenInitial);
+
+  document.getElementById("btnLoadExport").addEventListener("click", function () {
+    document.getElementById("importInput").click();
+  });
+
+  document.getElementById("importInput").addEventListener("change", function (e) {
+    var file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var parsed = JSON.parse(reader.result);
+        if (!Array.isArray(parsed)) throw new Error("File does not contain a list of requests");
+        snapshotName = file.name;
+        renderTiles(parsed);
+        updateStatusLabel();
+        toast("Loaded snapshot");
+      } catch (err) {
+        toast("Load failed: " + err.message);
+      }
+    };
+    reader.onerror = function () { toast("Couldn't read that file"); };
+    reader.readAsText(file);
+  });
+
+  function getKpiValue(id, cards, window) {
+    var kpi = KPIS.find(function (k) { return k.id === id; });
+    if (!kpi) return "—";
+    var result = kpi.compute(cards, window);
+    return kpi.render(result).value;
+  }
+
+  function buildStatsText(template, cards) {
+    var replacements = [
+      ["<in process>", getKpiValue("in-process", cards)],
+      ["<defined benefit>", getKpiValue("defined-benefit", cards)],
+      ["<responsiveness>", getKpiValue("responsiveness", cards)],
+      ["<thinking>", getKpiValue("thinking", cards)],
+      ["<on time releases>", getKpiValue("on-time-releases", cards)],
+      ["<previous in process>", getKpiValue("in-process", cards, PRIOR_WINDOW)],
+      ["<previous defined benefits>", getKpiValue("defined-benefit", cards, PRIOR_WINDOW)],
+      ["<previous responsiveness>", getKpiValue("responsiveness", cards, PRIOR_WINDOW)],
+      ["<previous thinking>", getKpiValue("thinking", cards, PRIOR_WINDOW)],
+      ["<previous on time releases>", getKpiValue("on-time-releases", cards, PRIOR_WINDOW)]
+    ];
+    var text = template;
+    replacements.forEach(function (pair) {
+      text = text.split(pair[0]).join(pair[1]);
+    });
+    return text;
+  }
+
+  function formatInline(raw) {
+    var html = escapeHtml(raw);
+    html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    html = html.replace(/__([^_]+)__/g, "<strong>$1</strong>");
+    html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    html = html.replace(/_([^_]+)_/g, "<em>$1</em>");
+    return html;
+  }
+
+  function formatSummaryHtml(text) {
+    var blocks = text.split(/\n\s*\n/);
+    return blocks.map(function (block) {
+      var trimmed = block.trim();
+      if (!trimmed) return "";
+      var h2 = trimmed.match(/^##\s+(.*)$/);
+      if (h2) return "<h4>" + formatInline(h2[1].trim()) + "</h4>";
+      var h1 = trimmed.match(/^#\s+(.*)$/);
+      if (h1) return "<h3>" + formatInline(h1[1].trim()) + "</h3>";
+
+      var lines = trimmed.split("\n");
+      if (lines.every(function (l) { return /^[-*]\s+/.test(l.trim()); })) {
+        return "<ul>" + lines.map(function (l) {
+          return "<li>" + formatInline(l.trim().replace(/^[-*]\s+/, "")) + "</li>";
+        }).join("") + "</ul>";
+      }
+      if (lines.every(function (l) { return /^\d+\.\s+/.test(l.trim()); })) {
+        return "<ol>" + lines.map(function (l) {
+          return "<li>" + formatInline(l.trim().replace(/^\d+\.\s+/, "")) + "</li>";
+        }).join("") + "</ol>";
+      }
+
+      return "<p>" + formatInline(trimmed).replace(/\n/g, "<br>") + "</p>";
+    }).join("");
+  }
+
+  function renderSummaryPanel() {
+    var container = document.getElementById("summaryBody");
+    if (!container) return;
+    if (!lastTemplateText) {
+      lastSummaryText = "";
+      container.innerHTML = '<div class="summary-empty">No template loaded yet. Click "Load Template" to choose your stats-template.md.</div>';
+      return;
+    }
+    lastSummaryText = buildStatsText(lastTemplateText, lastCards);
+    container.innerHTML = formatSummaryHtml(lastSummaryText);
+  }
+
+  function copyRichHtml(sourceEl, plainText) {
+    var html = sourceEl.innerHTML;
+    if (navigator.clipboard && window.ClipboardItem) {
+      return navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([plainText], { type: "text/plain" })
+        })
+      ]);
+    }
+    return new Promise(function (resolve, reject) {
+      var range = document.createRange();
+      range.selectNodeContents(sourceEl);
+      var selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      try {
+        var ok = document.execCommand("copy");
+        selection.removeAllRanges();
+        if (ok) resolve(); else reject(new Error("copy command failed"));
+      } catch (err) {
+        selection.removeAllRanges();
+        reject(err);
+      }
+    });
+  }
+
+  document.getElementById("btnCopySummary").addEventListener("click", function () {
+    var container = document.getElementById("summaryBody");
+    if (!lastSummaryText || !container.textContent.trim()) { toast("Nothing to copy yet"); return; }
+    copyRichHtml(container, container.textContent).then(function () {
+      toast("Copied to clipboard");
+    }).catch(function () {
+      toast("Couldn't copy — clipboard access denied");
+    });
+  });
+
+  function downloadText(filename, text) {
+    var blob = new Blob([text], { type: "text/markdown" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  var DB_KEY_TEMPLATE = "statsTemplateHandle";
+
+  function readFileText(handle) {
+    return handle.getFile().then(function (file) { return file.text(); });
+  }
+
+  function pickTemplateFile() {
+    return window.showOpenFilePicker({
+      types: [{ description: "Markdown", accept: { "text/markdown": [".md"] } }],
+      multiple: false
+    }).then(function (handles) {
+      var handle = handles[0];
+      return handle.requestPermission({ mode: "read" }).then(function (perm) {
+        if (perm !== "granted") { toast("Permission to the template file was denied"); return null; }
+        return idbSet(DB_KEY_TEMPLATE, handle).then(function () { return handle; });
+      });
+    });
+  }
+
+  function getOrConnectTemplateHandle() {
+    return idbGet(DB_KEY_TEMPLATE).then(function (handle) {
+      if (!handle) return pickTemplateFile();
+      return handle.requestPermission({ mode: "read" }).then(function (perm) {
+        if (perm === "granted") return handle;
+        return pickTemplateFile();
+      });
+    });
+  }
+
+  function exportStatsText(templateText) {
+    lastTemplateText = templateText;
+    renderSummaryPanel();
+    var text = buildStatsText(templateText, lastCards);
+    var filename = "intake" + new Date().toISOString().slice(0, 10) + ".md";
+    if (!FS_SUPPORTED) {
+      downloadText(filename, text);
+      toast("Exported " + filename);
+      return;
+    }
+    window.showSaveFilePicker({
+      suggestedName: filename,
+      types: [{ description: "Markdown", accept: { "text/markdown": [".md"] } }]
+    }).then(function (handle) {
+      return handle.createWritable().then(function (writable) {
+        return writable.write(text).then(function () { return writable.close(); });
+      });
+    }).then(function () {
+      toast("Exported " + filename);
+    }).catch(function (err) {
+      if (err && err.name === "AbortError") return;
+      toast("Couldn't save the file: " + (err && err.message ? err.message : "unknown error"));
+    });
+  }
+
+  document.getElementById("btnExportTxt").addEventListener("click", function () {
+    if (!FS_SUPPORTED) {
+      templatePickPurpose = "export";
+      document.getElementById("templateInput").click();
+      return;
+    }
+    getOrConnectTemplateHandle().then(function (handle) {
+      if (!handle) return;
+      return readFileText(handle).then(exportStatsText);
+    }).catch(function (err) {
+      if (err && err.name === "AbortError") return;
+      toast("Export failed: " + (err && err.message ? err.message : "unknown error"));
+    });
+  });
+
+  document.getElementById("btnLoadTemplate").addEventListener("click", function () {
+    if (!FS_SUPPORTED) {
+      templatePickPurpose = "panel";
+      document.getElementById("templateInput").click();
+      return;
+    }
+    // Always prompt for a file here (rather than silently reusing a previously
+    // granted handle) so the button reliably opens a picker every time it's clicked.
+    pickTemplateFile().then(function (handle) {
+      if (!handle) return;
+      return readFileText(handle).then(function (text) {
+        lastTemplateText = text;
+        renderSummaryPanel();
+        toast("Template loaded");
+      });
+    }).catch(function (err) {
+      if (err && err.name === "AbortError") return;
+      console.error("Template load failed:", err);
+      toast("Couldn't load template: " + (err && err.message ? err.message : "unknown error"));
+    });
+  });
+
+  document.getElementById("templateInput").addEventListener("change", function (e) {
+    var file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      if (templatePickPurpose === "export") {
+        exportStatsText(reader.result);
+      } else {
+        lastTemplateText = reader.result;
+        renderSummaryPanel();
+        toast("Template loaded");
+      }
+      templatePickPurpose = null;
+    };
+    reader.onerror = function () { toast("Couldn't read the template file"); };
+    reader.readAsText(file);
+  });
+
+  function tryAutoLoadTemplate() {
+    if (!FS_SUPPORTED) return;
+    idbGet(DB_KEY_TEMPLATE).then(function (handle) {
+      if (!handle) return;
+      return handle.queryPermission({ mode: "read" }).then(function (perm) {
+        if (perm !== "granted") return;
+        return readFileText(handle).then(function (text) {
+          lastTemplateText = text;
+          renderSummaryPanel();
+        });
+      });
+    }).catch(function (err) { console.error("Auto-load template failed:", err); /* panel just stays empty until Load Template */ });
+  }
+
+  tryAutoLoadTemplate();
+  window.onAuthReady(loadFromBestSource);
+})();
+</script>
+
+
+</body></html>

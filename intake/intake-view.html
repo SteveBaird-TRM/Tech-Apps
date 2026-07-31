@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Intake Tracker · View Only</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  :root {
+    --bg: #EAEDF1;
+    --surface: #FFFFFF;
+    --surface-alt: #F2F4F7;
+    --border: #DBE0E7;
+    --text: #191D23;
+    --text-muted: #5E6572;
+    --text-faint: #9BA1AC;
+    --accent: #0E7A6C;
+    --accent-contrast: #FFFFFF;
+    --accent-tint: #0E7A6C1A;
+    --danger: #C0362C;
+    --rejected-bg: #EEEAE7;
+    --rejected-border: #DCD4CE;
+    --shadow: 0 1px 2px rgba(20, 24, 30, 0.06), 0 1px 1px rgba(20, 24, 30, 0.04);
+
+    --type-epic: #FF6633;
+    --type-feature: #9933FF;
+    --type-change: #33CCFF;
+    --type-bug: #FF0000;
+    --type-technology: #33CC66;
+
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171C;
+      --surface: #1C2027;
+      --surface-alt: #20242C;
+      --border: #2C313B;
+      --text: #E8EAED;
+      --text-muted: #99A0AC;
+      --text-faint: #6B717C;
+      --accent: #3FC7B3;
+      --accent-contrast: #0A1512;
+      --accent-tint: #3FC7B326;
+      --danger: #F0685F;
+      --rejected-bg: #1E1B19;
+      --rejected-border: #322C27;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+
+      --type-epic: #E8944F;
+      --type-feature: #B294F0;
+      --type-change: #4FC2E0;
+      --type-bug: #F0685F;
+      --type-technology: #6E9EF5;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171C;
+    --surface: #1C2027;
+    --surface-alt: #20242C;
+    --border: #2C313B;
+    --text: #E8EAED;
+    --text-muted: #99A0AC;
+    --text-faint: #6B717C;
+    --accent: #3FC7B3;
+    --accent-contrast: #0A1512;
+    --accent-tint: #3FC7B326;
+    --danger: #F0685F;
+    --rejected-bg: #1E1B19;
+    --rejected-border: #322C27;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+
+    --type-epic: #E8944F;
+    --type-feature: #B294F0;
+    --type-change: #4FC2E0;
+    --type-bug: #F0685F;
+    --type-technology: #6E9EF5;
+  }
+  :root[data-theme="light"] {
+    --bg: #EAEDF1;
+    --surface: #FFFFFF;
+    --surface-alt: #F2F4F7;
+    --border: #DBE0E7;
+    --text: #191D23;
+    --text-muted: #5E6572;
+    --text-faint: #9BA1AC;
+    --accent: #0E7A6C;
+    --accent-contrast: #FFFFFF;
+    --accent-tint: #0E7A6C1A;
+    --danger: #C0362C;
+    --rejected-bg: #EEEAE7;
+    --rejected-border: #DCD4CE;
+
+    --type-epic: #FF6600;
+    --type-feature: #9933FF;
+    --type-change: #33CCFF;
+    --type-bug: #FF3333;
+    --type-technology: #3333FF;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    padding-top: 34px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .app {
+    height: calc(100vh - 34px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex: none;
+  }
+  .topbar h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: 0.2px;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .topbar .sub {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-left: 10px;
+  }
+  .view-only-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 9px;
+    margin-left: 10px;
+  }
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .file-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    margin-right: 2px;
+  }
+  .btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 7px 13px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease;
+  }
+  .btn:hover { background: var(--surface-alt); }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+  }
+  .btn-primary:hover { filter: brightness(1.06); }
+  #btnKpis, #btnExport, #btnExportCsv { display: none; }
+
+  .search-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .search-input, .search-select {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 7px 10px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .search-input {
+    width: 120px;
+    font-family: var(--font-mono);
+  }
+  .search-select {
+    width: 190px;
+  }
+  .search-input:focus, .search-select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+
+  /* ---------- Filter modal ---------- */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    align-items: center;
+    justify-content: center;
+    z-index: 60;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 380px;
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow);
+  }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    flex: none;
+  }
+  .modal-head h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 17px;
+    margin: 0;
+  }
+  .modal-body {
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    flex: 1;
+  }
+  .filter-section-head {
+    margin-bottom: 8px;
+  }
+  .filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .filter-options-empty {
+    font-size: 12px;
+    color: var(--text-faint);
+    font-style: italic;
+  }
+  .filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .filter-checkbox input {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    flex: none;
+  }
+  .btn-filter-active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease;
+    z-index: 50;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ---------- Main layout ---------- */
+  .main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  .board {
+    flex: 1;
+    display: flex;
+    gap: 14px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    align-items: flex-start;
+  }
+  .column {
+    flex: 0 0 258px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+  }
+  .column.rejected-col {
+    margin-left: 14px;
+    background: var(--rejected-bg);
+    border-color: var(--rejected-border);
+  }
+  .column-divider {
+    flex: none;
+    align-self: stretch;
+    width: 1px;
+    background: var(--border);
+    margin: 6px 0;
+  }
+  .column-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 12px 8px;
+    flex: none;
+  }
+  .column-head-title {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+  }
+  .column-head h2 {
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.35px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0;
+  }
+  .rejected-col .column-head h2 { color: var(--text-faint); }
+  .column-count {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11.5px;
+    color: var(--text-faint);
+  }
+
+  .column-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2px 10px 12px;
+    min-height: 40px;
+  }
+  .column-empty {
+    font-size: 12px;
+    color: var(--text-faint);
+    padding: 14px 4px;
+    text-align: center;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--card-type-color, var(--border));
+    border-radius: 8px;
+    padding: 10px 11px 9px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+  }
+  .card.selected {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+  .card-top {
+    margin-bottom: 5px;
+  }
+  .card-number {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .card-title {
+    font-size: 13.5px;
+    font-weight: 500;
+    line-height: 1.35;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-title:empty::before {
+    content: "Untitled request";
+    color: var(--text-faint);
+    font-style: italic;
+  }
+
+  /* ---------- Detail panel ---------- */
+  .panel {
+    flex: 0 0 380px;
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .panel.hidden {
+    display: none;
+  }
+  .panel-scroll {
+    overflow-y: auto;
+    padding: 20px 22px 28px;
+    flex: 1;
+  }
+  .panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .panel-head-number {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .panel-head-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+  .panel-head-title:empty::before {
+    content: "Untitled request";
+    color: var(--text-faint);
+    font-style: italic;
+  }
+  .panel-close {
+    border: none;
+    background: transparent;
+    color: var(--text-faint);
+    font-size: 20px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 6px;
+    flex: none;
+  }
+  .panel-close:hover { background: var(--surface-alt); color: var(--text); }
+
+  .field-group {
+    margin-bottom: 14px;
+  }
+  .field-inline {
+    display: grid;
+    grid-template-columns: minmax(90px, 1fr) 168px;
+    align-items: start;
+    column-gap: 14px;
+    margin-bottom: 14px;
+  }
+  .field-inline .field-label {
+    margin-bottom: 0;
+  }
+  .field-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 5px;
+  }
+  .field-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+  .field-label-row .field-label {
+    margin-bottom: 0;
+  }
+  .field-value {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+  .field-value.empty {
+    color: var(--text-faint);
+    font-style: italic;
+  }
+  .field-checkbox-badge {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--surface-alt);
+    color: var(--text-faint);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .field-checkbox-badge.on {
+    background: var(--accent-tint);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .field-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 18px 0;
+  }
+  .panel-footer {
+    padding: 14px 22px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: none;
+  }
+  .meta-stamp {
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="topbar">
+    <div>
+      <h1>Intake Tracker</h1><span class="sub">Project request pipeline</span><span class="view-only-badge">View only</span>
+    </div>
+    <div class="topbar-actions">
+      <span class="file-status" id="syncStatusLabel"></span>
+      <div class="search-group">
+        <input type="text" inputmode="numeric" class="search-input" id="searchNumberInput" placeholder="Project #" aria-label="Search by project number" />
+        <select class="search-select" id="searchTitleSelect" aria-label="Search by project title">
+          <option value="">Search by title…</option>
+        </select>
+      </div>
+      <button class="btn" id="btnFilter">Filter</button>
+      <a class="btn" href="intake-kpis.html" target="_blank" rel="noopener" id="btnKpis">KPIs</a>
+      <button class="btn" id="btnExport">Export JSON</button>
+      <button class="btn" id="btnExportCsv">Export CSV</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="board" id="board"></div>
+    <div class="panel" id="panel"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="filterModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Filter Requests</h2>
+      <button class="panel-close" id="filterModalClose" title="Close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="filter-section">
+        <div class="filter-section-head"><span class="field-label">Project Type</span></div>
+        <div class="filter-options" id="filterProjectType"></div>
+      </div>
+      <div class="filter-section">
+        <div class="filter-section-head"><span class="field-label">Requestor</span></div>
+        <div class="filter-options" id="filterRequestor"></div>
+      </div>
+      <div class="filter-section">
+        <div class="filter-section-head"><span class="field-label">Department</span></div>
+        <div class="filter-options" id="filterDepartment"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="filterClearAll">Clear all</button>
+      <button class="btn btn-primary" id="filterModalDone">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>window.AUTH_REQUIREMENTS = [{ project: 'intake', role: 'viewer' }];</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-gate.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var TABLE = "intake_cards";
+
+  var sb = window.sbClient;
+
+  var STORAGE_KEY = "intake-tracker-v1"; // local cache only, used if Supabase is unreachable
+
+  var COLUMNS = [
+    { id: "received", label: "Received" },
+    { id: "ipa", label: "Initial Project Assessment" },
+    { id: "business_case", label: "Business Case" },
+    { id: "roadmap", label: "Roadmap" },
+    { id: "in_progress", label: "In Progress" },
+    { id: "delivered", label: "Delivered" },
+    { id: "on_hold", label: "On Hold" },
+    { id: "rejected", label: "Rejected" }
+  ];
+
+  var TYPES = [
+    { id: "Epic", var: "--type-epic" },
+    { id: "Feature", var: "--type-feature" },
+    { id: "Change", var: "--type-change" },
+    { id: "Bug", var: "--type-bug" },
+    { id: "Technology", var: "--type-technology" }
+  ];
+
+  var FIELD_GROUPS = [
+    {
+      layout: "stacked",
+      fields: [
+        { key: "projectNumber", label: "Project number", type: "text", mono: true },
+        { key: "projectTitle", label: "Project title", type: "text" },
+        { key: "requestorName", label: "Requestor name", type: "text" },
+        { key: "department", label: "Department", type: "text" }
+      ]
+    },
+    {
+      layout: "inline",
+      fields: [
+        { key: "intake", label: "Intake", type: "select", options: [
+          { value: "", label: "—" },
+          { value: "TechHub", label: "TechHub" },
+          { value: "Meeting", label: "Meeting" },
+          { value: "Technology", label: "Technology" },
+          { value: "Bug", label: "Bug" },
+          { value: "Out of Process", label: "Out of Process" }
+        ] }
+      ]
+    },
+    { divider: true },
+    {
+      layout: "inline",
+      fields: [
+        { key: "projectType", label: "Project type", type: "select", options: TYPES.map(function (t) { return { value: t.id, label: t.id }; }) }
+      ]
+    },
+    {
+      layout: "inline",
+      fields: [
+        { key: "status", label: "Status", type: "select", options: COLUMNS.map(function (c) { return { value: c.id, label: c.label }; }) },
+        { key: "dateReceived", label: "Date received", type: "date" },
+        { key: "dateIpaSent", label: "Date IPA sent", type: "date" },
+        { key: "dateBusinessCaseReceived", label: "Date business case", type: "date" }
+      ]
+    },
+    { divider: true },
+    {
+      layout: "stacked",
+      fields: [
+        { key: "bigThinkingNotes", label: "Big Thinking", type: "textarea", checkbox: { key: "bigThinking", label: "Applied" } }
+      ]
+    },
+    { divider: true },
+    {
+      layout: "stacked",
+      fields: [
+        { key: "businessBenefit", label: "Business benefit", type: "textarea", checkbox: { key: "definedBusinessBenefit", label: "Defined" } }
+      ]
+    },
+    { divider: true },
+    {
+      layout: "stacked",
+      fields: [
+        { key: "comments", label: "Comments", type: "textarea" }
+      ]
+    },
+    { divider: true },
+    {
+      layout: "inline",
+      fields: [
+        { key: "promiseDate", label: "Promise Date", type: "date" },
+        { key: "releaseDate", label: "Release Date", type: "date" }
+      ]
+    }
+  ];
+
+  var state = {
+    cards: [],
+    selectedId: null,
+    filters: { projectType: [], requestor: [], department: [] }
+  };
+
+  function setSyncStatus(status, detail) {
+    var label = document.getElementById("syncStatusLabel");
+    if (!label) return;
+    if (status === "synced") label.textContent = "Synced with Supabase";
+    else if (status === "error") label.textContent = "Sync error" + (detail ? " — " + detail : "");
+    else if (status === "offline") label.textContent = "Offline — showing cached copy";
+  }
+
+  function cacheLocally() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.cards));
+    } catch (e) { /* ignore quota errors */ }
+  }
+
+  function loadCachedCards() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function fetchCards() {
+    return sb.from(TABLE).select("id, data").then(function (res) {
+      if (res.error) throw res.error;
+      var cards = res.data.map(function (row) {
+        var card = Object.assign({}, row.data);
+        card.id = row.id;
+        return card;
+      });
+      cards.sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
+      return cards;
+    });
+  }
+
+  function init() {
+    fetchCards().then(function (cards) {
+      state.cards = cards;
+      render();
+      setSyncStatus("synced");
+      cacheLocally();
+    }).catch(function (err) {
+      toast("Couldn't load from Supabase: " + err.message);
+      setSyncStatus("offline");
+      state.cards = loadCachedCards();
+      render();
+    });
+  }
+
+  function typeVar(type) {
+    var t = TYPES.find(function (x) { return x.id === type; });
+    return t ? "var(" + t.var + ")" : "";
+  }
+
+  function matchesFilters(card) {
+    var f = state.filters;
+    if (f.projectType.length && f.projectType.indexOf(card.projectType) === -1) return false;
+    if (f.requestor.length && f.requestor.indexOf(card.requestorName || "") === -1) return false;
+    if (f.department.length && f.department.indexOf(card.department || "") === -1) return false;
+    return true;
+  }
+
+  function uniqueValues(key) {
+    var seen = {};
+    var values = [];
+    state.cards.forEach(function (c) {
+      var v = (c[key] || "").trim();
+      if (!v || seen[v]) return;
+      seen[v] = true;
+      values.push(v);
+    });
+    values.sort(function (a, b) { return a.localeCompare(b, undefined, { sensitivity: "base" }); });
+    return values;
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "";
+    var parts = iso.split("-");
+    if (parts.length !== 3) return iso;
+    return parts[1] + "/" + parts[2] + "/" + parts[0].slice(2);
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function toast(msg) {
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove("show"); }, 2600);
+  }
+
+  /* ---------------- rendering ---------------- */
+
+  function render() {
+    renderBoard();
+    renderPanel();
+    renderSearchControls();
+    updateFilterButton();
+  }
+
+  function renderSearchControls() {
+    var select = document.getElementById("searchTitleSelect");
+    if (!select) return;
+    var sorted = state.cards.slice().sort(function (a, b) {
+      return (a.projectTitle || "").localeCompare(b.projectTitle || "", undefined, { sensitivity: "base" });
+    });
+    select.innerHTML = "";
+    var placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Search by title…";
+    select.appendChild(placeholder);
+    sorted.forEach(function (card) {
+      var opt = document.createElement("option");
+      opt.value = card.id;
+      opt.textContent = card.projectTitle || "Untitled request";
+      select.appendChild(opt);
+    });
+    select.value = state.selectedId && state.cards.some(function (c) { return c.id === state.selectedId; })
+      ? state.selectedId
+      : "";
+
+    var selectedEl = document.querySelector('.card[data-id="' + state.selectedId + '"]');
+    if (selectedEl) selectedEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  function selectCard(id) {
+    state.selectedId = id;
+    render();
+  }
+
+  function findCardByNumber(query) {
+    var q = query.trim().toLowerCase();
+    if (!q) return null;
+    return state.cards.find(function (c) { return (c.projectNumber || "").toLowerCase() === q; }) ||
+      state.cards.find(function (c) { return (c.projectNumber || "").toLowerCase().indexOf(q) === 0; });
+  }
+
+  function renderBoard() {
+    var board = document.getElementById("board");
+    board.innerHTML = "";
+    COLUMNS.forEach(function (col, idx) {
+      if (col.id === "rejected") {
+        var divider = document.createElement("div");
+        divider.className = "column-divider";
+        board.appendChild(divider);
+      }
+      var colCards = state.cards.filter(function (c) { return c.status === col.id && matchesFilters(c); });
+
+      var colEl = document.createElement("div");
+      colEl.className = "column" + (col.id === "rejected" ? " rejected-col" : "");
+      colEl.dataset.status = col.id;
+
+      var head = document.createElement("div");
+      head.className = "column-head";
+      head.innerHTML =
+        '<div class="column-head-title"><h2>' + escapeHtml(col.label) + '</h2>' +
+        '<span class="column-count">' + colCards.length + "</span></div>";
+      colEl.appendChild(head);
+
+      var body = document.createElement("div");
+      body.className = "column-body";
+      body.dataset.status = col.id;
+
+      if (colCards.length === 0) {
+        var empty = document.createElement("div");
+        empty.className = "column-empty";
+        empty.textContent = "No requests";
+        body.appendChild(empty);
+      } else {
+        colCards.forEach(function (card) {
+          body.appendChild(buildCardEl(card));
+        });
+      }
+
+      colEl.appendChild(body);
+      board.appendChild(colEl);
+    });
+  }
+
+  function buildCardEl(card) {
+    var el = document.createElement("div");
+    el.className = "card" + (card.id === state.selectedId ? " selected" : "");
+    el.dataset.id = card.id;
+    el.tabIndex = 0;
+    el.style.setProperty("--card-type-color", typeVar(card.projectType));
+
+    el.innerHTML =
+      '<div class="card-top">' +
+        '<span class="card-number">' + escapeHtml(card.projectNumber || "—") + "</span>" +
+      "</div>" +
+      '<div class="card-title">' + escapeHtml(card.projectTitle) + "</div>";
+
+    el.addEventListener("click", function () {
+      state.selectedId = card.id;
+      render();
+    });
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        state.selectedId = card.id;
+        render();
+      }
+    });
+
+    return el;
+  }
+
+  function renderPanel() {
+    var panel = document.getElementById("panel");
+    panel.innerHTML = "";
+    var card = state.cards.find(function (c) { return c.id === state.selectedId; });
+
+    if (!card) {
+      panel.classList.add("hidden");
+      return;
+    }
+    panel.classList.remove("hidden");
+
+    var scroll = document.createElement("div");
+    scroll.className = "panel-scroll";
+
+    var head = document.createElement("div");
+    head.className = "panel-head";
+    head.innerHTML =
+      "<div><div class=\"panel-head-number\">" + escapeHtml(card.projectNumber || "—") + "</div>" +
+      "<div class=\"panel-head-title\">" + escapeHtml(card.projectTitle) + "</div></div>" +
+      '<button class="panel-close" title="Close">×</button>';
+    head.querySelector(".panel-close").addEventListener("click", function () {
+      state.selectedId = null;
+      render();
+    });
+    scroll.appendChild(head);
+
+    FIELD_GROUPS.forEach(function (group) {
+      if (group.divider) {
+        var hr = document.createElement("hr");
+        hr.className = "field-divider";
+        scroll.appendChild(hr);
+        return;
+      }
+      group.fields.forEach(function (f) {
+        scroll.appendChild(buildFieldReadOnly(card, f, group.layout));
+      });
+    });
+
+    panel.appendChild(scroll);
+
+    var footer = document.createElement("div");
+    footer.className = "panel-footer";
+    var stamp = document.createElement("span");
+    stamp.className = "meta-stamp";
+    stamp.textContent = card.updatedAt ? "Updated " + new Date(card.updatedAt).toLocaleString() : "";
+    footer.appendChild(stamp);
+    panel.appendChild(footer);
+  }
+
+  function buildFieldReadOnly(card, f, layout) {
+    var wrap = document.createElement("div");
+    wrap.className = layout === "inline" ? "field-inline" : "field-group";
+    wrap.dataset.field = f.key;
+
+    if (f.checkbox) {
+      var labelRow = document.createElement("div");
+      labelRow.className = "field-label-row";
+
+      var rowLabel = document.createElement("label");
+      rowLabel.className = "field-label";
+      rowLabel.textContent = f.label;
+      labelRow.appendChild(rowLabel);
+
+      var on = !!card[f.checkbox.key];
+      var badge = document.createElement("span");
+      badge.className = "field-checkbox-badge" + (on ? " on" : "");
+      badge.textContent = on ? "✓ " + f.checkbox.label : "Not " + f.checkbox.label.toLowerCase();
+      labelRow.appendChild(badge);
+
+      wrap.appendChild(labelRow);
+    } else {
+      var label = document.createElement("label");
+      label.className = "field-label";
+      label.textContent = f.label;
+      wrap.appendChild(label);
+    }
+
+    var displayValue;
+    if (f.type === "select") {
+      var opt = f.options.find(function (o) { return o.value === card[f.key]; });
+      displayValue = opt ? opt.label : (card[f.key] || "");
+    } else if (f.type === "date") {
+      displayValue = fmtDate(card[f.key]);
+    } else {
+      displayValue = card[f.key] || "";
+    }
+
+    var valueEl = document.createElement("div");
+    valueEl.className = "field-value" + (displayValue ? "" : " empty");
+    valueEl.textContent = displayValue || "—";
+    wrap.appendChild(valueEl);
+
+    return wrap;
+  }
+
+  /* ---------------- search ---------------- */
+
+  document.getElementById("searchNumberInput").addEventListener("input", function (e) {
+    var match = findCardByNumber(e.target.value);
+    if (match) selectCard(match.id);
+  });
+
+  document.getElementById("searchTitleSelect").addEventListener("change", function (e) {
+    if (!e.target.value) return;
+    selectCard(e.target.value);
+  });
+
+  /* ---------------- filtering ---------------- */
+
+  function updateFilterButton() {
+    var btn = document.getElementById("btnFilter");
+    if (!btn) return;
+    var count = state.filters.projectType.length + state.filters.requestor.length + state.filters.department.length;
+    btn.textContent = count > 0 ? "Filter (" + count + ")" : "Filter";
+    btn.classList.toggle("btn-filter-active", count > 0);
+  }
+
+  function buildFilterOptions(containerId, options, filterKey) {
+    var container = document.getElementById(containerId);
+    container.innerHTML = "";
+    if (options.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "filter-options-empty";
+      empty.textContent = "None yet";
+      container.appendChild(empty);
+      return;
+    }
+    options.forEach(function (opt) {
+      var label = document.createElement("label");
+      label.className = "filter-checkbox";
+      var input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = state.filters[filterKey].indexOf(opt.value) !== -1;
+      input.addEventListener("change", function () {
+        var arr = state.filters[filterKey];
+        var idx = arr.indexOf(opt.value);
+        if (input.checked && idx === -1) arr.push(opt.value);
+        if (!input.checked && idx !== -1) arr.splice(idx, 1);
+        renderBoard();
+        updateFilterButton();
+      });
+      var text = document.createElement("span");
+      text.textContent = opt.label;
+      label.appendChild(input);
+      label.appendChild(text);
+      container.appendChild(label);
+    });
+  }
+
+  function renderFilterModal() {
+    buildFilterOptions("filterProjectType", TYPES.map(function (t) { return { value: t.id, label: t.id }; }), "projectType");
+    buildFilterOptions("filterRequestor", uniqueValues("requestorName").map(function (v) { return { value: v, label: v }; }), "requestor");
+    buildFilterOptions("filterDepartment", uniqueValues("department").map(function (v) { return { value: v, label: v }; }), "department");
+  }
+
+  function openFilterModal() {
+    renderFilterModal();
+    document.getElementById("filterModalOverlay").classList.add("show");
+  }
+
+  function closeFilterModal() {
+    document.getElementById("filterModalOverlay").classList.remove("show");
+  }
+
+  document.getElementById("btnFilter").addEventListener("click", openFilterModal);
+  document.getElementById("filterModalClose").addEventListener("click", closeFilterModal);
+  document.getElementById("filterModalDone").addEventListener("click", closeFilterModal);
+  document.getElementById("filterModalOverlay").addEventListener("click", function (e) {
+    if (e.target.id === "filterModalOverlay") closeFilterModal();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeFilterModal();
+  });
+  document.getElementById("filterClearAll").addEventListener("click", function () {
+    state.filters = { projectType: [], requestor: [], department: [] };
+    renderFilterModal();
+    renderBoard();
+    updateFilterButton();
+  });
+
+  /* ---------------- export ---------------- */
+
+  document.getElementById("btnExport").addEventListener("click", function () {
+    var data = JSON.stringify(state.cards, null, 2);
+    var filename = "intake-tracker-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    var blob = new Blob([data], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast("Backup saved");
+  });
+
+  var CSV_COLUMNS = [
+    { key: "projectNumber", label: "Project Number" },
+    { key: "projectTitle", label: "Project Title" },
+    { key: "requestorName", label: "Requestor" },
+    { key: "department", label: "Department" },
+    { key: "intake", label: "Intake" },
+    { key: "projectType", label: "Project Type" },
+    { key: "status", label: "Status", format: function (v) {
+      var col = COLUMNS.find(function (c) { return c.id === v; });
+      return col ? col.label : v;
+    } },
+    { key: "dateReceived", label: "Date Received" },
+    { key: "dateIpaSent", label: "Date IPA Sent" },
+    { key: "dateBusinessCaseReceived", label: "Date Business Case" },
+    { key: "bigThinking", label: "Big Thinking Applied", format: function (v) { return v ? "Yes" : "No"; } },
+    { key: "bigThinkingNotes", label: "Big Thinking Notes" },
+    { key: "businessBenefit", label: "Business Benefit" },
+    { key: "definedBusinessBenefit", label: "Business Benefit Defined", format: function (v) { return v ? "Yes" : "No"; } },
+    { key: "comments", label: "Comments" },
+    { key: "promiseDate", label: "Promise Date" },
+    { key: "releaseDate", label: "Release Date" },
+    { key: "createdAt", label: "Created At" },
+    { key: "updatedAt", label: "Updated At" }
+  ];
+
+  function csvEscape(value) {
+    var s = value == null ? "" : String(value);
+    if (/[",\n\r]/.test(s)) {
+      s = '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  function cardsToCsv(cards) {
+    var lines = [CSV_COLUMNS.map(function (c) { return csvEscape(c.label); }).join(",")];
+    cards.forEach(function (card) {
+      var row = CSV_COLUMNS.map(function (c) {
+        var val = card[c.key];
+        if (c.format) val = c.format(val);
+        return csvEscape(val);
+      });
+      lines.push(row.join(","));
+    });
+    return lines.join("\r\n");
+  }
+
+  document.getElementById("btnExportCsv").addEventListener("click", function () {
+    var csv = cardsToCsv(state.cards);
+    var filename = "intake-tracker-export-" + new Date().toISOString().slice(0, 10) + ".csv";
+    var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast("CSV exported");
+  });
+
+  window.onAuthReady(init);
+})();
+</script>
+</body>
+</html>

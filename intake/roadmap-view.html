@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feature Release Roadmap</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --border: #e1e4e8;
+    --text: #1f2328;
+    --text-muted: #6b7280;
+    --shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 1px rgba(0,0,0,0.04);
+    --empty-col-bg: repeating-linear-gradient(45deg, rgba(0,0,0,0.02), rgba(0,0,0,0.02) 8px, transparent 8px, transparent 16px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1d2026;
+      --border: #2c3038;
+      --text: #e6e8eb;
+      --text-muted: #9aa1ac;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 1px 1px rgba(0,0,0,0.3);
+      --empty-col-bg: repeating-linear-gradient(45deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03) 8px, transparent 8px, transparent 16px);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 18px 20px;
+  }
+  .generated-note { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+  #board {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .column {
+    flex: 0 0 250px;
+    width: 250px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+  .column.is-empty { background: var(--empty-col-bg), var(--panel); }
+  .column-header {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    background: var(--panel);
+    border-radius: 10px 10px 0 0;
+  }
+  .column-header .month { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
+  .column-header .count {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 1px 7px;
+  }
+  .card-list { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .card {
+    background: var(--bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--card-color, #8a8f98);
+    padding: 8px 10px;
+    box-shadow: var(--shadow);
+  }
+  .card .name { font-size: 13px; font-weight: 600; line-height: 1.35; word-break: break-word; }
+  .empty-note { padding: 20px 10px; text-align: center; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="generated-note">Generated 2026-07-31T07:19:16.734Z</div>
+<div id="board"><div class="column" style="max-height: none;"><div class="column-header" style="position: static;"><span class="month">July 2026</span><span class="count">3</span></div><div class="card-list" style="overflow: visible; max-height: none;"><div class="card" style="--card-color: #4fce65;"><div class="name">Bundles</div></div><div class="card" style="--card-color: #ff4853;"><div class="name">Customer First</div></div><div class="card" style="--card-color: #dc60c3;"><div class="name">Prepaid Card Warning</div></div></div></div><div class="column" style="max-height: none;"><div class="column-header" style="position: static;"><span class="month">August 2026</span><span class="count">5</span></div><div class="card-list" style="overflow: visible; max-height: none;"><div class="card" style="--card-color: #dc60c3;"><div class="name">Google Merchant API</div></div><div class="card" style="--card-color: #dc60c3;"><div class="name">Star Trek: Theme Test</div></div><div class="card" style="--card-color: #dc60c3;"><div class="name">Video on News Page</div></div><div class="card" style="--card-color: #dc60c3;"><div class="name">Tooth Fairy Letter</div></div><div class="card" style="--card-color: #dedede;"><div class="name">EU Delivery Charges</div></div></div></div><div class="column" style="max-height: none;"><div class="column-header" style="position: static;"><span class="month">September 2026</span><span class="count">4</span></div><div class="card-list" style="overflow: visible; max-height: none;"><div class="card" style="--card-color: #dc60c3;"><div class="name">Cluedo</div></div><div class="card" style="--card-color: #ff4853;"><div class="name">PAMP Snag List</div></div><div class="card" style="--card-color: #dc60c3;"><div class="name">RME Revamp</div></div><div class="card" style="--card-color: #dc60c3;"><div class="name">Single Session Enforcement</div></div></div></div><div class="column" style="max-height: none;"><div class="column-header" style="position: static;"><span class="month">October 2026</span><span class="count">2</span></div><div class="card-list" style="overflow: visible; max-height: none;"><div class="card" style="--card-color: #5b8cff;"><div class="name">D365 Phase 1</div></div><div class="card" style="--card-color: #dc60c3;"><div class="name">Consumer Credit: In-house</div></div></div></div><div class="column" style="max-height: none;"><div class="column-header" style="position: static;"><span class="month">November 2026</span><span class="count">5</span></div><div class="card-list" style="overflow: visible; max-height: none;"><div class="card" style="--card-color: #4fce65;"><div class="name">Customer Order Management</div></div><div class="card" style="--card-color: #4fce65;"><div class="name">DigiGold Conversion</div></div><div class="card" style="--card-color: #dedede;"><div class="name">**Web Deployment Freeze**</div></div><div class="card" style="--card-color: #dc60c3;"><div class="name">Klarna</div></div><div class="card" style="--card-color: #dedede;"><div class="name">Self Serve Cancellation Test</div></div></div></div><div class="column" style="max-height: none;"><div class="column-header" style="position: static;"><span class="month">December 2026</span><span class="count">4</span></div><div class="card-list" style="overflow: visible; max-height: none;"><div class="card" style="--card-color: #4fce65;"><div class="name">DMCCA</div></div><div class="card" style="--card-color: #4fce65;"><div class="name">Self Serve Address Change</div></div><div class="card" style="--card-color: #4fce65;"><div class="name">GEO/AEO</div></div><div class="card" style="--card-color: #5b8cff;"><div class="name">D365 Hypercare</div></div></div></div></div>
+</body>
+</html>

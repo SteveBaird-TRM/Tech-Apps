@@ -1,0 +1,179 @@
+<meta charset="utf-8">
+<title>Schedule A</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="app.css">
+
+
+<div class="app" id="app">
+  <div class="layout">
+    <div class="main-col">
+      <div class="header">
+        <h1>Schedule A: Resource Planner</h1>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-actions">
+          <div class="start-date-field" title="Timeline start (snaps to the Monday of the chosen week)">
+            <label for="timelineStartInput">Start</label>
+            <input type="date" id="timelineStartInput" />
+          </div>
+          <div class="view-toggle" id="viewToggle" role="group" aria-label="Group chart by">
+            <button type="button" class="view-toggle-btn" data-view="project">Projects</button>
+            <button type="button" class="view-toggle-btn" data-view="resource">Resources</button>
+          </div>
+          <div class="view-toggle" id="sortToggle" role="group" aria-label="Sort chart">
+            <button type="button" class="view-toggle-btn" id="sortAzBtn" title="Sort project or resource rows alphabethical, then by date">Sort A-Z</button>
+            <button type="button" class="view-toggle-btn" id="sortDateBtn" title="Sort by start date, then end date, then alphabetically">Sort Date</button>
+          </div>
+          <button type="button" class="ghost-btn" id="densityToggleBtn">Density:Normal</button>
+          <div class="zoom-control">
+            <button type="button" id="zoomOutBtn" title="Zoom out (narrower weeks)">−</button>
+            <span class="zoom-level" id="zoomLevelLabel">100%</span>
+            <button type="button" id="zoomInBtn" title="Zoom in (wider weeks)">+</button>
+          </div>
+          <button type="button" class="ghost-btn" id="manageRolesBtn">Assign Role</button>
+          <button type="button" class="ghost-btn" id="openFileBtn" style="display:none">Import Backup</button>
+          <input type="file" id="importFileInput" accept="application/json" style="display:none" />
+          <button type="button" class="ghost-btn" id="cleanupBtn" style="display:none">Data Clean Up</button>
+          <button type="button" class="ghost-btn" id="exportBtn">Back Up Data</button>
+          <button type="button" class="ghost-btn" id="exportPngBtn" style="display:none">Export PNG</button>
+          <button type="button" class="ghost-btn" id="exportPdfBtn" style="display:none">Export PDF</button>
+          <span class="save-status" id="saveStatus">—</span>
+        </div>
+      </div>
+
+      <div class="editable-area" id="editableArea">
+        <div class="filters-block" id="filtersBlock" style="display:none">
+          <div class="filters-block-header">
+            <button type="button" class="collapse-toggle" id="filtersCollapseToggle" title="Collapse filters">▾</button>
+            <div class="resource-filter-label">Filter</div>
+          </div>
+          <div class="filters-block-body" id="filtersBlockBody">
+            <div class="resource-filter" id="resourceFilterBar" style="display:none">
+              <div class="resource-filter-chips" id="resourceFilterChips"></div>
+            </div>
+
+            <div class="resource-filter" id="projectFilterBar" style="display:none">
+              <div class="resource-filter-chips" id="projectFilterChips"></div>
+            </div>
+
+            <div class="resource-filter" id="rolesFilterBar" style="display:none">
+              <div class="resource-filter-chips" id="rolesFilterChips"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="gantt-card">
+          <div class="gantt-scroll">
+            <div class="gantt-grid" id="ganttGrid"></div>
+          </div>
+          <div class="col-resize-handle" id="colResizeHandle" title="Drag to resize column"></div>
+        </div>
+
+        <div class="lock-overlay" id="lockOverlay" style="display:none">
+          <div class="lock-overlay-inner">
+            <p id="lockOverlayText">Loading schedule…</p>
+            <div class="lock-overlay-actions" id="lockOverlayActions" style="display:none">
+              <button type="button" class="ghost-btn" id="gateRetryBtn">Retry</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="side-panel" id="sidePanel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-date-label">Selected week(s)</div>
+          <div class="panel-date" id="panelDate">—</div>
+        </div>
+        <button type="button" class="panel-close" id="panelClose" title="Close">✕</button>
+      </div>
+      <div class="view-toggle" id="panelViewToggle" role="group" aria-label="Show in panel">
+        <button type="button" class="view-toggle-btn" data-panel-view="project">Projects</button>
+        <button type="button" class="view-toggle-btn" data-panel-view="resource">Resources</button>
+      </div>
+      <div class="panel-filter">
+        <div class="panel-filter-header">
+          <button type="button" class="collapse-toggle" id="panelFilterCollapseToggle" title="Collapse filter">▾</button>
+          <div class="panel-filter-label" id="panelFilterLabel">Filter projects</div>
+        </div>
+        <div class="panel-filter-chips" id="panelFilterChips"></div>
+      </div>
+      <div class="panel-filter" id="panelRolesFilterRow" style="display:none">
+        <div class="panel-filter-header">
+          <button type="button" class="collapse-toggle" id="panelRolesFilterCollapseToggle" title="Collapse filter">▾</button>
+          <div class="panel-filter-label">Filter roles</div>
+        </div>
+        <div class="panel-filter-chips" id="panelRolesFilterChips"></div>
+      </div>
+      <div class="panel-summary" id="panelSummary"></div>
+      <div class="panel-list" id="panelList"></div>
+    </aside>
+  </div>
+
+  <div class="drag-tip" id="dragTip"></div>
+
+  <div class="modal-overlay" id="addModalOverlay" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Add resource</div>
+        <button type="button" class="panel-close" id="addModalClose" title="Close">✕</button>
+      </div>
+      <form class="add-form" id="addForm">
+        <div class="field">
+          <label for="projectInput">Project</label>
+          <input id="projectInput" type="text" list="projectList" placeholder="e.g. Website Redesign" required maxlength="60" />
+          <datalist id="projectList"></datalist>
+        </div>
+        <div class="field">
+          <label for="nameInput">Resource name</label>
+          <input id="nameInput" type="text" list="resourceNameList" placeholder="e.g. Alice" required maxlength="40" />
+          <datalist id="resourceNameList"></datalist>
+        </div>
+        <div class="field alloc">
+          <label for="allocInput">Allocation</label>
+          <input id="allocInput" type="number" min="0" step="1" value="100" required />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost-btn" id="addModalCancel">Cancel</button>
+          <button type="submit" title="Bars default to a one-week span starting after this resource's last entry in the same project">Add resource</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="rolesModalOverlay" style="display:none">
+    <div class="modal roles-modal">
+      <div class="modal-header">
+        <div class="modal-title">Manage Roles</div>
+        <button type="button" class="panel-close" id="rolesModalClose" title="Close">✕</button>
+      </div>
+      <div class="roles-new-row">
+        <input id="newRoleInput" type="text" placeholder="Add a new role…" maxlength="40" />
+        <button type="button" class="ghost-btn" id="addRoleBtn">Add</button>
+      </div>
+      <div class="roles-resource-list" id="rolesResourceList"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="cleanupModalOverlay" style="display:none">
+    <div class="modal cleanup-modal">
+      <div class="modal-header">
+        <div class="modal-title">Data Clean Up</div>
+        <button type="button" class="panel-close" id="cleanupModalClose" title="Close">✕</button>
+      </div>
+      <div class="cleanup-warning">Don't forget to make a back up!</div>
+      <div class="cleanup-list" id="cleanupList"></div>
+      <div class="modal-actions">
+        <button type="button" class="ghost-btn" id="cleanupCancelBtn">Cancel</button>
+        <button type="button" id="cleanupOkBtn">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>window.AUTH_REQUIREMENTS = [{ project: 'schedule-a-db-v2', role: 'viewer' }];</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-gate.js"></script>
+<script src="app.js"></script>

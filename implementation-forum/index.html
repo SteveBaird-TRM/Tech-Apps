@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Planned Work</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Implementation Forum: Planned Work</h1>
+    <div class="header-right">
+      <span id="data-status" class="file-status">Loading…</span>
+      <button id="export-btn" class="btn hidden">Download CSV</button>
+      <button id="export-png-btn" class="btn">Export to PNG</button>
+      <button id="add-task-btn" class="btn btn-primary" disabled>+ Add Task</button>
+    </div>
+  </header>
+
+  <main id="board" class="board">
+    <section class="column" data-sprint="0">
+      <h2 class="column-title" id="column-title-0">Next</h2>
+      <div class="card-list" data-sprint="0"></div>
+    </section>
+    <section class="column" data-sprint="1">
+      <h2 class="column-title" id="column-title-1">Next+1</h2>
+      <div class="card-list" data-sprint="1"></div>
+    </section>
+  </main>
+
+  <div id="modal-backdrop" class="modal-backdrop hidden">
+    <form id="task-form" class="modal">
+      <h2 id="modal-title">Add Task</h2>
+      <input type="hidden" id="task-id" />
+
+      <label for="task-title">Title</label>
+      <input type="text" id="task-title" required maxlength="200" />
+
+      <label for="task-type">Type</label>
+      <select id="task-type" required></select>
+
+      <label for="task-sprint">Sprint</label>
+      <select id="task-sprint" required>
+        <option value="0">Next</option>
+        <option value="1">Next+1</option>
+      </select>
+
+      <div class="modal-checkbox-row">
+        <label class="checkbox-label" for="task-new">
+          <input type="checkbox" id="task-new" /> New
+        </label>
+        <label class="checkbox-label" for="task-changed">
+          <input type="checkbox" id="task-changed" /> Changed
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="delete-task-btn" class="btn btn-danger hidden">Delete</button>
+        <div class="modal-actions-right">
+          <button type="button" id="cancel-btn" class="btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <script>window.AUTH_REQUIREMENTS = [{ project: 'implementation-forum', role: 'viewer' }];</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth-gate.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
