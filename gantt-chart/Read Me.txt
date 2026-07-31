@@ -1,0 +1,12 @@
+1) Open the index.html file to use the webapp.  It only works in Chrome or Edge because it reads and writes directly to a file.
+2) The webapp uses a json file to store the data, you can store this anywhere.  It will remember the last file (including location) for next time.
+3) The project title is the title of the json file.
+4) Start sets the start date of the chart, goin gback to the Monday.
+5) Week/Month/Quater and zoom +/- allow you to change the time line.
+6) You can move bars around; up down, left right, and resize as you want.
+7) The pencil icon allows you to edit the task colour and tags.
+8) Auto Sort button puts the bars in start date order.
+9) Filters button allows you to apply filters on the view.
+10) Display allowd you to change the look of the bars and screen.
+11) Tags button allows you to edit the tags - note when you edit the tag any with the tag will be updated as well.
+12) Export send the file in the named format (note CVS does not inlcude colour).
