@@ -43,6 +43,16 @@
   }
   #toolbar button:hover, #toolbar label.file-btn:hover { background: #f0f0f0; }
   #fileName { font-size: 12px; color: var(--muted); }
+  #filterWrap { display: none; align-items: center; gap: 6px; margin-left: auto; }
+  #filterWrap label { font-size: 13px; color: var(--muted); }
+  #filterSelect {
+    font-size: 13px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background: #fff;
+    max-width: 260px;
+  }
   #error {
     display: none;
     margin: 10px 16px;
@@ -124,6 +134,10 @@
   </label>
   <button id="sampleBtn">Load tickets.csv</button>
   <span id="fileName"></span>
+  <div id="filterWrap">
+    <label for="filterSelect">Show connected to:</label>
+    <select id="filterSelect"></select>
+  </div>
 </div>
 
 <div id="error"></div>
@@ -191,6 +205,17 @@
   var dropzone = document.getElementById("dropzone");
   var diagramWrap = document.getElementById("diagramWrap");
   var diagram = document.getElementById("diagram");
+  var filterWrap = document.getElementById("filterWrap");
+  var filterSelect = document.getElementById("filterSelect");
+
+  // Full (unfiltered) graph for the currently loaded file — used to populate
+  // the filter dropdown and to walk ancestors/descendants regardless of
+  // whatever subset is currently on screen.
+  var allRecords = [];
+  var fullById = {};
+  var fullChildrenOf = {};
+
+  filterSelect.addEventListener("change", applyFilter);
 
   fileInput.addEventListener("change", function (e) {
     var f = e.target.files && e.target.files[0];
@@ -319,6 +344,87 @@
     return STATUS_ICONS[key] || DEFAULT_ICON;
   }
 
+  // ---- Filtering -------------------------------------------------
+
+  // Builds a lookup + children map across the WHOLE loaded file (not
+  // whatever subset is currently rendered), so the filter can always find
+  // the full ancestor/descendant chain for a selected Epic or Feature.
+  function indexFull(records) {
+    fullById = {};
+    records.forEach(function (t) { if (t.id) fullById[t.id] = t; });
+    fullChildrenOf = {};
+    records.forEach(function (t) {
+      if (t.parent && fullById[t.parent] && t.parent !== t.id) {
+        (fullChildrenOf[t.parent] = fullChildrenOf[t.parent] || []).push(t);
+      }
+    });
+  }
+
+  function populateFilter(records) {
+    var epics = [];
+    var features = [];
+    records.forEach(function (t) {
+      var idx = resolveColumn(t.type).index;
+      if (idx === 0) epics.push(t);
+      else if (idx === 1) features.push(t);
+    });
+    function byNumericId(a, b) { return a.id.localeCompare(b.id, undefined, { numeric: true }); }
+    epics.sort(byNumericId);
+    features.sort(byNumericId);
+
+    filterSelect.innerHTML = "";
+    var optAll = document.createElement("option");
+    optAll.value = "";
+    optAll.textContent = "Show all";
+    filterSelect.appendChild(optAll);
+
+    function addGroup(label, items) {
+      if (!items.length) return;
+      var group = document.createElement("optgroup");
+      group.label = label;
+      items.forEach(function (t) {
+        var opt = document.createElement("option");
+        opt.value = t.id;
+        opt.textContent = t.id + " — " + t.title;
+        group.appendChild(opt);
+      });
+      filterSelect.appendChild(group);
+    }
+    addGroup("Epics", epics);
+    addGroup("Features", features);
+    filterSelect.value = "";
+    filterWrap.style.display = (epics.length || features.length) ? "flex" : "none";
+  }
+
+  // All descendants of `id`, plus its ancestor chain (e.g. a Feature's
+  // parent Epic) so the filtered view still shows how the selection fits
+  // into the wider hierarchy.
+  function connectedIds(id) {
+    var result = {};
+    (function walkDown(nodeId) {
+      if (result[nodeId]) return;
+      result[nodeId] = true;
+      (fullChildrenOf[nodeId] || []).forEach(function (c) { walkDown(c.id); });
+    })(id);
+
+    var cur = fullById[id];
+    while (cur && cur.parent && fullById[cur.parent]) {
+      result[cur.parent] = true;
+      cur = fullById[cur.parent];
+    }
+    return result;
+  }
+
+  function applyFilter() {
+    var selected = filterSelect.value;
+    if (!selected) {
+      renderDiagram(allRecords);
+      return;
+    }
+    var ids = connectedIds(selected);
+    renderDiagram(allRecords.filter(function (t) { return ids[t.id]; }));
+  }
+
   // ---- Render -------------------------------------------------
 
   function renderFromText(text) {
@@ -335,11 +441,6 @@
       return;
     }
 
-    var byId = {};
-    records.forEach(function (t) {
-      if (t.id) byId[t.id] = t;
-    });
-
     var seen = {};
     var duplicates = [];
     records.forEach(function (t) {
@@ -350,6 +451,18 @@
     if (duplicates.length) {
       showError("Warning: duplicate ticket IDs found (" + duplicates.join(", ") + "). Later rows overwrite earlier ones in lookups.");
     }
+
+    allRecords = records;
+    indexFull(records);
+    populateFilter(records);
+    applyFilter();
+  }
+
+  function renderDiagram(records) {
+    var byId = {};
+    records.forEach(function (t) {
+      if (t.id) byId[t.id] = t;
+    });
 
     // children map — a ticket only counts as a "child" if its parent resolves
     // to a ticket that's actually in this file. Otherwise it becomes a root
