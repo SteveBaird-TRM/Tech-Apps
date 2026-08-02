@@ -42,16 +42,79 @@
     cursor: pointer;
   }
   #toolbar button:hover, #toolbar label.file-btn:hover { background: #f0f0f0; }
+  #autoSortBtn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+  #autoSortBtn.active:hover { background: #1d4fd1; }
   #fileName { font-size: 12px; color: var(--muted); }
-  #filterWrap { display: none; align-items: center; gap: 6px; margin-left: auto; }
-  #filterWrap label { font-size: 13px; color: var(--muted); }
-  #filterSelect {
+  #filterWrap { display: none; align-items: center; gap: 6px; margin-left: auto; position: relative; }
+  #filterWrap > label { font-size: 13px; color: var(--muted); }
+  #filterBtn {
     font-size: 13px;
-    padding: 5px 8px;
+    padding: 6px 12px;
     border-radius: 6px;
     border: 1px solid #ccc;
     background: #fff;
-    max-width: 260px;
+    cursor: pointer;
+    min-width: 140px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  #filterBtn:hover { background: #f0f0f0; }
+  #filterBtn .chevron { font-size: 10px; color: var(--muted); }
+  #filterPanel {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    width: 300px;
+    max-height: 360px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    display: flex;
+    flex-direction: column;
+    z-index: 20;
+  }
+  #filterPanel[hidden] { display: none; }
+  .filter-panel-actions {
+    display: flex;
+    gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+  }
+  .filter-panel-actions button {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background: #fafafa;
+    cursor: pointer;
+  }
+  .filter-panel-actions button:hover { background: #f0f0f0; }
+  .filter-panel-body { overflow-y: auto; padding: 4px 0; }
+  .filter-group-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #888;
+    padding: 8px 10px 4px;
+  }
+  .filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .filter-option:hover { background: #f5f5f5; }
+  .filter-option input { flex: none; }
+  .filter-option span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   #error {
     display: none;
@@ -132,18 +195,25 @@
     Choose CSV…
     <input id="fileInput" type="file" accept=".csv,text/csv" style="display:none">
   </label>
-  <button id="sampleBtn">Load tickets.csv</button>
   <span id="fileName"></span>
+  <button id="autoSortBtn" type="button">Auto Sort</button>
   <div id="filterWrap">
-    <label for="filterSelect">Show connected to:</label>
-    <select id="filterSelect"></select>
+    <label>Show connected to:</label>
+    <button id="filterBtn" type="button"><span id="filterBtnLabel">All</span><span class="chevron">▾</span></button>
+    <div id="filterPanel" hidden>
+      <div class="filter-panel-actions">
+        <button type="button" id="selectAllBtn">Select all</button>
+        <button type="button" id="selectNoneBtn">Select none</button>
+      </div>
+      <div class="filter-panel-body" id="filterPanelBody"></div>
+    </div>
   </div>
 </div>
 
 <div id="error"></div>
 
 <div id="dropzone">
-  Drop a CSV file here, or use "Choose CSV…" / "Load tickets.csv" above.<br>
+  Drop a CSV file here, or use "Choose CSV…" above.<br>
   Expected columns: <strong>ID</strong>, <strong>Work Item Type</strong>, <strong>Title</strong>, <strong>State</strong> (optional), <strong>Parent</strong>.
 </div>
 
@@ -194,54 +264,67 @@
   var STATUS_ICONS = {
     "new": "circle-0.svg",
     "done": "circle-8.svg",
-    "blocked": "circle-cc000.svg"
+    "blocked": "circle-blocked.svg"
   };
   var DEFAULT_ICON = "circle-4.svg";
 
   // ---- DOM refs --------------------------------------------------------
 
   var fileInput = document.getElementById("fileInput");
-  var sampleBtn = document.getElementById("sampleBtn");
   var fileNameEl = document.getElementById("fileName");
   var errorEl = document.getElementById("error");
   var dropzone = document.getElementById("dropzone");
   var diagramWrap = document.getElementById("diagramWrap");
   var diagram = document.getElementById("diagram");
   var filterWrap = document.getElementById("filterWrap");
-  var filterSelect = document.getElementById("filterSelect");
+  var filterBtn = document.getElementById("filterBtn");
+  var filterBtnLabel = document.getElementById("filterBtnLabel");
+  var filterPanel = document.getElementById("filterPanel");
+  var filterPanelBody = document.getElementById("filterPanelBody");
+  var selectAllBtn = document.getElementById("selectAllBtn");
+  var selectNoneBtn = document.getElementById("selectNoneBtn");
+  var autoSortBtn = document.getElementById("autoSortBtn");
 
   // Full (unfiltered) graph for the currently loaded file — used to populate
-  // the filter dropdown and to walk ancestors/descendants regardless of
+  // the filter panel and to walk ancestors/descendants regardless of
   // whatever subset is currently on screen.
   var allRecords = [];
   var fullById = {};
   var fullChildrenOf = {};
+  var filterableItems = []; // Epics + Features available in the current file
+  var selectedFilterIds = new Set(); // currently checked items (default: all)
+  var sortEnabled = false; // Auto Sort toggle — orders every hierarchy level by ID
 
-  filterSelect.addEventListener("change", applyFilter);
+  autoSortBtn.addEventListener("click", function () {
+    if (!allRecords.length) return;
+    sortEnabled = !sortEnabled;
+    autoSortBtn.classList.toggle("active", sortEnabled);
+    applyFilter();
+  });
+
+  filterBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    filterPanel.hidden = !filterPanel.hidden;
+  });
+  document.addEventListener("click", function (e) {
+    if (!filterPanel.hidden && !filterWrap.contains(e.target)) filterPanel.hidden = true;
+  });
+  selectAllBtn.addEventListener("click", function () {
+    filterableItems.forEach(function (t) { selectedFilterIds.add(t.id); });
+    syncCheckboxes();
+    updateFilterButtonLabel();
+    applyFilter();
+  });
+  selectNoneBtn.addEventListener("click", function () {
+    selectedFilterIds.clear();
+    syncCheckboxes();
+    updateFilterButtonLabel();
+    applyFilter();
+  });
 
   fileInput.addEventListener("change", function (e) {
     var f = e.target.files && e.target.files[0];
     if (f) loadFile(f);
-  });
-
-  sampleBtn.addEventListener("click", function () {
-    fetch("tickets.csv")
-      .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.text();
-      })
-      .then(function (text) {
-        fileNameEl.textContent = "tickets.csv";
-        renderFromText(text);
-      })
-      .catch(function (err) {
-        showError(
-          "Couldn't fetch tickets.csv directly (" + err.message + "). " +
-          "If you opened this file directly from disk (file://), browsers " +
-          "block that request — use \"Choose CSV…\" instead, or serve this " +
-          "folder with a local web server."
-        );
-      });
   });
 
   ["dragenter", "dragover"].forEach(function (evt) {
@@ -365,37 +448,69 @@
   function populateFilter(records) {
     var epics = [];
     var features = [];
+    var noParent = [];
     records.forEach(function (t) {
       var idx = resolveColumn(t.type).index;
       if (idx === 0) epics.push(t);
       else if (idx === 1) features.push(t);
+      else if (!t.parent || !fullById[t.parent]) noParent.push(t);
     });
     function byNumericId(a, b) { return a.id.localeCompare(b.id, undefined, { numeric: true }); }
     epics.sort(byNumericId);
     features.sort(byNumericId);
+    noParent.sort(byNumericId);
 
-    filterSelect.innerHTML = "";
-    var optAll = document.createElement("option");
-    optAll.value = "";
-    optAll.textContent = "Show all";
-    filterSelect.appendChild(optAll);
+    filterableItems = epics.concat(features).concat(noParent);
+    selectedFilterIds = new Set(filterableItems.map(function (t) { return t.id; })); // default: all selected
 
-    function addGroup(label, items) {
+    filterPanelBody.innerHTML = "";
+    function addGroup(label, items, showType) {
       if (!items.length) return;
-      var group = document.createElement("optgroup");
-      group.label = label;
+      var heading = document.createElement("div");
+      heading.className = "filter-group-label";
+      heading.textContent = label;
+      filterPanelBody.appendChild(heading);
       items.forEach(function (t) {
-        var opt = document.createElement("option");
-        opt.value = t.id;
-        opt.textContent = t.id + " — " + t.title;
-        group.appendChild(opt);
+        var row = document.createElement("label");
+        row.className = "filter-option";
+        var cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = true;
+        cb.dataset.id = t.id;
+        cb.addEventListener("change", function () {
+          if (cb.checked) selectedFilterIds.add(t.id);
+          else selectedFilterIds.delete(t.id);
+          updateFilterButtonLabel();
+          applyFilter();
+        });
+        var span = document.createElement("span");
+        span.textContent = t.id + " — " + t.title + (showType ? " (" + t.type + ")" : "");
+        row.appendChild(cb);
+        row.appendChild(span);
+        filterPanelBody.appendChild(row);
       });
-      filterSelect.appendChild(group);
     }
     addGroup("Epics", epics);
     addGroup("Features", features);
-    filterSelect.value = "";
-    filterWrap.style.display = (epics.length || features.length) ? "flex" : "none";
+    addGroup("No Parent", noParent, true);
+
+    updateFilterButtonLabel();
+    filterWrap.style.display = filterableItems.length ? "flex" : "none";
+  }
+
+  function syncCheckboxes() {
+    var boxes = filterPanelBody.querySelectorAll("input[type=checkbox]");
+    for (var i = 0; i < boxes.length; i++) {
+      boxes[i].checked = selectedFilterIds.has(boxes[i].dataset.id);
+    }
+  }
+
+  function updateFilterButtonLabel() {
+    var total = filterableItems.length;
+    var n = selectedFilterIds.size;
+    if (n === total) filterBtnLabel.textContent = "All";
+    else if (n === 0) filterBtnLabel.textContent = "None";
+    else filterBtnLabel.textContent = n + " selected";
   }
 
   // All descendants of `id`, plus its ancestor chain (e.g. a Feature's
@@ -418,13 +533,35 @@
   }
 
   function applyFilter() {
-    var selected = filterSelect.value;
-    if (!selected) {
+    var total = filterableItems.length;
+    if (total === 0 || selectedFilterIds.size === total) {
       renderDiagram(allRecords);
       return;
     }
-    var ids = connectedIds(selected);
+    if (selectedFilterIds.size === 0) {
+      renderEmptyState();
+      return;
+    }
+    var ids = {};
+    selectedFilterIds.forEach(function (id) {
+      var c = connectedIds(id);
+      Object.keys(c).forEach(function (k) { ids[k] = true; });
+    });
     renderDiagram(allRecords.filter(function (t) { return ids[t.id]; }));
+  }
+
+  function renderEmptyState() {
+    diagram.innerHTML = "";
+    diagram.style.width = "";
+    diagram.style.height = "";
+    var msg = document.createElement("div");
+    msg.style.margin = "40px";
+    msg.style.color = "#888";
+    msg.style.fontSize = "14px";
+    msg.textContent = "No Epics or Features selected — check at least one in the filter, or click \"Select all\".";
+    diagram.appendChild(msg);
+    dropzone.style.display = "none";
+    diagramWrap.style.display = "block";
   }
 
   // ---- Render -------------------------------------------------
@@ -478,6 +615,14 @@
         roots.push(t);
       }
     });
+
+    // Auto Sort — order every level of the hierarchy (root/Epic, then each
+    // parent's Feature/PBI/Task/Information children) by ID.
+    if (sortEnabled) {
+      var byNumericIdSort = function (a, b) { return a.id.localeCompare(b.id, undefined, { numeric: true }); };
+      roots.sort(byNumericIdSort);
+      Object.keys(childrenOf).forEach(function (k) { childrenOf[k].sort(byNumericIdSort); });
+    }
 
     // assign dynamic column slots (base slots + OTHER if needed)
     var slots = COLUMN_SLOTS.map(function (s) { return { label: s.label, used: false }; });
