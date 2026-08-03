@@ -1,4 +1,4 @@
-<title>Ticket Hierarchy Viewer</title>
+<title>DevOps Visualiser</title>
 <style>
   :root {
     color-scheme: light;
@@ -42,8 +42,8 @@
     cursor: pointer;
   }
   #toolbar button:hover, #toolbar label.file-btn:hover { background: #f0f0f0; }
-  #autoSortBtn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
-  #autoSortBtn.active:hover { background: #1d4fd1; }
+  #otherToggleBtn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+  #otherToggleBtn.active:hover { background: #1d4fd1; }
   #fileName { font-size: 12px; color: var(--muted); }
   #filterWrap { display: none; align-items: center; gap: 6px; margin-left: auto; position: relative; }
   #filterWrap > label { font-size: 13px; color: var(--muted); }
@@ -190,13 +190,12 @@
 </style>
 
 <div id="toolbar">
-  <h1>Ticket Hierarchy Viewer</h1>
+  <h1>DevOps Visualiser</h1>
   <label class="file-btn">
     Choose CSV…
     <input id="fileInput" type="file" accept=".csv,text/csv" style="display:none">
   </label>
   <span id="fileName"></span>
-  <button id="autoSortBtn" type="button">Auto Sort</button>
   <div id="filterWrap">
     <label>Show connected to:</label>
     <button id="filterBtn" type="button"><span id="filterBtnLabel">All</span><span class="chevron">▾</span></button>
@@ -208,6 +207,7 @@
       <div class="filter-panel-body" id="filterPanelBody"></div>
     </div>
   </div>
+  <button id="otherToggleBtn" type="button">Hide Other</button>
 </div>
 
 <div id="error"></div>
@@ -262,8 +262,7 @@
         "design": "#ec008c",
         "cr": "#ec008c",
         "change request": "#ec008c"
-      } },
-    { label: "INFORMATION", types: { "information": "#339947" } }
+      } }
   ];
   var DEFAULT_COLOR = "#808080";
 
@@ -289,7 +288,7 @@
   var filterPanelBody = document.getElementById("filterPanelBody");
   var selectAllBtn = document.getElementById("selectAllBtn");
   var selectNoneBtn = document.getElementById("selectNoneBtn");
-  var autoSortBtn = document.getElementById("autoSortBtn");
+  var otherToggleBtn = document.getElementById("otherToggleBtn");
 
   // Full (unfiltered) graph for the currently loaded file — used to populate
   // the filter panel and to walk ancestors/descendants regardless of
@@ -299,12 +298,13 @@
   var fullChildrenOf = {};
   var filterableItems = []; // Epics + Features available in the current file
   var selectedFilterIds = new Set(); // currently checked items (default: all)
-  var sortEnabled = false; // Auto Sort toggle — orders every hierarchy level by ID
+  var otherHidden = false; // Hide Other toggle — excludes unmatched work item types
 
-  autoSortBtn.addEventListener("click", function () {
+  otherToggleBtn.addEventListener("click", function () {
     if (!allRecords.length) return;
-    sortEnabled = !sortEnabled;
-    autoSortBtn.classList.toggle("active", sortEnabled);
+    otherHidden = !otherHidden;
+    otherToggleBtn.classList.toggle("active", otherHidden);
+    otherToggleBtn.textContent = otherHidden ? "Show Other" : "Hide Other";
     applyFilter();
   });
 
@@ -540,20 +540,24 @@
 
   function applyFilter() {
     var total = filterableItems.length;
+    var records;
     if (total === 0 || selectedFilterIds.size === total) {
-      renderDiagram(allRecords);
-      return;
-    }
-    if (selectedFilterIds.size === 0) {
+      records = allRecords;
+    } else if (selectedFilterIds.size === 0) {
       renderEmptyState();
       return;
+    } else {
+      var ids = {};
+      selectedFilterIds.forEach(function (id) {
+        var c = connectedIds(id);
+        Object.keys(c).forEach(function (k) { ids[k] = true; });
+      });
+      records = allRecords.filter(function (t) { return ids[t.id]; });
     }
-    var ids = {};
-    selectedFilterIds.forEach(function (id) {
-      var c = connectedIds(id);
-      Object.keys(c).forEach(function (k) { ids[k] = true; });
-    });
-    renderDiagram(allRecords.filter(function (t) { return ids[t.id]; }));
+    if (otherHidden) {
+      records = records.filter(function (t) { return resolveColumn(t.type).index !== -1; });
+    }
+    renderDiagram(records);
   }
 
   function renderEmptyState() {
@@ -622,13 +626,11 @@
       }
     });
 
-    // Auto Sort — order every level of the hierarchy (root/Epic, then each
-    // parent's Feature/Element/Task/Information children) by ID.
-    if (sortEnabled) {
-      var byNumericIdSort = function (a, b) { return a.id.localeCompare(b.id, undefined, { numeric: true }); };
-      roots.sort(byNumericIdSort);
-      Object.keys(childrenOf).forEach(function (k) { childrenOf[k].sort(byNumericIdSort); });
-    }
+    // Order every level of the hierarchy (root/Epic, then each parent's
+    // Feature/Element/Task children) by ID.
+    var byNumericIdSort = function (a, b) { return a.id.localeCompare(b.id, undefined, { numeric: true }); };
+    roots.sort(byNumericIdSort);
+    Object.keys(childrenOf).forEach(function (k) { childrenOf[k].sort(byNumericIdSort); });
 
     // assign dynamic column slots (base slots + OTHER if needed)
     var slots = COLUMN_SLOTS.map(function (s) { return { label: s.label, used: false }; });
