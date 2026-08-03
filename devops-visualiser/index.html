@@ -45,9 +45,10 @@
   #otherToggleBtn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
   #otherToggleBtn.active:hover { background: #1d4fd1; }
   #fileName { font-size: 12px; color: var(--muted); }
-  #filterWrap { display: none; align-items: center; gap: 6px; margin-left: auto; position: relative; }
-  #filterWrap > label { font-size: 13px; color: var(--muted); }
-  #filterBtn {
+  .filter-wrap { display: none; align-items: center; gap: 6px; position: relative; }
+  .filter-wrap > label { font-size: 13px; color: var(--muted); }
+  #filterWrap { margin-left: auto; }
+  .filter-trigger-btn {
     font-size: 13px;
     padding: 6px 12px;
     border-radius: 6px;
@@ -61,9 +62,9 @@
     justify-content: space-between;
     gap: 8px;
   }
-  #filterBtn:hover { background: #f0f0f0; }
-  #filterBtn .chevron { font-size: 10px; color: var(--muted); }
-  #filterPanel {
+  .filter-trigger-btn:hover { background: #f0f0f0; }
+  .filter-trigger-btn .chevron { font-size: 10px; color: var(--muted); }
+  .filter-panel {
     position: absolute;
     top: calc(100% + 4px);
     right: 0;
@@ -77,7 +78,7 @@
     flex-direction: column;
     z-index: 20;
   }
-  #filterPanel[hidden] { display: none; }
+  .filter-panel[hidden] { display: none; }
   .filter-panel-actions {
     display: flex;
     gap: 8px;
@@ -196,15 +197,26 @@
     <input id="fileInput" type="file" accept=".csv,text/csv" style="display:none">
   </label>
   <span id="fileName"></span>
-  <div id="filterWrap">
+  <div id="filterWrap" class="filter-wrap">
     <label>Show connected to:</label>
-    <button id="filterBtn" type="button"><span id="filterBtnLabel">All</span><span class="chevron">▾</span></button>
-    <div id="filterPanel" hidden>
+    <button id="filterBtn" type="button" class="filter-trigger-btn"><span id="filterBtnLabel">All</span><span class="chevron">▾</span></button>
+    <div id="filterPanel" class="filter-panel" hidden>
       <div class="filter-panel-actions">
         <button type="button" id="selectAllBtn">Select all</button>
         <button type="button" id="selectNoneBtn">Select none</button>
       </div>
       <div class="filter-panel-body" id="filterPanelBody"></div>
+    </div>
+  </div>
+  <div id="tagFilterWrap" class="filter-wrap">
+    <label>Tags:</label>
+    <button id="tagFilterBtn" type="button" class="filter-trigger-btn"><span id="tagFilterBtnLabel">All</span><span class="chevron">▾</span></button>
+    <div id="tagFilterPanel" class="filter-panel" hidden>
+      <div class="filter-panel-actions">
+        <button type="button" id="tagSelectAllBtn">Select all</button>
+        <button type="button" id="tagSelectNoneBtn">Select none</button>
+      </div>
+      <div class="filter-panel-body" id="tagFilterPanelBody"></div>
     </div>
   </div>
   <button id="otherToggleBtn" type="button">Hide Other</button>
@@ -214,7 +226,7 @@
 
 <div id="dropzone">
   Drop a CSV file here, or use "Choose CSV…" above.<br>
-  Expected columns: <strong>ID</strong>, <strong>Work Item Type</strong>, <strong>Title</strong>, <strong>State</strong> (optional), <strong>Parent</strong>.
+  Expected columns: <strong>ID</strong>, <strong>Work Item Type</strong>, <strong>Title</strong>, <strong>State</strong> (optional), <strong>Parent</strong>, <strong>Tags</strong> (optional, semicolon-separated).
 </div>
 
 <div id="diagramWrap" style="display:none">
@@ -289,6 +301,13 @@
   var selectAllBtn = document.getElementById("selectAllBtn");
   var selectNoneBtn = document.getElementById("selectNoneBtn");
   var otherToggleBtn = document.getElementById("otherToggleBtn");
+  var tagFilterWrap = document.getElementById("tagFilterWrap");
+  var tagFilterBtn = document.getElementById("tagFilterBtn");
+  var tagFilterBtnLabel = document.getElementById("tagFilterBtnLabel");
+  var tagFilterPanel = document.getElementById("tagFilterPanel");
+  var tagFilterPanelBody = document.getElementById("tagFilterPanelBody");
+  var tagSelectAllBtn = document.getElementById("tagSelectAllBtn");
+  var tagSelectNoneBtn = document.getElementById("tagSelectNoneBtn");
 
   // Full (unfiltered) graph for the currently loaded file — used to populate
   // the filter panel and to walk ancestors/descendants regardless of
@@ -299,6 +318,10 @@
   var filterableItems = []; // Epics + Features available in the current file
   var selectedFilterIds = new Set(); // currently checked items (default: all)
   var otherHidden = false; // Hide Other toggle — excludes unmatched work item types
+  var NO_TAGS_KEY = "__NO_TAGS__"; // sentinel selection key for untagged tickets
+  var allTags = []; // distinct tag values in the current file, sorted
+  var hasUntaggedTag = false; // whether any ticket in the current file has no tags
+  var selectedTags = new Set(); // currently checked tags (default: all, including "no tags")
 
   otherToggleBtn.addEventListener("click", function () {
     if (!allRecords.length) return;
@@ -325,6 +348,27 @@
     selectedFilterIds.clear();
     syncCheckboxes();
     updateFilterButtonLabel();
+    applyFilter();
+  });
+
+  tagFilterBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    tagFilterPanel.hidden = !tagFilterPanel.hidden;
+  });
+  document.addEventListener("click", function (e) {
+    if (!tagFilterPanel.hidden && !tagFilterWrap.contains(e.target)) tagFilterPanel.hidden = true;
+  });
+  tagSelectAllBtn.addEventListener("click", function () {
+    allTags.forEach(function (tag) { selectedTags.add(tag); });
+    if (hasUntaggedTag) selectedTags.add(NO_TAGS_KEY);
+    syncTagCheckboxes();
+    updateTagFilterButtonLabel();
+    applyFilter();
+  });
+  tagSelectNoneBtn.addEventListener("click", function () {
+    selectedTags.clear();
+    syncTagCheckboxes();
+    updateTagFilterButtonLabel();
     applyFilter();
   });
 
@@ -407,12 +451,15 @@
     for (var r = 1; r < rows.length; r++) {
       var cols = rows[r];
       if (cols.length === 1 && cols[0].trim() === "") continue;
+      var tagsRaw = String(pick(cols, ["tags"])).trim();
+      var tags = tagsRaw ? tagsRaw.split(";").map(function (s) { return s.trim(); }).filter(function (s) { return s.length; }) : [];
       records.push({
         id: String(pick(cols, ["id"])).trim(),
         type: String(pick(cols, ["work item type", "type"])).trim(),
         title: String(pick(cols, ["title"])).trim(),
         state: String(pick(cols, ["state", "status"])).trim(),
-        parent: String(pick(cols, ["parent"])).trim()
+        parent: String(pick(cols, ["parent"])).trim(),
+        tags: tags
       });
     }
     return records;
@@ -519,6 +566,68 @@
     else filterBtnLabel.textContent = n + " selected";
   }
 
+  // ---- Tag filtering -------------------------------------------------
+
+  function populateTagFilter(records) {
+    var tagSet = {};
+    hasUntaggedTag = false;
+    records.forEach(function (t) {
+      if (t.tags.length) t.tags.forEach(function (tag) { tagSet[tag] = true; });
+      else hasUntaggedTag = true;
+    });
+    allTags = Object.keys(tagSet).sort(function (a, b) { return a.localeCompare(b, undefined, { sensitivity: "base" }); });
+    selectedTags = new Set(allTags);
+    if (hasUntaggedTag) selectedTags.add(NO_TAGS_KEY);
+
+    tagFilterPanelBody.innerHTML = "";
+    function addTagOption(label, key) {
+      var row = document.createElement("label");
+      row.className = "filter-option";
+      var cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = true;
+      cb.dataset.tag = key;
+      cb.addEventListener("change", function () {
+        if (cb.checked) selectedTags.add(key);
+        else selectedTags.delete(key);
+        updateTagFilterButtonLabel();
+        applyFilter();
+      });
+      var span = document.createElement("span");
+      span.textContent = label;
+      row.appendChild(cb);
+      row.appendChild(span);
+      tagFilterPanelBody.appendChild(row);
+    }
+    allTags.forEach(function (tag) { addTagOption(tag, tag); });
+    if (hasUntaggedTag) addTagOption("(No tags)", NO_TAGS_KEY);
+
+    updateTagFilterButtonLabel();
+    tagFilterWrap.style.display = (allTags.length || hasUntaggedTag) ? "flex" : "none";
+  }
+
+  function syncTagCheckboxes() {
+    var boxes = tagFilterPanelBody.querySelectorAll("input[type=checkbox]");
+    for (var i = 0; i < boxes.length; i++) {
+      boxes[i].checked = selectedTags.has(boxes[i].dataset.tag);
+    }
+  }
+
+  function updateTagFilterButtonLabel() {
+    var total = allTags.length + (hasUntaggedTag ? 1 : 0);
+    var n = selectedTags.size;
+    if (n === total) tagFilterBtnLabel.textContent = "All";
+    else if (n === 0) tagFilterBtnLabel.textContent = "None";
+    else tagFilterBtnLabel.textContent = n + " selected";
+  }
+
+  function ticketMatchesTagFilter(t) {
+    var total = allTags.length + (hasUntaggedTag ? 1 : 0);
+    if (total === 0 || selectedTags.size === total) return true;
+    if (!t.tags.length) return selectedTags.has(NO_TAGS_KEY);
+    return t.tags.some(function (tag) { return selectedTags.has(tag); });
+  }
+
   // All descendants of `id`, plus its ancestor chain (e.g. a Feature's
   // parent Epic) so the filtered view still shows how the selection fits
   // into the wider hierarchy.
@@ -557,6 +666,7 @@
     if (otherHidden) {
       records = records.filter(function (t) { return resolveColumn(t.type).index !== -1; });
     }
+    records = records.filter(ticketMatchesTagFilter);
     renderDiagram(records);
   }
 
@@ -604,6 +714,7 @@
     allRecords = records;
     indexFull(records);
     populateFilter(records);
+    populateTagFilter(records);
     applyFilter();
   }
 
