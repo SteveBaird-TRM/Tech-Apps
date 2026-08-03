@@ -414,6 +414,7 @@
   function renderTable(cards) {
     var rows = [];
     cards.forEach(function (card) {
+      if (card.status === "delivered" || card.status === "rejected") return;
       var priority = computePriority(card);
       if (priority == null) return; // no scores entered — hide the request
       rows.push({ card: card, priority: priority });
