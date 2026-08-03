@@ -789,6 +789,16 @@
     {
       layout: "inline",
       fields: [
+        { key: "strategicScore", label: "Strategic Score", type: "number", min: 0, max: 100, placeholder: "0-100" },
+        { key: "operationalScore", label: "Operational Score", type: "number", min: 0, max: 100, placeholder: "0-100" },
+        { key: "customerScore", label: "Customer Score", type: "number", min: 0, max: 100, placeholder: "0-100" },
+        { key: "commercialScore", label: "Commercial Score", type: "number", min: 0, max: 100, placeholder: "0-100" }
+      ]
+    },
+    { divider: true },
+    {
+      layout: "inline",
+      fields: [
         { key: "promiseDate", label: "Promise Date", type: "date" },
         { key: "releaseDate", label: "Release Date", type: "date" }
       ]
@@ -1261,9 +1271,21 @@
       input.className = "field-input" + (f.mono ? " mono" : "");
       input.type = f.type;
       if (f.placeholder) input.placeholder = f.placeholder;
+      if (f.min != null) input.min = f.min;
+      if (f.max != null) input.max = f.max;
       input.value = card[f.key] || "";
       input.addEventListener("input", function () {
-        updateCardField(card.id, f.key, input.value);
+        var val = input.value;
+        if (f.type === "number" && val !== "") {
+          var num = Number(val);
+          if (!isNaN(num)) {
+            if (f.min != null && num < f.min) num = f.min;
+            if (f.max != null && num > f.max) num = f.max;
+            input.value = num;
+            val = num;
+          }
+        }
+        updateCardField(card.id, f.key, val);
       });
     }
     wrap.appendChild(input);
@@ -1313,6 +1335,10 @@
       bigThinking: false,
       bigThinkingNotes: "",
       comments: "",
+      strategicScore: "",
+      operationalScore: "",
+      commercialScore: "",
+      customerScore: "",
       promiseDate: "",
       releaseDate: "",
       createdAt: new Date().toISOString(),
@@ -1470,6 +1496,10 @@
     { key: "businessBenefit", label: "Business Benefit" },
     { key: "definedBusinessBenefit", label: "Business Benefit Defined", format: function (v) { return v ? "Yes" : "No"; } },
     { key: "comments", label: "Comments" },
+    { key: "strategicScore", label: "Strategic Score" },
+    { key: "operationalScore", label: "Operational Score" },
+    { key: "customerScore", label: "Customer Score" },
+    { key: "commercialScore", label: "Commercial Score" },
     { key: "promiseDate", label: "Promise Date" },
     { key: "releaseDate", label: "Release Date" },
     { key: "createdAt", label: "Created At" },
