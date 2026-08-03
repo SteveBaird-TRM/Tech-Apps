@@ -243,16 +243,22 @@
   var COLUMN_SLOTS = [
     { label: "EPIC", types: { "epic": "#ff7b00" } },
     { label: "FEATURE", types: { "feature": "#773b93" } },
-    { label: "PBI", types: {
+    { label: "ELEMENT", types: {
         "pbi": "#73accc",
         "product backlog item": "#73accc",
         "user story": "#73accc",
-        "bug": "#d40000"
+        "bug": "#d40000",
+        "prebuild": "#73accc"
       } },
     { label: "TASK", types: {
         "task": "#fbbc3d",
         "sprint": "#fbbc3d",
         "spike": "#fbbc3d",
+        "be task": "#fbbc3d",
+        "fe task": "#fbbc3d",
+        "cms task": "#fbbc3d",
+        "data": "#fbbc3d",
+        "ssqp": "#fbbc3d",
         "design": "#ec008c",
         "cr": "#ec008c",
         "change request": "#ec008c"
@@ -617,7 +623,7 @@
     });
 
     // Auto Sort — order every level of the hierarchy (root/Epic, then each
-    // parent's Feature/PBI/Task/Information children) by ID.
+    // parent's Feature/Element/Task/Information children) by ID.
     if (sortEnabled) {
       var byNumericIdSort = function (a, b) { return a.id.localeCompare(b.id, undefined, { numeric: true }); };
       roots.sort(byNumericIdSort);
