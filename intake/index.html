@@ -943,6 +943,21 @@
     return true;
   }
 
+  var STALE_COLUMN_DAYS = 100;
+
+  function isOlderThanDays(dateStr, days) {
+    if (!dateStr) return false;
+    var d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
+    return (Date.now() - d.getTime()) > days * 24 * 60 * 60 * 1000;
+  }
+
+  function isHiddenStaleCard(card) {
+    if (card.status === "delivered" && isOlderThanDays(card.releaseDate, STALE_COLUMN_DAYS)) return true;
+    if (card.status === "rejected" && isOlderThanDays(card.dateReceived, STALE_COLUMN_DAYS)) return true;
+    return false;
+  }
+
   function uniqueValues(key) {
     var seen = {};
     var values = [];
@@ -1032,7 +1047,7 @@
         divider.className = "column-divider";
         board.appendChild(divider);
       }
-      var colCards = state.cards.filter(function (c) { return c.status === col.id && matchesFilters(c); });
+      var colCards = state.cards.filter(function (c) { return c.status === col.id && matchesFilters(c) && !isHiddenStaleCard(c); });
 
       var colEl = document.createElement("div");
       colEl.className = "column" + (col.id === "rejected" ? " rejected-col" : "");
