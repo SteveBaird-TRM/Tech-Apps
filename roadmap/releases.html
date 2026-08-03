@@ -674,7 +674,7 @@ function buildStaticDocument() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Feature Release Roadmap</title>
+<title>Technology Releases Roadmap</title>
 <style>
   :root {
     color-scheme: light dark;
@@ -686,6 +686,7 @@ function buildStaticDocument() {
     --shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 1px rgba(0,0,0,0.04);
     --empty-col-bg: repeating-linear-gradient(45deg, rgba(0,0,0,0.02), rgba(0,0,0,0.02) 8px, transparent 8px, transparent 16px);
   }
+  .page-title { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #14161a;
@@ -753,6 +754,7 @@ function buildStaticDocument() {
 </style>
 </head>
 <body>
+<h1 class="page-title">Technology Releases Roadmap</h1>
 <div class="generated-note">Generated ${generated}</div>
 ${boardHTML}
 </body>
@@ -765,16 +767,19 @@ async function publishStaticView() {
   if (!board.children.length) { showError("Nothing to publish."); return; }
   showError("");
   const html = buildStaticDocument();
+  const filename = "roadmap-view.html";
 
   if (window.showSaveFilePicker) {
     try {
-      if (!publishFileHandle) {
-        publishFileHandle = await window.showSaveFilePicker({
-          suggestedName: "roadmap-view.html",
+      let handle = publishFileHandle;
+      if (!handle) {
+        handle = await window.showSaveFilePicker({
+          suggestedName: filename,
           types: [{ description: "HTML file", accept: { "text/html": [".html"] } }],
         });
+        publishFileHandle = handle;
       }
-      const writable = await publishFileHandle.createWritable();
+      const writable = await handle.createWritable();
       await writable.write(html);
       await writable.close();
     } catch (err) {
@@ -782,7 +787,7 @@ async function publishStaticView() {
     }
   } else {
     const blob = new Blob([html], { type: "text/html" });
-    downloadBlob(blob, "roadmap-view.html");
+    downloadBlob(blob, filename);
   }
 }
 
