@@ -798,7 +798,7 @@
         { key: "strategicScore", label: "Strategic Score", type: "number", min: 0, max: 100, placeholder: "0-100" },
         { key: "operationalScore", label: "Operational Score", type: "number", min: 0, max: 100, placeholder: "0-100" },
         { key: "customerScore", label: "Customer Score", type: "number", min: 0, max: 100, placeholder: "0-100" },
-        { key: "annualValue", label: "Annual Value (£1K)", type: "number", min: 0, placeholder: "£" },
+        { key: "annualValue", label: "Annual Value (x£1K)", type: "number", min: 0, placeholder: "£" },
         { key: "commercialScore", label: "Commercial Score", type: "number", readonly: true, computedFrom: "annualValue" }
       ]
     },
@@ -1325,7 +1325,8 @@
   function computeCommercialScore(annualValue) {
     var n = Number(annualValue);
     if (annualValue === "" || annualValue == null || isNaN(n)) return "";
-    var score = 53.4 * Math.log(0.00551 * n + 1);
+    var score = 25 * Math.log(0.1 * n + 1);
+    score = Math.min(score, 100);
     return Math.round(score * 100) / 100;
   }
 
