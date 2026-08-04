@@ -259,7 +259,7 @@
     <table class="scoring" id="scoringTable" style="display:none;">
       <thead>
         <tr>
-          <th class="col-title">Request</th>
+          <th class="col-title sortable" data-sort-key="title">Request<span class="sort-icon"></span></th>
           <th class="col-score sortable" data-sort-key="strategicScore">Strategic<span class="sort-icon"></span></th>
           <th class="col-score sortable" data-sort-key="operationalScore">Operational<span class="sort-icon"></span></th>
           <th class="col-score sortable" data-sort-key="customerScore">Customer<span class="sort-icon"></span></th>
@@ -356,7 +356,11 @@
   var lastRows = [];
 
   function compareRows(a, b, key) {
-    if (key && key !== "priority") {
+    if (key === "title") {
+      var at = (a.card.projectTitle || "Untitled request").toLowerCase();
+      var bt = (b.card.projectTitle || "Untitled request").toLowerCase();
+      if (at !== bt) return at < bt ? -1 : 1;
+    } else if (key && key !== "priority") {
       var av = scoredValue(a.card, key);
       var bv = scoredValue(b.card, key);
       // unscored (0/blank) sinks to the bottom within this column's sort
