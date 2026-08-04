@@ -12,6 +12,7 @@
   const ZOOM_STORAGE_KEY = 'timeline-compare-zoom';
   const THEME_STORAGE_KEY = 'timeline-compare-theme';
   const FILTER_STORAGE_KEY = 'timeline-compare-filter';
+  const START_DATE_STORAGE_KEY = 'timeline-compare-start-date';
   const MIN_VISIBLE_WEEKS = 10;
   const PADDING_WEEKS = 2;
 
@@ -41,6 +42,7 @@
   const filterSelectNoneBtn = document.getElementById('filter-select-none-btn');
   const filterCancelBtn = document.getElementById('filter-cancel-btn');
   const filterApplyBtn = document.getElementById('filter-apply-btn');
+  const startDateInput = document.getElementById('start-date-input');
 
   const supabaseClient = window.sbClient;
 
@@ -72,6 +74,16 @@
     if (!Number.isNaN(stored) && stored >= MIN_ZOOM && stored <= MAX_ZOOM) zoom = stored;
   } catch (err) {
     // localStorage unavailable — fall back to the default zoom.
+  }
+
+  // Left edge of the visible timeline — always snapped back to the Monday of
+  // its week. Defaults to this week's Monday; overridable via the date picker.
+  let timelineStart = mondayOf(new Date());
+  try {
+    const stored = parseISODate(localStorage.getItem(START_DATE_STORAGE_KEY));
+    if (stored) timelineStart = mondayOf(stored);
+  } catch (err) {
+    // localStorage unavailable — fall back to today's Monday.
   }
 
   // ---------- Date helpers ----------
@@ -111,6 +123,13 @@
 
   function formatShort(date) {
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  function formatISODate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + d;
   }
 
   // ---------- Timeline geometry ----------
@@ -307,23 +326,17 @@
 
   // ---------- Timeline range / columns ----------
   function computeRange() {
-    let minStart = null;
     let maxEnd = null;
     projects.forEach((p) => {
-      if (p.roadmap) {
-        if (!minStart || p.roadmap.start < minStart) minStart = p.roadmap.start;
-        if (!maxEnd || p.roadmap.end > maxEnd) maxEnd = p.roadmap.end;
-      }
-      if (p.schedule) {
-        if (!minStart || p.schedule.start < minStart) minStart = p.schedule.start;
-        if (!maxEnd || p.schedule.end > maxEnd) maxEnd = p.schedule.end;
-      }
+      if (p.roadmap && (!maxEnd || p.roadmap.end > maxEnd)) maxEnd = p.roadmap.end;
+      if (p.schedule && (!maxEnd || p.schedule.end > maxEnd)) maxEnd = p.schedule.end;
     });
 
-    let rangeStart = minStart ? mondayOf(minStart) : mondayOf(new Date());
+    // timelineStart is a hard override for the left edge — activity before it
+    // is clipped rather than auto-expanding the range to include it.
+    const rangeStart = timelineStart;
     let rangeEnd = maxEnd ? mondayOf(addDays(maxEnd, 7)) : addDays(rangeStart, MIN_VISIBLE_WEEKS * 7);
 
-    rangeStart = addDays(rangeStart, -PADDING_WEEKS * 7);
     rangeEnd = addDays(rangeEnd, PADDING_WEEKS * 7);
 
     const minEnd = addDays(rangeStart, MIN_VISIBLE_WEEKS * 7);
@@ -522,6 +535,7 @@
     tableEl.style.width = (LABEL_WIDTH_PX + totalWidthPx) + 'px';
     syncZoomControls();
     syncFilterButton();
+    syncStartDateControl();
   }
 
   // ---------- Zoom ----------
@@ -545,6 +559,30 @@
 
   zoomInBtn.addEventListener('click', () => setZoom(zoom + ZOOM_STEP));
   zoomOutBtn.addEventListener('click', () => setZoom(zoom - ZOOM_STEP));
+
+  // ---------- Timeline start date ----------
+  function syncStartDateControl() {
+    startDateInput.value = formatISODate(timelineStart);
+  }
+
+  function setTimelineStart(date) {
+    timelineStart = mondayOf(date);
+    try {
+      localStorage.setItem(START_DATE_STORAGE_KEY, formatISODate(timelineStart));
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+    render();
+  }
+
+  startDateInput.addEventListener('change', () => {
+    const parsed = parseISODate(startDateInput.value);
+    if (!parsed) {
+      syncStartDateControl();
+      return;
+    }
+    setTimelineStart(parsed);
+  });
 
   // ---------- Theme ----------
   function currentEffectiveTheme() {
