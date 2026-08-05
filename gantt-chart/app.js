@@ -1,7 +1,7 @@
 (() => {
+  const DAY_COL_WIDTH = 40;
   const WEEK_COL_WIDTH = 90;
   const MONTH_COL_WIDTH = 160;
-  const QUARTER_COL_WIDTH = 220;
   const ROW_HEIGHTS = { narrow: 32, normal: 46, wide: 64 };
   const BAR_HEIGHTS = { narrow: 18, normal: 32, wide: 32 };
   const DENSITY_LEVELS = ['narrow', 'normal', 'wide'];
@@ -43,7 +43,7 @@
     'Test': 'Finalising',
     'Complete': 'Complete',
   };
-  const VIEW_MODES = ['week', 'month', 'quarter'];
+  const VIEW_MODES = ['day', 'week', 'month'];
   const DEFAULT_VIEW_MODE = 'week';
   const VIEW_STORAGE_KEY = 'roadmap-gantt-view-mode';
   const ZOOM_STORAGE_KEY = 'roadmap-gantt-zoom';
@@ -55,7 +55,7 @@
   const LABEL_WIDTH_STORAGE_KEY = 'roadmap-gantt-label-width';
   const MIN_LABEL_WIDTH = 160;
   const MAX_LABEL_WIDTH = 480;
-  const LABEL_MODES = ['off', 'weeks', 'dates'];
+  const LABEL_MODES = ['off', 'days', 'weeks', 'dates'];
   const DEFAULT_LABEL_MODE = 'dates';
   const LABEL_MODE_STORAGE_KEY = 'roadmap-gantt-label-mode';
   const DATES_STORAGE_KEY = 'roadmap-gantt-dates-visible';
@@ -261,7 +261,7 @@
   function pxPerDay() {
     let base;
     if (viewMode === 'month') base = MONTH_COL_WIDTH / 30.4368;
-    else if (viewMode === 'quarter') base = QUARTER_COL_WIDTH / 91.3105;
+    else if (viewMode === 'day') base = DAY_COL_WIDTH;
     else base = WEEK_COL_WIDTH / 7;
     return base * zoomLevel;
   }
@@ -271,7 +271,7 @@
     tasks.forEach((t) => {
       const start = parseISODate(t.startDate);
       if (!start) return;
-      const end = addDays(start, t.durationWeeks * 7);
+      const end = addDays(start, t.durationDays);
       if (!maxEnd || end > maxEnd) maxEnd = end;
     });
 
@@ -289,11 +289,6 @@
     if (viewMode === 'month') {
       rangeStart = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
       rangeEnd = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth() + 1, 1);
-    } else if (viewMode === 'quarter') {
-      const startQMonth = Math.floor(rangeStart.getMonth() / 3) * 3;
-      rangeStart = new Date(rangeStart.getFullYear(), startQMonth, 1);
-      const endQMonth = Math.floor(rangeEnd.getMonth() / 3) * 3 + 3;
-      rangeEnd = new Date(rangeEnd.getFullYear(), endQMonth, 1);
     }
 
     return { start: rangeStart, end: rangeEnd };
@@ -303,26 +298,26 @@
     const ppd = pxPerDay();
     const cols = [];
 
-    if (viewMode === 'week') {
+    if (viewMode === 'day') {
+      let cur = range.start;
+      while (cur < range.end) {
+        const next = addDays(cur, 1);
+        const label = `${cur.toLocaleDateString(undefined, { weekday: 'short' })} ${cur.getDate()}`;
+        cols.push({ start: cur, end: next, label });
+        cur = next;
+      }
+    } else if (viewMode === 'week') {
       let cur = range.start;
       while (cur < range.end) {
         const next = addDays(cur, 7);
         cols.push({ start: cur, end: next, label: formatShort(cur) });
         cur = next;
       }
-    } else if (viewMode === 'month') {
+    } else {
       let cur = new Date(range.start.getFullYear(), range.start.getMonth(), 1);
       while (cur < range.end) {
         const next = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
         cols.push({ start: cur, end: next, label: cur.toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) });
-        cur = next;
-      }
-    } else {
-      let cur = new Date(range.start.getFullYear(), range.start.getMonth(), 1);
-      while (cur < range.end) {
-        const next = new Date(cur.getFullYear(), cur.getMonth() + 3, 1);
-        const q = Math.floor(cur.getMonth() / 3) + 1;
-        cols.push({ start: cur, end: next, label: `Q${q} ${cur.getFullYear()}` });
         cur = next;
       }
     }
@@ -351,7 +346,7 @@
 
   function barWidthPx(range, task) {
     const start = parseISODate(task.startDate);
-    const end = addDays(start, task.durationWeeks * 7);
+    const end = addDays(start, task.durationDays);
     // Tasks ending before the range start are filtered out by visibleTasks()
     // before reaching here; clamp remains as a safety net against negative
     // widths (which would crash the canvas rounded-rect export).
@@ -360,22 +355,28 @@
 
   function formatDatesBarLabel(task) {
     const start = parseISODate(task.startDate);
-    const end = addDays(start, task.durationWeeks * 7 - 1);
+    const end = addDays(start, task.durationDays - 1);
     return `${formatShort(start)} – ${formatShort(end)}`;
   }
 
+  function formatDaysBarLabel(task) {
+    const n = task.durationDays;
+    return `${n} day${n === 1 ? '' : 's'}`;
+  }
+
   function formatWeeksBarLabel(task) {
-    const n = task.durationWeeks;
+    const n = Math.round((task.durationDays / 7) * 10) / 10;
     return `${n} week${n === 1 ? '' : 's'}`;
   }
 
   function formatBarLabel(task) {
-    return labelMode === 'weeks' ? formatWeeksBarLabel(task) : formatDatesBarLabel(task);
+    if (labelMode === 'days') return formatDaysBarLabel(task);
+    if (labelMode === 'weeks') return formatWeeksBarLabel(task);
+    return formatDatesBarLabel(task);
   }
 
-  function snapDaysDeltaToWeek(px) {
-    const days = px / pxPerDay();
-    return Math.round(days / 7) * 7;
+  function snapDaysDelta(px) {
+    return Math.round(px / pxPerDay());
   }
 
   // ---------- Color ----------
@@ -467,12 +468,17 @@
     });
 
     const result = rawTasks.map((row) => {
-      const parsed = parseISODate(row.startDate) || mondayOf(new Date());
+      const parsed = parseISODate(row.startDate) || new Date();
+      // Older files stored duration in whole weeks — convert those to days
+      // so existing projects keep the same durations under the new field.
+      const durationDays = row.durationDays != null
+        ? Math.max(1, parseInt(row.durationDays, 10) || 1)
+        : Math.max(1, (parseInt(row.durationWeeks, 10) || 1) * 7);
       return {
         id: row.id != null ? String(row.id) : uid(),
         name: row.name || '',
-        startDate: formatISODate(mondayOf(parsed)),
-        durationWeeks: Math.max(1, parseInt(row.durationWeeks, 10) || 1),
+        startDate: formatISODate(parsed),
+        durationDays,
         order: Number.isFinite(row.order) ? row.order : 0,
         color: row.color || '',
         tag: row.tag || '',
@@ -499,7 +505,7 @@
         id: t.id,
         name: t.name,
         startDate: t.startDate,
-        durationWeeks: t.durationWeeks,
+        durationDays: t.durationDays,
         order: t.order,
         color: t.color,
         tag: t.tag,
@@ -510,12 +516,12 @@
   }
 
   const SEED_TASKS = [
-    { name: 'Discovery & Requirements', startWeekOffset: 0, durationWeeks: 2 },
-    { name: 'UX Design', startWeekOffset: 2, durationWeeks: 2 },
-    { name: 'Backend API', startWeekOffset: 4, durationWeeks: 3 },
-    { name: 'Frontend Build', startWeekOffset: 6, durationWeeks: 3 },
-    { name: 'Integration Testing', startWeekOffset: 10, durationWeeks: 2 },
-    { name: 'Launch', startWeekOffset: 12, durationWeeks: 1 },
+    { name: 'Discovery & Requirements', startDayOffset: 0, durationDays: 14 },
+    { name: 'UX Design', startDayOffset: 14, durationDays: 14 },
+    { name: 'Backend API', startDayOffset: 28, durationDays: 21 },
+    { name: 'Frontend Build', startDayOffset: 42, durationDays: 21 },
+    { name: 'Integration Testing', startDayOffset: 70, durationDays: 14 },
+    { name: 'Launch', startDayOffset: 84, durationDays: 7 },
   ];
 
   function buildSeedJson() {
@@ -523,8 +529,8 @@
     const seedTasks = SEED_TASKS.map((t, idx) => ({
       id: String(idx + 1),
       name: t.name,
-      startDate: formatISODate(addDays(anchor, t.startWeekOffset * 7)),
-      durationWeeks: t.durationWeeks,
+      startDate: formatISODate(addDays(anchor, t.startDayOffset)),
+      durationDays: t.durationDays,
       order: idx,
       color: DEFAULT_COLOR_1,
       tag: '',
@@ -1049,7 +1055,7 @@
       if (!taskPassesFilter(t)) return false;
       const start = parseISODate(t.startDate);
       if (!start) return false;
-      const end = addDays(start, t.durationWeeks * 7);
+      const end = addDays(start, t.durationDays);
       return end > range.start;
     });
   }
@@ -1185,10 +1191,10 @@
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
 
-      // Horizontal: move in time, snapped to whole weeks
-      const deltaDays = snapDaysDeltaToWeek(dx);
+      // Horizontal: move in time, snapped to whole days
+      const deltaDays = snapDaysDelta(dx);
       const newStart = addDays(origStart, deltaDays);
-      const previewTask = { startDate: formatISODate(newStart), durationWeeks: task.durationWeeks };
+      const previewTask = { startDate: formatISODate(newStart), durationDays: task.durationDays };
       barEl.style.left = barLeftPx(range, previewTask) + 'px';
       barEl.style.width = barWidthPx(range, previewTask) + 'px';
       task._pendingStartDate = formatISODate(newStart);
@@ -1250,33 +1256,33 @@
     const { barEl } = rowRefs.get(task.id);
     const startX = e.clientX;
     const origStart = parseISODate(task.startDate);
-    const origDurationWeeks = task.durationWeeks;
+    const origDurationDays = task.durationDays;
 
     barEl.classList.add('dragging');
     document.body.style.userSelect = 'none';
 
     function onMove(ev) {
       const dx = ev.clientX - startX;
-      const deltaWeeks = snapDaysDeltaToWeek(dx) / 7;
+      const deltaDays = snapDaysDelta(dx);
 
       let newStart = origStart;
-      let newDurationWeeks = origDurationWeeks;
+      let newDurationDays = origDurationDays;
 
       if (side === 'right') {
-        newDurationWeeks = Math.max(1, origDurationWeeks + deltaWeeks);
+        newDurationDays = Math.max(1, origDurationDays + deltaDays);
       } else {
-        const maxDelta = origDurationWeeks - 1;
-        const clampedDelta = Math.min(maxDelta, deltaWeeks);
-        newStart = addDays(origStart, clampedDelta * 7);
-        newDurationWeeks = origDurationWeeks - clampedDelta;
+        const maxDelta = origDurationDays - 1;
+        const clampedDelta = Math.min(maxDelta, deltaDays);
+        newStart = addDays(origStart, clampedDelta);
+        newDurationDays = origDurationDays - clampedDelta;
       }
 
-      const previewTask = { startDate: formatISODate(newStart), durationWeeks: newDurationWeeks };
+      const previewTask = { startDate: formatISODate(newStart), durationDays: newDurationDays };
       barEl.style.left = barLeftPx(range, previewTask) + 'px';
       barEl.style.width = barWidthPx(range, previewTask) + 'px';
 
       task._pendingStartDate = formatISODate(newStart);
-      task._pendingDurationWeeks = newDurationWeeks;
+      task._pendingDurationDays = newDurationDays;
     }
 
     function onUp() {
@@ -1285,9 +1291,9 @@
       document.body.style.userSelect = '';
 
       if (task._pendingStartDate) task.startDate = task._pendingStartDate;
-      if (task._pendingDurationWeeks) task.durationWeeks = task._pendingDurationWeeks;
+      if (task._pendingDurationDays) task.durationDays = task._pendingDurationDays;
       delete task._pendingStartDate;
-      delete task._pendingDurationWeeks;
+      delete task._pendingDurationDays;
 
       render();
       scheduleSave();
@@ -1308,7 +1314,7 @@
   function taskEndDate(task) {
     const start = parseISODate(task.startDate);
     if (!start) return null;
-    return addDays(start, task.durationWeeks * 7);
+    return addDays(start, task.durationDays);
   }
 
   function finishedTasks() {
@@ -1363,7 +1369,7 @@
       .sort((a, b) => {
         const startCmp = parseISODate(a.startDate) - parseISODate(b.startDate);
         if (startCmp !== 0) return startCmp;
-        const durCmp = a.durationWeeks - b.durationWeeks;
+        const durCmp = a.durationDays - b.durationDays;
         if (durCmp !== 0) return durCmp;
         return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
       })
@@ -1376,8 +1382,8 @@
     const newTask = {
       id: uid(),
       name: 'New Task',
-      startDate: formatISODate(mondayOf(new Date())),
-      durationWeeks: 1,
+      startDate: formatISODate(new Date()),
+      durationDays: 1,
       order: tasks.length,
       color: DEFAULT_COLOR_1,
       tag: '',
@@ -1417,7 +1423,7 @@
     editingTaskId = task.id;
     editNameInput.value = task.name;
     editStartInput.value = task.startDate;
-    editDurationInput.value = task.durationWeeks;
+    editDurationInput.value = task.durationDays;
     editColorInput.value = task.color || DEFAULT_COLOR_1;
     editTagInput.value = task.tag || '';
     editPhaseInput.value = task.phase || DEFAULT_PHASE;
@@ -1446,8 +1452,8 @@
 
     task.name = editNameInput.value.trim() || 'Untitled';
     const chosen = parseISODate(editStartInput.value);
-    if (chosen) task.startDate = formatISODate(mondayOf(chosen));
-    task.durationWeeks = Math.max(1, parseInt(editDurationInput.value, 10) || 1);
+    if (chosen) task.startDate = formatISODate(chosen);
+    task.durationDays = Math.max(1, parseInt(editDurationInput.value, 10) || 1);
     task.color = editColorInput.value || '';
     task.tag = editTagInput.value || '';
     task.phase = editPhaseInput.value || DEFAULT_PHASE;
@@ -1636,9 +1642,9 @@
   }
 
   function exportCsv() {
-    const rows = sortedTasks().map((t) => [t.name, t.startDate, t.durationWeeks, t.tag, t.phase]);
+    const rows = sortedTasks().map((t) => [t.name, t.startDate, t.durationDays, t.tag, t.phase]);
     const lines = [
-      ['name', 'startDate', 'durationWeeks', 'tag', 'phase'],
+      ['name', 'startDate', 'durationDays', 'tag', 'phase'],
       ...rows,
     ].map((row) => row.map(csvField).join(','));
     const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/csv' });

@@ -20,9 +20,9 @@
         <input type="date" id="timeline-start-input" class="timeline-start-input" title="Tasks starting before this date are clipped to show only their remaining duration; tasks that end before this date are hidden" />
       </div>
       <div class="view-toggle" role="group" aria-label="Timeline view">
+        <button type="button" class="view-btn" data-view="day">Day</button>
         <button type="button" class="view-btn" data-view="week">Week</button>
         <button type="button" class="view-btn" data-view="month">Month</button>
-        <button type="button" class="view-btn" data-view="quarter">Quarter</button>
       </div>
       <div class="zoom-toggle" role="group" aria-label="Timeline zoom">
         <button type="button" id="zoom-out-btn" class="zoom-btn" title="Zoom out">−</button>
@@ -78,10 +78,10 @@
       <label>Name
         <input type="text" id="edit-name" />
       </label>
-      <label>Start date (snaps to the start of the week)
+      <label>Start date
         <input type="date" id="edit-start" />
       </label>
-      <label>Duration (weeks)
+      <label>Duration (days)
         <input type="number" id="edit-duration" min="1" step="1" />
       </label>
       <label>Tag
@@ -118,6 +118,7 @@
       <span class="display-group-label">Label</span>
       <div class="view-toggle" role="group" aria-label="Task bar label">
         <button type="button" class="view-btn" data-group="label" data-value="off">Off</button>
+        <button type="button" class="view-btn" data-group="label" data-value="days">Days</button>
         <button type="button" class="view-btn" data-group="label" data-value="weeks">Weeks</button>
         <button type="button" class="view-btn" data-group="label" data-value="dates">Dates</button>
       </div>

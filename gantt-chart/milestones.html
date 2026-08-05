@@ -284,22 +284,35 @@ function parseJSONData(text) {
 }
 
 function parseMilestones(rawRows) {
-  const required = ["name", "startDate", "durationWeeks"];
+  const required = ["name", "startDate"];
   if (!rawRows.length) throw new Error("The file has no data rows.");
   const headerSet = Object.keys(rawRows[0]);
   for (const col of required) {
     if (!headerSet.includes(col)) throw new Error(`Missing required field "${col}" in JSON data.`);
+  }
+  if (!headerSet.includes("durationDays") && !headerSet.includes("durationWeeks")) {
+    throw new Error(`Missing required field "durationDays" in JSON data.`);
   }
 
   return rawRows.map((r, idx) => {
     const name = r.name || `(unnamed #${idx + 1})`;
     const start = new Date(r.startDate + "T00:00:00Z");
     if (isNaN(start.getTime())) throw new Error(`Invalid startDate "${r.startDate}" for "${name}".`);
-    const weeks = Number(r.durationWeeks);
-    if (isNaN(weeks)) throw new Error(`Invalid durationWeeks "${r.durationWeeks}" for "${name}".`);
+
+    // Older files stored duration in whole weeks — convert those to days
+    // so existing exports keep the same durations under the new field.
+    let days;
+    if (r.durationDays != null) {
+      days = Number(r.durationDays);
+      if (isNaN(days)) throw new Error(`Invalid durationDays "${r.durationDays}" for "${name}".`);
+    } else {
+      const weeks = Number(r.durationWeeks);
+      if (isNaN(weeks)) throw new Error(`Invalid durationWeeks "${r.durationWeeks}" for "${name}".`);
+      days = weeks * 7;
+    }
 
     const finish = new Date(start.getTime());
-    finish.setUTCDate(finish.getUTCDate() + weeks * 7);
+    finish.setUTCDate(finish.getUTCDate() + days);
 
     const color = typeof r.color === "string" ? r.color.trim() : "";
     const tag = typeof r.tag === "string" ? r.tag.trim() : "";
@@ -309,7 +322,7 @@ function parseMilestones(rawRows) {
       name,
       start,
       finish,
-      durationWeeks: weeks,
+      durationDays: days,
       order: r.order === "" || r.order === undefined || r.order === null ? idx : Number(r.order),
       color: color || null,
       tag: tag || null,

@@ -401,7 +401,7 @@ body {
   height: 40px;
 }
 
-/* Column cells are sized individually in JS (week/month/quarter widths differ
+/* Column cells are sized individually in JS (day/week/month widths differ
    by real calendar length), so only the shared box model lives here. */
 .grid-col {
   flex: 0 0 auto;
