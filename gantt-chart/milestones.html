@@ -249,7 +249,7 @@
   <h1>Milestones</h1>
   <span class="file-info" id="file-info">No file loaded</span>
   <button class="btn" id="open-project-btn">Open Project</button>
-  <input type="file" id="file-input" accept=".json,application/json">
+  <input type="file" id="file-input" accept=".gantt,.json,application/json">
   <button class="btn secondary" id="reload-btn">Reload</button>
   <button class="btn secondary" id="export-png-btn">Export PNG</button>
   <button class="btn secondary" id="export-pdf-btn">Export PDF</button>
@@ -506,7 +506,7 @@ async function openProject() {
   if (window.showOpenFilePicker) {
     try {
       const [handle] = await window.showOpenFilePicker({
-        types: [{ description: "JSON files", accept: { "application/json": [".json"] } }],
+        types: [{ description: "Gantt Project", accept: { "application/json": [".gantt", ".json"] } }],
       });
       const file = await handle.getFile();
       const text = await file.text();

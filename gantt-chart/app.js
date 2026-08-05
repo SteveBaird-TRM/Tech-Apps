@@ -598,8 +598,9 @@
   async function openExisting() {
     try {
       const [handle] = await window.showOpenFilePicker({
-        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
-        suggestedName: 'project.json',
+        // Accepts legacy .json project files too, so older projects still open.
+        types: [{ description: 'Gantt Project', accept: { 'application/json': ['.gantt', '.json'] } }],
+        suggestedName: 'project.gantt',
       });
       await connectHandle(handle);
     } catch (err) {
@@ -610,8 +611,8 @@
   async function createNew() {
     try {
       const handle = await window.showSaveFilePicker({
-        suggestedName: 'project.json',
-        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+        suggestedName: 'project.gantt',
+        types: [{ description: 'Gantt Project', accept: { 'application/json': ['.gantt'] } }],
       });
       await connectHandle(handle, { seedIfEmpty: true });
     } catch (err) {
@@ -1018,9 +1019,9 @@
 
   // ---------- Page title ----------
   // Derives the chart title from the connected file's name so the chart is
-  // always labeled after the project it represents, e.g. "roadmap.json" -> "Roadmap".
+  // always labeled after the project it represents, e.g. "roadmap.gantt" -> "Roadmap".
   function titleFromFileName(fileName) {
-    const base = fileName.replace(/\.json$/i, '');
+    const base = fileName.replace(/\.(gantt|json)$/i, '');
     const words = base.split(/[\s_-]+/).filter(Boolean);
     if (!words.length) return 'Project';
     return words.map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
@@ -1464,7 +1465,7 @@
 
   // ---------- Export ----------
   function baseFileName() {
-    return fileHandle ? fileHandle.name.replace(/\.json$/i, '') : 'project';
+    return fileHandle ? fileHandle.name.replace(/\.(gantt|json)$/i, '') : 'project';
   }
 
   function roundRectPath(ctx, x, y, w, h, r) {
