@@ -81,6 +81,8 @@
   const fileStatusEl = document.getElementById('file-status');
   const unsupportedBanner = document.getElementById('unsupported-banner');
   const emptyState = document.getElementById('empty-state');
+  const dropZone = document.getElementById('drop-zone');
+  const dropFileInput = document.getElementById('drop-file-input');
   const ganttEl = document.getElementById('gantt');
   const todayLineEl = document.getElementById('today-line');
   const viewButtons = Array.from(document.querySelectorAll('.topbar-actions > .view-toggle > .view-btn'));
@@ -587,6 +589,29 @@
     showGantt(true);
     render();
     return true;
+  }
+
+  // Loading a file this way (drag-drop or the file-picker fallback) never
+  // acquires a file handle, so scheduleSave() has nothing to write to —
+  // the loaded data is view-only until the user connects a file via "Open
+  // Project"/"Create Project", or saves their edits out via Export.
+  async function loadFromDroppedFile(file) {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = parseJson(text);
+      fileHandle = null;
+      tasks = parsed.tasks;
+      tagOptions = parsed.tags;
+      populateTagSelect();
+      setFileStatus('Viewing: ' + file.name + ' (not connected — use Export to save changes)', 'readonly');
+      applyPageTitleFromFile(file.name);
+      showGantt(true);
+      render();
+    } catch (err) {
+      console.error(err);
+      setFileStatus('Could not read ' + file.name + ': ' + err.message, 'error');
+    }
   }
 
   async function writeFile(text) {
@@ -1702,6 +1727,31 @@
   autosortBtn.addEventListener('click', autoSortTasks);
   openFileBtn.addEventListener('click', openExisting);
   newFileBtn.addEventListener('click', createNew);
+
+  dropZone.addEventListener('click', () => dropFileInput.click());
+  dropZone.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      dropFileInput.click();
+    }
+  });
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('drag-over');
+  });
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    loadFromDroppedFile(file);
+  });
+  dropFileInput.addEventListener('change', () => {
+    loadFromDroppedFile(dropFileInput.files && dropFileInput.files[0]);
+    dropFileInput.value = '';
+  });
   function closeExportMenu() {
     exportMenu.hidden = true;
     exportBtn.setAttribute('aria-expanded', 'false');

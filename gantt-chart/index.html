@@ -57,6 +57,11 @@
     <div id="empty-state" class="empty-state">
       <p>Connect to <code>project.gantt</code> to get started.</p>
       <p class="muted">Use "Open Project" to pick the existing file in this folder, or "Create Project" to start a new one. Once connected, all edits save automatically back to the file on disk.</p>
+      <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Drop a project file here, or click to browse">
+        <p class="drop-zone-title">Drop a <code>.gantt</code> or <code>.json</code> file here</p>
+        <p class="muted">Or click to browse. This just views the file — nothing is written back to disk automatically; use Export to save changes.</p>
+      </div>
+      <input type="file" id="drop-file-input" accept=".gantt,.json,application/json" hidden />
     </div>
     <div id="gantt" class="gantt" hidden>
       <div class="gantt-header-row">

@@ -129,6 +129,34 @@ body {
   border: 1px solid var(--border);
 }
 
+.drop-zone {
+  max-width: 480px;
+  margin: 24px auto 0;
+  padding: 28px 20px;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.drop-zone:hover,
+.drop-zone:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.drop-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--panel-alt);
+}
+
+.drop-zone-title {
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.file-status.readonly { color: var(--accent); }
+
 .btn {
   border: 1px solid var(--border);
   background: var(--panel-alt);
