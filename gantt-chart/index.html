@@ -9,11 +9,15 @@
 </head>
 <body>
   <header class="topbar">
-    <h1 id="page-title">Project Gantt Chart</h1>
+    <h1 class="page-title-wrap">
+      <input type="text" id="page-title" class="page-title-input" value="Project Gantt Chart" maxlength="120" disabled />
+    </h1>
     <div class="topbar-actions">
-      <span id="file-status" class="file-status">No file connected</span>
-      <button id="open-file-btn" class="btn">Open Project</button>
-      <button id="new-file-btn" class="btn">Create Project</button>
+      <span id="file-status" class="file-status">No project connected</span>
+      <input type="file" id="import-file-input" accept=".gantt,.json,application/json" hidden />
+      <button id="import-btn" class="btn" disabled title="Import tasks from a JSON file into the current project">Import</button>
+      <button id="open-file-btn" class="btn" title="Open an existing .gantt project file">Open Project</button>
+      <button id="new-file-btn" class="btn" title="Create a new .gantt project file">Create Project</button>
       <span id="save-status" class="save-status"></span>
       <div class="timeline-start-group" role="group" aria-label="Timeline start date">
         <label for="timeline-start-input">Start</label>
@@ -35,6 +39,7 @@
       <button id="tags-btn" class="btn" disabled title="Add, rename, or remove tag options">Tags</button>
 
       <button id="cleanup-btn" class="btn" disabled hidden title="Find tasks that have already finished and remove them">Data Clean Up</button>
+      <button id="remove-project-btn" class="btn btn-danger" disabled title="Close this project (the file on disk is untouched)">Close</button>
       <div class="dropdown">
         <button id="export-btn" class="btn" disabled aria-haspopup="true" aria-expanded="false">Export ▾</button>
         <div id="export-menu" class="dropdown-menu" hidden role="menu">
@@ -44,24 +49,19 @@
           <button type="button" id="export-png-btn" class="dropdown-item" role="menuitem">to PNG</button>
         </div>
       </div>
-      <a id="milestones-btn" class="btn btn-green" href="milestones.html" target="_blank" rel="noopener">Milestones</a>
+      <a id="milestones-btn" class="btn btn-green" href="milestones.html" target="_blank" rel="noopener" hidden>Milestones</a>
     </div>
   </header>
 
   <div id="unsupported-banner" class="banner" hidden>
-    Your browser doesn't support direct file access (File System Access API). Please open this
-    page in a Chromium-based browser like Edge or Chrome to enable live saving to project.gantt.
+    This browser doesn't support the File System Access API, so projects can't be opened, created, or saved.
+    Use Chrome or Edge instead.
   </div>
 
   <main class="gantt-wrap">
     <div id="empty-state" class="empty-state">
-      <p>Connect to <code>project.gantt</code> to get started.</p>
-      <p class="muted">Use "Open Project" to pick the existing file in this folder, or "Create Project" to start a new one. Once connected, all edits save automatically back to the file on disk.</p>
-      <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Drop a project file here, or click to browse">
-        <p class="drop-zone-title">Drop a <code>.gantt</code> or <code>.json</code> file here</p>
-        <p class="muted">Or click to browse. This just views the file — nothing is written back to disk automatically; use Export to save changes.</p>
-      </div>
-      <input type="file" id="drop-file-input" accept=".gantt,.json,application/json" hidden />
+      <p id="empty-state-message">Open or create a project to get started.</p>
+      <p class="muted">Use "Open Project" to pick an existing .gantt file, or "Create Project" to start a new one. Once open, all edits save automatically to that file.</p>
     </div>
     <div id="gantt" class="gantt" hidden>
       <div class="gantt-header-row">
@@ -94,13 +94,15 @@
           <option value="">—</option>
         </select>
       </label>
-      <label>Progress
+      <label>Status
         <select id="edit-phase">
           <option value="Not Started">Not Started</option>
           <option value="Discovery">Started</option>
           <option value="Build">In Progress</option>
           <option value="Test">Finalising</option>
           <option value="Complete">Complete</option>
+          <option value="Headline">Headline</option>
+          <option value="Milestone">Milestone</option>
         </select>
       </label>
       <label>Bar color
@@ -143,6 +145,13 @@
         <button type="button" class="view-btn" data-group="theme" data-value="light">Light</button>
       </div>
     </div>
+    <div class="display-group">
+      <span class="display-group-label">Dateline</span>
+      <div class="view-toggle" role="group" aria-label="Dateline">
+        <button type="button" class="view-btn" data-group="dateline" data-value="on">On</button>
+        <button type="button" class="view-btn" data-group="dateline" data-value="off">Off</button>
+      </div>
+    </div>
     <div class="edit-dialog-actions">
       <button type="button" id="display-close-btn" class="btn">Close</button>
     </div>
@@ -150,14 +159,14 @@
 
   <dialog id="filter-dialog" class="edit-dialog filter-dialog">
     <h2>Filter</h2>
-    <p class="filter-hint">Show tasks matching the selected tag, progress, and color. Nothing selected in a group shows all.</p>
+    <p class="filter-hint">Show tasks matching the selected tag, status, and color. Nothing selected in a group shows all.</p>
     <div class="filter-groups">
       <div class="filter-group">
         <span class="display-group-label">Tag</span>
         <div id="filter-tag-list" class="filter-tag-list"></div>
       </div>
       <div class="filter-group">
-        <span class="display-group-label">Progress</span>
+        <span class="display-group-label">Status</span>
         <div id="filter-phase-list" class="filter-tag-list"></div>
       </div>
       <div class="filter-group">

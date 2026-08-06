@@ -27,7 +27,7 @@
   const DEFAULT_TAG_OPTIONS = [
     'Tag 1', 'Tag 2', 'Tag 3', 'Tag 4', 'Tag 5', 'Tag 6', 'Tag 7', 'Tag 8',
   ];
-  const PHASE_OPTIONS = ['Not Started', 'Discovery', 'Build', 'Test', 'Complete'];
+  const PHASE_OPTIONS = ['Not Started', 'Discovery', 'Build', 'Test', 'Complete', 'Headline', 'Milestone'];
   const DEFAULT_PHASE = 'Not Started';
   const PHASE_ICON_FILES = {
     'Not Started': 'circle-0.svg',
@@ -35,6 +35,8 @@
     'Build': 'circle-4.svg',
     'Test': 'circle-6.svg',
     'Complete': 'circle-8.svg',
+    'Headline': 'headline.svg',
+    'Milestone': 'milestone.svg',
   };
   const PHASE_LABELS = {
     'Not Started': 'Not Started',
@@ -42,6 +44,8 @@
     'Build': 'In Progress',
     'Test': 'Finalising',
     'Complete': 'Complete',
+    'Headline': 'Headline',
+    'Milestone': 'Milestone',
   };
   const VIEW_MODES = ['day', 'week', 'month'];
   const DEFAULT_VIEW_MODE = 'week';
@@ -52,6 +56,7 @@
   const ZOOM_STEP = 0.25;
   const DEFAULT_ZOOM = 1;
   const THEME_STORAGE_KEY = 'roadmap-gantt-theme';
+  const DATELINE_STORAGE_KEY = 'roadmap-gantt-dateline-visible';
   const LABEL_WIDTH_STORAGE_KEY = 'roadmap-gantt-label-width';
   const MIN_LABEL_WIDTH = 160;
   const MAX_LABEL_WIDTH = 480;
@@ -61,9 +66,14 @@
   const DATES_STORAGE_KEY = 'roadmap-gantt-dates-visible';
   const TIMELINE_START_STORAGE_KEY = 'roadmap-gantt-timeline-start';
   const PRINT_PAGE_WIDTH_PX = 1050; // approx usable width for a landscape page at 96dpi
-  const DB_NAME = 'roadmap-gantt';
-  const DB_STORE = 'handles';
-  const DB_KEY = 'roadmapFileHandle';
+  const FILE_PICKER_TYPES = [{
+    description: 'Gantt project files',
+    accept: { 'application/json': ['.gantt', '.json'] },
+  }];
+  const HANDLE_DB_NAME = 'roadmap-gantt-files';
+  const HANDLE_STORE = 'handles';
+  const LAST_HANDLE_KEY = 'lastFileHandle';
+  const DEFAULT_EMPTY_STATE_MESSAGE = 'Open or create a project to get started.';
 
   const sprintHeaderEl = document.getElementById('sprint-header');
   const taskRowsEl = document.getElementById('task-rows');
@@ -81,8 +91,9 @@
   const fileStatusEl = document.getElementById('file-status');
   const unsupportedBanner = document.getElementById('unsupported-banner');
   const emptyState = document.getElementById('empty-state');
-  const dropZone = document.getElementById('drop-zone');
-  const dropFileInput = document.getElementById('drop-file-input');
+  const emptyStateMessageEl = document.getElementById('empty-state-message');
+  const importBtn = document.getElementById('import-btn');
+  const importFileInput = document.getElementById('import-file-input');
   const ganttEl = document.getElementById('gantt');
   const todayLineEl = document.getElementById('today-line');
   const viewButtons = Array.from(document.querySelectorAll('.topbar-actions > .view-toggle > .view-btn'));
@@ -125,14 +136,15 @@
   const cleanupTaskListEl = document.getElementById('cleanup-task-list');
   const cleanupCancelBtn = document.getElementById('cleanup-cancel-btn');
   const cleanupOkBtn = document.getElementById('cleanup-ok-btn');
+  const removeProjectBtn = document.getElementById('remove-project-btn');
   const timelineStartInput = document.getElementById('timeline-start-input');
   const labelColResizeHandle = document.getElementById('label-col-resize-handle');
-
   let tasks = [];
   let tagOptions = DEFAULT_TAG_OPTIONS.slice();
   let saveTimer = null;
   let rowRefs = new Map(); // id -> { rowEl, barEl }
   let fileHandle = null;
+  let currentProjectTitle = '';
   let editingTaskId = null;
 
   // '' represents tasks with no tag / no color set.
@@ -162,6 +174,16 @@
     if (storedTheme === 'light' || storedTheme === 'dark') theme = storedTheme;
   } catch (err) {
     // localStorage unavailable — fall back to the default theme.
+  }
+
+  let datelineVisible = true;
+  try {
+    const storedDatelineVisible = localStorage.getItem(DATELINE_STORAGE_KEY);
+    if (storedDatelineVisible === 'true' || storedDatelineVisible === 'false') {
+      datelineVisible = storedDatelineVisible === 'true';
+    }
+  } catch (err) {
+    // localStorage unavailable — fall back to the default (dateline visible).
   }
 
   let labelWidth = LABEL_WIDTH;
@@ -215,7 +237,9 @@
     // localStorage unavailable — fall back to the default timeline start.
   }
 
-  const supportsFSA = 'showOpenFilePicker' in window && 'showSaveFilePicker' in window;
+  function supportsFileSystemAccess() {
+    return typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function';
+  }
 
   // ---------- Date helpers ----------
   function startOfDay(d) {
@@ -240,6 +264,17 @@
 
   function daysBetween(a, b) {
     return Math.round((startOfDay(b) - startOfDay(a)) / DAY_MS);
+  }
+
+  // Counts weekdays only (Mon–Fri), skipping Saturday/Sunday, across the
+  // `durationDays` calendar days starting at `start`.
+  function countWeekdays(start, durationDays) {
+    let count = 0;
+    for (let i = 0; i < durationDays; i++) {
+      const day = addDays(start, i).getDay();
+      if (day !== 0 && day !== 6) count++;
+    }
+    return count;
   }
 
   function formatISODate(date) {
@@ -305,7 +340,9 @@
       while (cur < range.end) {
         const next = addDays(cur, 1);
         const label = `${cur.toLocaleDateString(undefined, { weekday: 'short' })} ${cur.getDate()}`;
-        cols.push({ start: cur, end: next, label });
+        const dayOfWeek = cur.getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        cols.push({ start: cur, end: next, label, isWeekend });
         cur = next;
       }
     } else if (viewMode === 'week') {
@@ -362,7 +399,8 @@
   }
 
   function formatDaysBarLabel(task) {
-    const n = task.durationDays;
+    const start = parseISODate(task.startDate);
+    const n = countWeekdays(start, task.durationDays);
     return `${n} day${n === 1 ? '' : 's'}`;
   }
 
@@ -403,37 +441,66 @@
 
   function applyBarColor(bar, task) {
     const [c1] = barColors(task);
-    bar.style.background = c1;
+    bar.style.setProperty('--bar-color', c1);
   }
 
-  // ---------- IndexedDB (persist the file handle across reloads) ----------
-  function idbOpen() {
+  // ---------- File handle persistence (remembers the last opened file) ----------
+  function openHandleDb() {
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, 1);
-      req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+      const req = indexedDB.open(HANDLE_DB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(HANDLE_STORE);
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
   }
 
-  async function idbSet(key, value) {
-    const db = await idbOpen();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(DB_STORE, 'readwrite');
-      tx.objectStore(DB_STORE).put(value, key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+  async function storeLastHandle(handle) {
+    try {
+      const db = await openHandleDb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(HANDLE_STORE, 'readwrite');
+        tx.objectStore(HANDLE_STORE).put(handle, LAST_HANDLE_KEY);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
   }
 
-  async function idbGet(key) {
-    const db = await idbOpen();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(DB_STORE, 'readonly');
-      const req = tx.objectStore(DB_STORE).get(key);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
+  async function loadLastHandle() {
+    try {
+      const db = await openHandleDb();
+      return await new Promise((resolve, reject) => {
+        const req = db.transaction(HANDLE_STORE, 'readonly').objectStore(HANDLE_STORE).get(LAST_HANDLE_KEY);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (err) {
+      return null;
+    }
+  }
+
+  async function clearLastHandle() {
+    try {
+      const db = await openHandleDb();
+      db.transaction(HANDLE_STORE, 'readwrite').objectStore(HANDLE_STORE).delete(LAST_HANDLE_KEY);
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+  }
+
+  // requestPermission() only shows a prompt when called during a user
+  // gesture; called silently (e.g. on page load) it just resolves without
+  // granting, which the caller treats as "needs a Reconnect click".
+  async function ensureReadWritePermission(handle) {
+    const opts = { mode: 'readwrite' };
+    try {
+      if ((await handle.queryPermission(opts)) === 'granted') return true;
+      return (await handle.requestPermission(opts)) === 'granted';
+    } catch (err) {
+      return false;
+    }
   }
 
   // ---------- JSON ----------
@@ -441,35 +508,14 @@
   // tag list only ever living in app.js) and the current format
   // (an object with "tags" and "tasks"), so old project files keep
   // opening without a manual migration step.
-  function parseJson(text) {
-    const raw = text.trim();
-    if (!raw) return { tags: DEFAULT_TAG_OPTIONS.slice(), tasks: [] };
-    let data;
-    try {
-      data = JSON.parse(raw);
-    } catch (err) {
-      throw new Error('Invalid JSON: ' + err.message);
-    }
-
-    let rawTasks;
-    let rawTags;
-    if (Array.isArray(data)) {
-      rawTasks = data;
-      rawTags = DEFAULT_TAG_OPTIONS;
-    } else if (data && Array.isArray(data.tasks)) {
-      rawTasks = data.tasks;
-      rawTags = Array.isArray(data.tags) ? data.tags : DEFAULT_TAG_OPTIONS;
-    } else {
-      throw new Error('Expected a JSON array of tasks, or an object with a "tasks" array.');
-    }
-
+  function buildTagsAndTasks(rawTags, rawTasks) {
     const tags = [];
-    rawTags.forEach((c) => {
+    (rawTags || []).forEach((c) => {
       const name = typeof c === 'string' ? c.trim() : '';
       if (name && !tags.includes(name)) tags.push(name);
     });
 
-    const result = rawTasks.map((row) => {
+    const result = (rawTasks || []).map((row) => {
       const parsed = parseISODate(row.startDate) || new Date();
       // Older files stored duration in whole weeks — convert those to days
       // so existing projects keep the same durations under the new field.
@@ -499,9 +545,38 @@
     return { tags, tasks: result };
   }
 
-  function serializeJson(list, tags) {
+  // Accepts both the legacy format (a plain array of tasks, with the
+  // tag list only ever living in app.js) and the current format
+  // (an object with "tags" and "tasks"), so old project files keep
+  // opening without a manual migration step.
+  function parseJson(text) {
+    const raw = text.trim();
+    if (!raw) return { tags: DEFAULT_TAG_OPTIONS.slice(), tasks: [] };
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (err) {
+      throw new Error('Invalid JSON: ' + err.message);
+    }
+
+    let rawTasks;
+    let rawTags;
+    if (Array.isArray(data)) {
+      rawTasks = data;
+      rawTags = DEFAULT_TAG_OPTIONS;
+    } else if (data && Array.isArray(data.tasks)) {
+      rawTasks = data.tasks;
+      rawTags = Array.isArray(data.tags) ? data.tags : DEFAULT_TAG_OPTIONS;
+    } else {
+      throw new Error('Expected a JSON array of tasks, or an object with a "tasks" array.');
+    }
+
+    return buildTagsAndTasks(rawTags, rawTasks);
+  }
+
+  function projectDataToPayload(list, tags) {
     const sorted = [...list].sort((a, b) => a.order - b.order);
-    const data = {
+    return {
       tags: tags.slice(),
       tasks: sorted.map((t) => ({
         id: t.id,
@@ -514,19 +589,18 @@
         phase: t.phase,
       })),
     };
-    return JSON.stringify(data, null, 2) + '\n';
+  }
+
+  function serializeJson(list, tags) {
+    return JSON.stringify(projectDataToPayload(list, tags), null, 2) + '\n';
   }
 
   const SEED_TASKS = [
-    { name: 'Discovery & Requirements', startDayOffset: 0, durationDays: 14 },
-    { name: 'UX Design', startDayOffset: 14, durationDays: 14 },
-    { name: 'Backend API', startDayOffset: 28, durationDays: 21 },
-    { name: 'Frontend Build', startDayOffset: 42, durationDays: 21 },
-    { name: 'Integration Testing', startDayOffset: 70, durationDays: 14 },
-    { name: 'Launch', startDayOffset: 84, durationDays: 7 },
+    { name: 'The First Task', startDayOffset: 0, durationDays: 14 },
+    { name: 'Another Task', startDayOffset: 14, durationDays: 14 },
   ];
 
-  function buildSeedJson() {
+  function buildSeedProjectData() {
     const anchor = mondayOf(new Date());
     const seedTasks = SEED_TASKS.map((t, idx) => ({
       id: String(idx + 1),
@@ -538,10 +612,10 @@
       tag: '',
       phase: DEFAULT_PHASE,
     }));
-    return serializeJson(seedTasks, DEFAULT_TAG_OPTIONS.slice());
+    return projectDataToPayload(seedTasks, DEFAULT_TAG_OPTIONS.slice());
   }
 
-  // ---------- File connection ----------
+  // ---------- Project connection (local file) ----------
   function setFileStatus(text, cls) {
     fileStatusEl.textContent = text;
     fileStatusEl.className = 'file-status' + (cls ? ' ' + cls : '');
@@ -555,121 +629,170 @@
     cleanupBtn.disabled = !show;
     exportBtn.disabled = !show;
     autosortBtn.disabled = !show;
+    importBtn.disabled = !show;
+    removeProjectBtn.disabled = !show;
   }
 
-  async function verifyPermission(handle, mode) {
-    const opts = { mode };
-    if ((await handle.queryPermission(opts)) === 'granted') return true;
-    if ((await handle.requestPermission(opts)) === 'granted') return true;
-    return false;
+  // The project title is derived from the filename (without its extension),
+  // capitalised — there is no separate title stored in the file.
+  function titleFromFilename(filename) {
+    const base = String(filename || '').replace(/\.[^./\\]+$/, '') || 'project';
+    return base.charAt(0).toUpperCase() + base.slice(1);
   }
 
-  async function connectHandle(handle, { seedIfEmpty } = {}) {
-    const ok = await verifyPermission(handle, 'readwrite');
-    if (!ok) {
-      setFileStatus('Permission denied', 'error');
-      return false;
+  function flushPendingSave() {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+      saveTasks();
     }
+  }
+
+  function applyProjectFile(handle, parsed) {
     fileHandle = handle;
-    await idbSet(DB_KEY, handle);
-
-    const file = await fileHandle.getFile();
-    let text = await file.text();
-    if (!text.trim() && seedIfEmpty) {
-      text = buildSeedJson();
-      await writeFile(text);
-    }
-
-    const parsed = parseJson(text);
+    currentProjectTitle = titleFromFilename(handle.name);
     tasks = parsed.tasks;
     tagOptions = parsed.tags;
     populateTagSelect();
-    setFileStatus('Connected: ' + fileHandle.name, 'connected');
-    applyPageTitleFromFile(fileHandle.name);
+    setFileStatus('Connected: ' + currentProjectTitle, 'connected');
+    applyPageTitle(currentProjectTitle);
     showGantt(true);
     render();
-    return true;
+    storeLastHandle(handle);
   }
 
-  // Loading a file this way (drag-drop or the file-picker fallback) never
-  // acquires a file handle, so scheduleSave() has nothing to write to —
-  // the loaded data is view-only until the user connects a file via "Open
-  // Project"/"Create Project", or saves their edits out via Export.
-  async function loadFromDroppedFile(file) {
-    if (!file) return;
+  async function loadFromHandle(handle) {
+    try {
+      const granted = await ensureReadWritePermission(handle);
+      if (!granted) {
+        setFileStatus('Permission needed for "' + handle.name + '"', 'error');
+        return false;
+      }
+      const file = await handle.getFile();
+      const parsed = parseJson(await file.text());
+      applyProjectFile(handle, parsed);
+      return true;
+    } catch (err) {
+      console.error(err);
+      setFileStatus('Could not open ' + handle.name + ': ' + err.message, 'error');
+      return false;
+    }
+  }
+
+  async function openProjectFile() {
+    if (!supportsFileSystemAccess()) return;
+    let handle;
+    try {
+      [handle] = await window.showOpenFilePicker({ types: FILE_PICKER_TYPES });
+    } catch (err) {
+      if (err.name === 'AbortError') return; // user cancelled the picker
+      console.error(err);
+      setFileStatus('Could not open file: ' + err.message, 'error');
+      return;
+    }
+    flushPendingSave();
+    await loadFromHandle(handle);
+  }
+
+  async function createProjectFile() {
+    if (!supportsFileSystemAccess()) return;
+    let handle;
+    try {
+      handle = await window.showSaveFilePicker({
+        suggestedName: 'project.gantt',
+        types: FILE_PICKER_TYPES,
+      });
+    } catch (err) {
+      if (err.name === 'AbortError') return; // user cancelled the picker
+      console.error(err);
+      setFileStatus('Could not create file: ' + err.message, 'error');
+      return;
+    }
+    flushPendingSave();
+    try {
+      const granted = await ensureReadWritePermission(handle);
+      if (!granted) {
+        setFileStatus('Permission needed for "' + handle.name + '"', 'error');
+        return;
+      }
+      const seed = buildSeedProjectData();
+      const writable = await handle.createWritable();
+      await writable.write(JSON.stringify(seed, null, 2) + '\n');
+      await writable.close();
+      applyProjectFile(handle, seed);
+    } catch (err) {
+      console.error(err);
+      setFileStatus('Could not create ' + handle.name + ': ' + err.message, 'error');
+    }
+  }
+
+  function disconnectProject(emptyMessage) {
+    fileHandle = null;
+    currentProjectTitle = '';
+    tasks = [];
+    tagOptions = DEFAULT_TAG_OPTIONS.slice();
+    clearLastHandle();
+    populateTagSelect();
+    showGantt(false);
+    taskRowsEl.innerHTML = '';
+    sprintHeaderEl.innerHTML = '';
+    rowRefs = new Map();
+    todayLineEl.hidden = true;
+    emptyStateMessageEl.textContent = emptyMessage || DEFAULT_EMPTY_STATE_MESSAGE;
+    applyPageTitle('Project Gantt Chart');
+    setFileStatus('No project connected', '');
+  }
+
+  function closeCurrentProject() {
+    if (!fileHandle) return;
+    flushPendingSave();
+    disconnectProject('Ready for the next project!');
+  }
+
+  // Appends the tasks (and any new tags) from a JSON/.gantt file onto the
+  // currently connected project, rather than replacing it. Imported tasks
+  // get fresh ids so they can't collide with existing ones, and are
+  // ordered after the current last task.
+  async function importTasksFromFile(file) {
+    if (!file || !fileHandle) return;
     try {
       const text = await file.text();
       const parsed = parseJson(text);
-      fileHandle = null;
-      tasks = parsed.tasks;
-      tagOptions = parsed.tags;
+      const maxOrder = tasks.reduce((max, t) => Math.max(max, t.order), -1);
+      const importedTasks = parsed.tasks.map((t, idx) => ({
+        ...t,
+        id: uid(),
+        order: maxOrder + 1 + idx,
+      }));
+      tasks = tasks.concat(importedTasks);
+      parsed.tags.forEach((tag) => {
+        if (tag && !tagOptions.includes(tag)) tagOptions.push(tag);
+      });
       populateTagSelect();
-      setFileStatus('Viewing: ' + file.name + ' (not connected — use Export to save changes)', 'readonly');
-      applyPageTitleFromFile(file.name);
-      showGantt(true);
       render();
+      scheduleSave();
     } catch (err) {
       console.error(err);
-      setFileStatus('Could not read ' + file.name + ': ' + err.message, 'error');
+      setFileStatus('Could not import ' + file.name + ': ' + err.message, 'error');
     }
   }
 
-  async function writeFile(text) {
-    const writable = await fileHandle.createWritable();
-    await writable.write(text);
-    await writable.close();
-  }
+  async function tryRestoreLastFile() {
+    const handle = await loadLastHandle();
+    if (!handle) return;
 
-  async function openExisting() {
-    try {
-      const [handle] = await window.showOpenFilePicker({
-        // Accepts legacy .json project files too, so older projects still open.
-        types: [{ description: 'Gantt Project', accept: { 'application/json': ['.gantt', '.json'] } }],
-        suggestedName: 'project.gantt',
-      });
-      await connectHandle(handle);
-    } catch (err) {
-      if (err.name !== 'AbortError') console.error(err);
-    }
-  }
-
-  async function createNew() {
-    try {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: 'project.gantt',
-        types: [{ description: 'Gantt Project', accept: { 'application/json': ['.gantt'] } }],
-      });
-      await connectHandle(handle, { seedIfEmpty: true });
-    } catch (err) {
-      if (err.name !== 'AbortError') console.error(err);
-    }
-  }
-
-  async function tryRestoreHandle() {
-    try {
-      const handle = await idbGet(DB_KEY);
-      if (!handle) return;
-
-      // If the browser already granted permission in a prior session, no user
-      // gesture is needed — reopen it immediately without waiting for a click.
-      const alreadyGranted = (await handle.queryPermission({ mode: 'readwrite' })) === 'granted';
-      if (alreadyGranted) {
-        await connectHandle(handle);
-        return;
-      }
-
-      setFileStatus('Reconnect to ' + handle.name + ' to resume', '');
-      fileStatusEl.textContent += ' ';
+    setFileStatus('Reconnecting…', '');
+    const ok = await loadFromHandle(handle);
+    if (!ok) {
+      setFileStatus('Click Reconnect to reopen your last project', '');
       const reconnectBtn = document.createElement('button');
       reconnectBtn.className = 'btn';
       reconnectBtn.textContent = 'Reconnect';
       reconnectBtn.addEventListener('click', async () => {
         reconnectBtn.remove();
-        await connectHandle(handle);
+        await loadFromHandle(handle);
       });
       fileStatusEl.after(reconnectBtn);
-    } catch (err) {
-      console.error(err);
     }
   }
 
@@ -733,6 +856,19 @@
     }
     applyTheme();
     syncDisplayDialog();
+  }
+
+  // ---------- Dateline (today marker) ----------
+  function setDatelineVisible(next) {
+    if (next === datelineVisible) return;
+    datelineVisible = next;
+    try {
+      localStorage.setItem(DATELINE_STORAGE_KEY, String(datelineVisible));
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+    syncDisplayDialog();
+    render();
   }
 
   // ---------- Task column width ----------
@@ -805,7 +941,7 @@
 
   // ---------- Display options popup (label / density / theme) ----------
   function syncDisplayDialog() {
-    const current = { label: labelMode, density, theme };
+    const current = { label: labelMode, density, theme, dateline: datelineVisible ? 'on' : 'off' };
     displayGroupButtons.forEach((btn) => {
       const { group, value } = btn.dataset;
       btn.classList.toggle('active', current[group] === value);
@@ -1043,19 +1179,12 @@
   }
 
   // ---------- Page title ----------
-  // Derives the chart title from the connected file's name so the chart is
-  // always labeled after the project it represents, e.g. "roadmap.gantt" -> "Roadmap".
-  function titleFromFileName(fileName) {
-    const base = fileName.replace(/\.(gantt|json)$/i, '');
-    const words = base.split(/[\s_-]+/).filter(Boolean);
-    if (!words.length) return 'Project';
-    return words.map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
-  }
-
-  function applyPageTitleFromFile(fileName) {
-    const title = titleFromFileName(fileName);
-    pageTitleEl.textContent = title;
-    document.title = title;
+  // The title always mirrors the open file's name (see titleFromFilename) —
+  // renaming happens by renaming the file on disk, not in this input.
+  function applyPageTitle(title) {
+    const text = title || 'Project';
+    pageTitleEl.value = text;
+    document.title = text;
   }
 
   // ---------- Rendering ----------
@@ -1091,6 +1220,7 @@
     columns.forEach((col) => {
       const el = document.createElement('div');
       el.className = withLabel ? 'grid-col sprint-col' : 'grid-col';
+      if (col.isWeekend) el.classList.add('weekend-col');
       el.style.width = col.widthPx + 'px';
       if (withLabel) el.textContent = col.label;
       container.appendChild(el);
@@ -1099,7 +1229,7 @@
 
   function renderTodayLine(range) {
     const today = startOfDay(new Date());
-    if (today < range.start || today >= range.end) {
+    if (!datelineVisible || today < range.start || today >= range.end) {
       todayLineEl.hidden = true;
       return;
     }
@@ -1133,7 +1263,8 @@
       const phase = PHASE_OPTIONS.includes(task.phase) ? task.phase : DEFAULT_PHASE;
       phaseIcon.src = PHASE_ICON_FILES[phase];
       phaseIcon.alt = PHASE_LABELS[phase] || phase;
-      phaseIcon.title = `Progress: ${PHASE_LABELS[phase] || phase}`;
+      phaseIcon.title = `Status: ${PHASE_LABELS[phase] || phase}`;
+      phaseIcon.addEventListener('click', () => openEditDialog(task));
       label.appendChild(phaseIcon);
 
       const nameInput = document.createElement('input');
@@ -1161,12 +1292,12 @@
       renderColumnCells(track, columns, false);
 
       const bar = document.createElement('div');
-      bar.className = 'bar';
+      bar.className = phase === 'Headline' ? 'bar headline' : 'bar';
       bar.style.left = barLeftPx(range, task) + 'px';
       bar.style.width = barWidthPx(range, task) + 'px';
       applyBarColor(bar, task);
 
-      if (labelMode !== 'off') {
+      if (labelMode !== 'off' && phase !== 'Headline') {
         const barLabel = document.createElement('span');
         barLabel.className = 'bar-label';
         barLabel.textContent = formatBarLabel(task);
@@ -1490,7 +1621,12 @@
 
   // ---------- Export ----------
   function baseFileName() {
-    return fileHandle ? fileHandle.name.replace(/\.(gantt|json)$/i, '') : 'project';
+    if (!currentProjectTitle) return 'project';
+    const slug = currentProjectTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    return slug || 'project';
   }
 
   function roundRectPath(ctx, x, y, w, h, r) {
@@ -1605,12 +1741,24 @@
       const barW = barWidthPx(range, task);
       const barH = BAR_HEIGHT;
       const [c1] = barColors(task);
+      const isHeadline = (PHASE_OPTIONS.includes(task.phase) ? task.phase : DEFAULT_PHASE) === 'Headline';
 
       ctx.fillStyle = c1;
-      roundRectPath(ctx, barX, barY, barW, barH, 6);
-      ctx.fill();
+      if (isHeadline) {
+        const lineY = y + ROW_HEIGHT / 2;
+        ctx.fillRect(barX, lineY - 1.5, barW, 3);
+        ctx.beginPath();
+        ctx.arc(barX, lineY, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(barX + barW, lineY, 5, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        roundRectPath(ctx, barX, barY, barW, barH, 6);
+        ctx.fill();
+      }
 
-      if (labelMode !== 'off') {
+      if (labelMode !== 'off' && !isHeadline) {
         ctx.save();
         roundRectPath(ctx, barX, barY, barW, barH, 6);
         ctx.clip();
@@ -1622,7 +1770,7 @@
     });
 
     const today = startOfDay(new Date());
-    if (today >= range.start && today < range.end) {
+    if (datelineVisible && today >= range.start && today < range.end) {
       const todayX = labelWidth + xForDate(range, today);
       ctx.strokeStyle = colors.accent;
       ctx.lineWidth = 2;
@@ -1712,7 +1860,9 @@
   async function saveTasks() {
     if (!fileHandle) return;
     try {
-      await writeFile(serializeJson(tasks, tagOptions));
+      const writable = await fileHandle.createWritable();
+      await writable.write(serializeJson(tasks, tagOptions));
+      await writable.close();
       saveStatusEl.textContent = 'Saved';
       saveStatusEl.className = 'save-status';
     } catch (err) {
@@ -1725,33 +1875,15 @@
   // ---------- Init ----------
   addTaskBtn.addEventListener('click', addTask);
   autosortBtn.addEventListener('click', autoSortTasks);
-  openFileBtn.addEventListener('click', openExisting);
-  newFileBtn.addEventListener('click', createNew);
+  openFileBtn.addEventListener('click', openProjectFile);
+  newFileBtn.addEventListener('click', createProjectFile);
 
-  dropZone.addEventListener('click', () => dropFileInput.click());
-  dropZone.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      dropFileInput.click();
-    }
+  importBtn.addEventListener('click', () => importFileInput.click());
+  importFileInput.addEventListener('change', () => {
+    importTasksFromFile(importFileInput.files && importFileInput.files[0]);
+    importFileInput.value = '';
   });
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-  });
-  dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('drag-over');
-  });
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const file = e.dataTransfer.files && e.dataTransfer.files[0];
-    loadFromDroppedFile(file);
-  });
-  dropFileInput.addEventListener('change', () => {
-    loadFromDroppedFile(dropFileInput.files && dropFileInput.files[0]);
-    dropFileInput.value = '';
-  });
+
   function closeExportMenu() {
     exportMenu.hidden = true;
     exportBtn.setAttribute('aria-expanded', 'false');
@@ -1796,6 +1928,7 @@
       if (group === 'label') setLabelMode(value);
       else if (group === 'density') setDensity(value);
       else if (group === 'theme') setTheme(value);
+      else if (group === 'dateline') setDatelineVisible(value === 'on');
     });
   });
 
@@ -1817,6 +1950,8 @@
   cleanupCancelBtn.addEventListener('click', () => cleanupDialog.close());
   cleanupOkBtn.addEventListener('click', confirmCleanup);
 
+  removeProjectBtn.addEventListener('click', closeCurrentProject);
+
   labelColResizeHandle.addEventListener('mousedown', startLabelColResize);
   applyLabelWidth();
 
@@ -1830,12 +1965,12 @@
   });
   syncTimelineStartInput();
 
-  if (!supportsFSA) {
+  if (!supportsFileSystemAccess()) {
     unsupportedBanner.hidden = false;
     openFileBtn.disabled = true;
     newFileBtn.disabled = true;
-    setFileStatus('File System Access not supported', 'error');
+    setFileStatus('File System Access API unavailable', 'error');
   } else {
-    tryRestoreHandle();
+    tryRestoreLastFile();
   }
 })();
