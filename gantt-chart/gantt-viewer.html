@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Project Gantt Chart</title>
+<link rel="icon" type="image/svg+xml" href="index-favicon.svg">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="page-title-wrap">
+      <input type="text" id="page-title" class="page-title-input" value="Project Gantt Chart" maxlength="120" disabled />
+    </h1>
+    <div class="topbar-actions">
+      <span id="file-status" class="file-status">No project connected</span>
+      <button id="open-file-btn" class="btn" title="Open a .gantt project file to view">Open Project</button>
+      <div class="timeline-start-group" role="group" aria-label="Timeline start date">
+        <label for="timeline-start-input">Start</label>
+        <input type="date" id="timeline-start-input" class="timeline-start-input" title="Tasks starting before this date are clipped to show only their remaining duration; tasks that end before this date are hidden" />
+      </div>
+      <div class="view-toggle" role="group" aria-label="Timeline view">
+        <button type="button" class="view-btn" data-view="day">Day</button>
+        <button type="button" class="view-btn" data-view="week">Week</button>
+        <button type="button" class="view-btn" data-view="month">Month</button>
+      </div>
+      <div class="zoom-toggle" role="group" aria-label="Timeline zoom">
+        <button type="button" id="zoom-out-btn" class="zoom-btn" title="Zoom out">−</button>
+        <span id="zoom-level" class="zoom-level">100%</span>
+        <button type="button" id="zoom-in-btn" class="zoom-btn" title="Zoom in">+</button>
+      </div>
+      <button id="filter-btn" class="btn" title="Filter which task bars are shown, by tag and color">Filters</button>
+      <button id="display-btn" class="btn" title="Change label, density, and theme display options">Display</button>
+
+      <button id="remove-project-btn" class="btn btn-danger" disabled title="Close this project (the file on disk is untouched)">Close</button>
+      <div class="dropdown">
+        <button id="export-btn" class="btn" disabled aria-haspopup="true" aria-expanded="false">Export ▾</button>
+        <div id="export-menu" class="dropdown-menu" hidden role="menu">
+          <button type="button" id="backup-data-btn" class="dropdown-item" role="menuitem" title="Download a backup copy of the project JSON file">to JSON</button>
+          <button type="button" id="export-csv-btn" class="dropdown-item" role="menuitem">to CSV</button>
+          <button type="button" id="export-pdf-btn" class="dropdown-item" role="menuitem">to PDF</button>
+          <button type="button" id="export-png-btn" class="dropdown-item" role="menuitem">to PNG</button>
+        </div>
+      </div>
+      <a id="milestones-btn" class="btn btn-green" href="milestones.html" target="_blank" rel="noopener" hidden>Milestones</a>
+    </div>
+  </header>
+
+  <div id="unsupported-banner" class="banner" hidden>
+    This browser doesn't support the File System Access API, so projects can't be opened.
+    Use Chrome or Edge instead.
+  </div>
+
+  <main class="gantt-wrap">
+    <div id="empty-state" class="empty-state">
+      <p id="empty-state-message">Open a project to view it.</p>
+      <p class="muted">Use "Open Project" to pick a .gantt file. This is a read-only viewer — nothing here can be edited or saved.</p>
+    </div>
+    <div id="gantt" class="gantt" hidden>
+      <div class="gantt-header-row">
+        <div class="label-col label-col-header">
+          <span class="label-col-title">Task</span>
+          <div id="label-col-resize-handle" class="col-resize-handle" title="Drag to resize the Task column"></div>
+        </div>
+        <div id="sprint-header" class="timeline-track timeline-header"></div>
+      </div>
+      <div id="task-rows" class="task-rows"></div>
+      <div id="today-line" class="today-line" hidden></div>
+    </div>
+  </main>
+
+  <dialog id="display-dialog" class="edit-dialog display-dialog">
+    <h2>Display</h2>
+    <div class="display-group">
+      <span class="display-group-label">Label</span>
+      <div class="view-toggle" role="group" aria-label="Task bar label">
+        <button type="button" class="view-btn" data-group="label" data-value="off">Off</button>
+        <button type="button" class="view-btn" data-group="label" data-value="days">Days</button>
+        <button type="button" class="view-btn" data-group="label" data-value="weeks">Weeks</button>
+        <button type="button" class="view-btn" data-group="label" data-value="dates">Dates</button>
+      </div>
+    </div>
+    <div class="display-group">
+      <span class="display-group-label">Density</span>
+      <div class="view-toggle" role="group" aria-label="Row density">
+        <button type="button" class="view-btn" data-group="density" data-value="narrow">Narrow</button>
+        <button type="button" class="view-btn" data-group="density" data-value="normal">Normal</button>
+        <button type="button" class="view-btn" data-group="density" data-value="wide">Wide</button>
+      </div>
+    </div>
+    <div class="display-group">
+      <span class="display-group-label">Theme</span>
+      <div class="view-toggle" role="group" aria-label="Color theme">
+        <button type="button" class="view-btn" data-group="theme" data-value="dark">Dark</button>
+        <button type="button" class="view-btn" data-group="theme" data-value="light">Light</button>
+      </div>
+    </div>
+    <div class="display-group">
+      <span class="display-group-label">Dateline</span>
+      <div class="view-toggle" role="group" aria-label="Dateline">
+        <button type="button" class="view-btn" data-group="dateline" data-value="on">On</button>
+        <button type="button" class="view-btn" data-group="dateline" data-value="off">Off</button>
+      </div>
+    </div>
+    <div class="edit-dialog-actions">
+      <button type="button" id="display-close-btn" class="btn">Close</button>
+    </div>
+  </dialog>
+
+  <dialog id="filter-dialog" class="edit-dialog filter-dialog">
+    <h2>Filter</h2>
+    <p class="filter-hint">Show tasks matching the selected tag, status, and color. Nothing selected in a group shows all.</p>
+    <div class="filter-groups">
+      <div class="filter-group">
+        <span class="display-group-label">Tag</span>
+        <div id="filter-tag-list" class="filter-tag-list"></div>
+      </div>
+      <div class="filter-group">
+        <span class="display-group-label">Status</span>
+        <div id="filter-phase-list" class="filter-tag-list"></div>
+      </div>
+      <div class="filter-group">
+        <span class="display-group-label">Color</span>
+        <div id="filter-color-list" class="filter-color-list"></div>
+      </div>
+    </div>
+    <div class="edit-dialog-actions">
+      <button type="button" id="filter-clear-btn" class="btn">Clear</button>
+      <button type="button" id="filter-close-btn" class="btn btn-primary">Close</button>
+    </div>
+  </dialog>
+
+  <script src="viewer.js"></script>
+</body>
+</html>

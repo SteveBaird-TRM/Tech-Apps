@@ -38,7 +38,7 @@
     #auth-gate-card { background: #1c1e27; color: #e6e8ec; border-radius: 12px;
       padding: 32px 28px; width: 320px; max-width: calc(100vw - 40px);
       box-shadow: 0 10px 40px rgba(0,0,0,.4); }
-    #auth-gate-card h1 { font-size: 17px; margin: 0 0 4px; font-weight: 600; }
+    #auth-gate-card h1 { font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif; font-size: 18px; margin: 0 0 4px; font-weight: 400; letter-spacing: 0.2px; }
     #auth-gate-card p.sub { font-size: 12px; color: #9aa0ab; margin: 0 0 14px; }
     #auth-gate-card label { display: block; font-size: 12px; color: #9aa0ab; margin: 12px 0 4px; }
     #auth-gate-card input { width: 100%; box-sizing: border-box; padding: 9px 10px;

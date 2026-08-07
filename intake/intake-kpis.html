@@ -281,75 +281,6 @@
     overflow-y: auto;
     padding: 24px;
   }
-  .summary-panel {
-    flex: 0 0 380px;
-    border-left: 1px solid var(--border);
-    background: var(--surface);
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-  .summary-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    flex: none;
-    flex-wrap: wrap;
-  }
-  .summary-head h2 {
-    font-family: var(--font-display);
-    font-weight: 400;
-    font-size: 17px;
-    margin: 0;
-  }
-  .summary-head-actions {
-    display: flex;
-    gap: 8px;
-  }
-  .summary-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 18px 20px 28px;
-    font-size: 13px;
-    line-height: 1.6;
-  }
-  .summary-body h3 {
-    font-family: var(--font-display);
-    font-weight: 400;
-    font-size: 18px;
-    margin: 0 0 12px;
-  }
-  .summary-body h4 {
-    font-size: 11.5px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin: 20px 0 8px;
-  }
-  .summary-body h4:first-child {
-    margin-top: 0;
-  }
-  .summary-body p {
-    margin: 0 0 12px;
-  }
-  .summary-body ul, .summary-body ol {
-    margin: 0 0 12px;
-    padding-left: 20px;
-  }
-  .summary-body li {
-    margin-bottom: 4px;
-  }
-  .summary-body strong {
-    font-weight: 600;
-  }
-  .summary-empty {
-    color: var(--text-faint);
-    font-size: 13px;
-  }
   .tiles-col.hide-captions .tile-caption {
     display: none;
   }
@@ -376,16 +307,6 @@
     <div class="tiles-col">
       <div class="tiles" id="tiles"></div>
     </div>
-    <div class="summary-panel">
-      <div class="summary-head">
-        <h2>Management Summary</h2>
-        <div class="summary-head-actions">
-          <button class="btn" id="btnLoadTemplate">Template</button>
-          <button class="btn btn-primary" id="btnCopySummary">Copy</button>
-        </div>
-      </div>
-      <div class="summary-body" id="summaryBody"></div>
-    </div>
   </div>
 </div>
 
@@ -408,9 +329,6 @@
 
   var snapshotName = null;
   var lastCards = [];
-  var lastTemplateText = null;
-  var lastSummaryText = "";
-  var templatePickPurpose = null; // "export" | "panel"
 
   function daysAgo(n) {
     var d = new Date();
@@ -455,7 +373,7 @@
         return {
           value: Math.round(result.pct) + "%",
           unit: "",
-          caption: result.inProcess + " of " + result.total + " requests received · last 92 days · TechHub, Meeting, Technology, Bug vs Out of Process"
+          caption: result.inProcess + " of " + result.total + " requests received through normal paths · last 92 days"
         };
       },
       status: function (result) {
@@ -498,7 +416,7 @@
         return {
           value: result.value.toFixed(1),
           unit: "days avg",
-          caption: "Received → IPA sent · last 92 days · based on " + result.count + " request" + (result.count === 1 ? "" : "s")
+          caption: "Based on " + result.count + " request" + (result.count === 1 ? "" : "s") + " the avergae Request → IPA sent · last 92 days" 
         };
       },
       status: function (result) {
@@ -538,7 +456,7 @@
         return {
           value: Math.round(result.pct) + "%",
           unit: "",
-          caption: result.big + " of " + result.total + " requests · last 92 days · Big Thinking applied"
+          caption: result.big + " of " + result.total + " requests had Big Thinking alied · last 92 days"
         };
       },
       status: function (result) {
@@ -578,7 +496,7 @@
         return {
           value: Math.round(result.pct) + "%",
           unit: "",
-          caption: result.defined + " of " + result.total + " requests · last 92 days (by business case received) · Business Benefit defined"
+          caption: result.defined + " of " + result.total + " requests had a defined business benefit · last 92 days"
         };
       },
       status: function (result) {
@@ -771,7 +689,6 @@
       container.appendChild(tile);
     });
     container.appendChild(buildPriorTile(cards));
-    renderSummaryPanel();
   }
 
   function buildPriorTile(cards) {
@@ -892,90 +809,6 @@
     return text;
   }
 
-  function formatInline(raw) {
-    var html = escapeHtml(raw);
-    html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    html = html.replace(/__([^_]+)__/g, "<strong>$1</strong>");
-    html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-    html = html.replace(/_([^_]+)_/g, "<em>$1</em>");
-    return html;
-  }
-
-  function formatSummaryHtml(text) {
-    var blocks = text.split(/\n\s*\n/);
-    return blocks.map(function (block) {
-      var trimmed = block.trim();
-      if (!trimmed) return "";
-      var h2 = trimmed.match(/^##\s+(.*)$/);
-      if (h2) return "<h4>" + formatInline(h2[1].trim()) + "</h4>";
-      var h1 = trimmed.match(/^#\s+(.*)$/);
-      if (h1) return "<h3>" + formatInline(h1[1].trim()) + "</h3>";
-
-      var lines = trimmed.split("\n");
-      if (lines.every(function (l) { return /^[-*]\s+/.test(l.trim()); })) {
-        return "<ul>" + lines.map(function (l) {
-          return "<li>" + formatInline(l.trim().replace(/^[-*]\s+/, "")) + "</li>";
-        }).join("") + "</ul>";
-      }
-      if (lines.every(function (l) { return /^\d+\.\s+/.test(l.trim()); })) {
-        return "<ol>" + lines.map(function (l) {
-          return "<li>" + formatInline(l.trim().replace(/^\d+\.\s+/, "")) + "</li>";
-        }).join("") + "</ol>";
-      }
-
-      return "<p>" + formatInline(trimmed).replace(/\n/g, "<br>") + "</p>";
-    }).join("");
-  }
-
-  function renderSummaryPanel() {
-    var container = document.getElementById("summaryBody");
-    if (!container) return;
-    if (!lastTemplateText) {
-      lastSummaryText = "";
-      container.innerHTML = '<div class="summary-empty">No template loaded yet. Click "Load Template" to choose your stats-template.md.</div>';
-      return;
-    }
-    lastSummaryText = buildStatsText(lastTemplateText, lastCards);
-    container.innerHTML = formatSummaryHtml(lastSummaryText);
-  }
-
-  function copyRichHtml(sourceEl, plainText) {
-    var html = sourceEl.innerHTML;
-    if (navigator.clipboard && window.ClipboardItem) {
-      return navigator.clipboard.write([
-        new ClipboardItem({
-          "text/html": new Blob([html], { type: "text/html" }),
-          "text/plain": new Blob([plainText], { type: "text/plain" })
-        })
-      ]);
-    }
-    return new Promise(function (resolve, reject) {
-      var range = document.createRange();
-      range.selectNodeContents(sourceEl);
-      var selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      try {
-        var ok = document.execCommand("copy");
-        selection.removeAllRanges();
-        if (ok) resolve(); else reject(new Error("copy command failed"));
-      } catch (err) {
-        selection.removeAllRanges();
-        reject(err);
-      }
-    });
-  }
-
-  document.getElementById("btnCopySummary").addEventListener("click", function () {
-    var container = document.getElementById("summaryBody");
-    if (!lastSummaryText || !container.textContent.trim()) { toast("Nothing to copy yet"); return; }
-    copyRichHtml(container, container.textContent).then(function () {
-      toast("Copied to clipboard");
-    }).catch(function () {
-      toast("Couldn't copy — clipboard access denied");
-    });
-  });
-
   function downloadText(filename, text) {
     var blob = new Blob([text], { type: "text/markdown" });
     var url = URL.createObjectURL(blob);
@@ -1018,8 +851,6 @@
   }
 
   function exportStatsText(templateText) {
-    lastTemplateText = templateText;
-    renderSummaryPanel();
     var text = buildStatsText(templateText, lastCards);
     var filename = "intake" + new Date().toISOString().slice(0, 10) + ".md";
     if (!FS_SUPPORTED) {
@@ -1044,7 +875,6 @@
 
   document.getElementById("btnExportTxt").addEventListener("click", function () {
     if (!FS_SUPPORTED) {
-      templatePickPurpose = "export";
       document.getElementById("templateInput").click();
       return;
     }
@@ -1057,62 +887,18 @@
     });
   });
 
-  document.getElementById("btnLoadTemplate").addEventListener("click", function () {
-    if (!FS_SUPPORTED) {
-      templatePickPurpose = "panel";
-      document.getElementById("templateInput").click();
-      return;
-    }
-    // Always prompt for a file here (rather than silently reusing a previously
-    // granted handle) so the button reliably opens a picker every time it's clicked.
-    pickTemplateFile().then(function (handle) {
-      if (!handle) return;
-      return readFileText(handle).then(function (text) {
-        lastTemplateText = text;
-        renderSummaryPanel();
-        toast("Template loaded");
-      });
-    }).catch(function (err) {
-      if (err && err.name === "AbortError") return;
-      console.error("Template load failed:", err);
-      toast("Couldn't load template: " + (err && err.message ? err.message : "unknown error"));
-    });
-  });
-
   document.getElementById("templateInput").addEventListener("change", function (e) {
     var file = e.target.files && e.target.files[0];
     e.target.value = "";
     if (!file) return;
     var reader = new FileReader();
     reader.onload = function () {
-      if (templatePickPurpose === "export") {
-        exportStatsText(reader.result);
-      } else {
-        lastTemplateText = reader.result;
-        renderSummaryPanel();
-        toast("Template loaded");
-      }
-      templatePickPurpose = null;
+      exportStatsText(reader.result);
     };
     reader.onerror = function () { toast("Couldn't read the template file"); };
     reader.readAsText(file);
   });
 
-  function tryAutoLoadTemplate() {
-    if (!FS_SUPPORTED) return;
-    idbGet(DB_KEY_TEMPLATE).then(function (handle) {
-      if (!handle) return;
-      return handle.queryPermission({ mode: "read" }).then(function (perm) {
-        if (perm !== "granted") return;
-        return readFileText(handle).then(function (text) {
-          lastTemplateText = text;
-          renderSummaryPanel();
-        });
-      });
-    }).catch(function (err) { console.error("Auto-load template failed:", err); /* panel just stays empty until Load Template */ });
-  }
-
-  tryAutoLoadTemplate();
   window.onAuthReady(loadFromBestSource);
 })();
 </script>

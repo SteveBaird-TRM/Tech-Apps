@@ -1,0 +1,1350 @@
+(() => {
+  const DAY_COL_WIDTH = 40;
+  const WEEK_COL_WIDTH = 90;
+  const MONTH_COL_WIDTH = 160;
+  const ROW_HEIGHTS = { narrow: 32, normal: 46, wide: 64 };
+  const BAR_HEIGHTS = { narrow: 18, normal: 32, wide: 32 };
+  const DENSITY_LEVELS = ['narrow', 'normal', 'wide'];
+  const DEFAULT_DENSITY = 'normal';
+  const DENSITY_STORAGE_KEY = 'roadmap-gantt-viewer-density';
+  const LABEL_WIDTH = 240;
+  const HEADER_HEIGHT = 40;
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const MIN_VISIBLE_WEEKS = 10;
+  const PADDING_WEEKS_AFTER = 2;
+  const DEFAULT_COLOR_1 = '#5b8cff';
+  const DEFAULT_COLOR_2 = '#7c5cff';
+  const DEFAULT_TAG_OPTIONS = [
+    'Tag 1', 'Tag 2', 'Tag 3', 'Tag 4', 'Tag 5', 'Tag 6', 'Tag 7', 'Tag 8',
+  ];
+  const PHASE_OPTIONS = ['Not Started', 'Discovery', 'Build', 'Test', 'Complete', 'Headline', 'Milestone'];
+  const DEFAULT_PHASE = 'Not Started';
+  const PHASE_ICON_FILES = {
+    'Not Started': 'circle-0.svg',
+    'Discovery': 'circle-2.svg',
+    'Build': 'circle-4.svg',
+    'Test': 'circle-6.svg',
+    'Complete': 'circle-8.svg',
+    'Headline': 'headline.svg',
+    'Milestone': 'milestone.svg',
+  };
+  const PHASE_LABELS = {
+    'Not Started': 'Not Started',
+    'Discovery': 'Started',
+    'Build': 'In Progress',
+    'Test': 'Finalising',
+    'Complete': 'Complete',
+    'Headline': 'Headline',
+    'Milestone': 'Milestone',
+  };
+  const VIEW_MODES = ['day', 'week', 'month'];
+  const DEFAULT_VIEW_MODE = 'week';
+  const VIEW_STORAGE_KEY = 'roadmap-gantt-viewer-view-mode';
+  const ZOOM_STORAGE_KEY = 'roadmap-gantt-viewer-zoom';
+  const ZOOM_MIN = 0.5;
+  const ZOOM_MAX = 2.5;
+  const ZOOM_STEP = 0.25;
+  const DEFAULT_ZOOM = 1;
+  const THEME_STORAGE_KEY = 'roadmap-gantt-viewer-theme';
+  const DATELINE_STORAGE_KEY = 'roadmap-gantt-viewer-dateline-visible';
+  const LABEL_WIDTH_STORAGE_KEY = 'roadmap-gantt-viewer-label-width';
+  const MIN_LABEL_WIDTH = 160;
+  const MAX_LABEL_WIDTH = 480;
+  const LABEL_MODES = ['off', 'days', 'weeks', 'dates'];
+  const DEFAULT_LABEL_MODE = 'dates';
+  const LABEL_MODE_STORAGE_KEY = 'roadmap-gantt-viewer-label-mode';
+  const TIMELINE_START_STORAGE_KEY = 'roadmap-gantt-viewer-timeline-start';
+  const PRINT_PAGE_WIDTH_PX = 1050; // approx usable width for a landscape page at 96dpi
+  const FILE_PICKER_TYPES = [{
+    description: 'Gantt project files',
+    accept: { 'application/json': ['.gantt', '.json'] },
+  }];
+  const HANDLE_DB_NAME = 'roadmap-gantt-files';
+  const HANDLE_STORE = 'handles';
+  const LAST_HANDLE_KEY = 'lastViewerFileHandle';
+  const DEFAULT_EMPTY_STATE_MESSAGE = 'Open a project to view it.';
+
+  const sprintHeaderEl = document.getElementById('sprint-header');
+  const taskRowsEl = document.getElementById('task-rows');
+  const openFileBtn = document.getElementById('open-file-btn');
+  const fileStatusEl = document.getElementById('file-status');
+  const unsupportedBanner = document.getElementById('unsupported-banner');
+  const emptyState = document.getElementById('empty-state');
+  const emptyStateMessageEl = document.getElementById('empty-state-message');
+  const ganttEl = document.getElementById('gantt');
+  const todayLineEl = document.getElementById('today-line');
+  const viewButtons = Array.from(document.querySelectorAll('.topbar-actions > .view-toggle > .view-btn'));
+
+  const pageTitleEl = document.getElementById('page-title');
+  const zoomInBtn = document.getElementById('zoom-in-btn');
+  const zoomOutBtn = document.getElementById('zoom-out-btn');
+  const zoomLevelEl = document.getElementById('zoom-level');
+  const displayBtn = document.getElementById('display-btn');
+  const displayDialog = document.getElementById('display-dialog');
+  const displayCloseBtn = document.getElementById('display-close-btn');
+  const displayGroupButtons = Array.from(displayDialog.querySelectorAll('.view-btn'));
+  const filterBtn = document.getElementById('filter-btn');
+  const filterDialog = document.getElementById('filter-dialog');
+  const filterCloseBtn = document.getElementById('filter-close-btn');
+  const filterClearBtn = document.getElementById('filter-clear-btn');
+  const filterTagListEl = document.getElementById('filter-tag-list');
+  const filterPhaseListEl = document.getElementById('filter-phase-list');
+  const filterColorListEl = document.getElementById('filter-color-list');
+  const removeProjectBtn = document.getElementById('remove-project-btn');
+  const timelineStartInput = document.getElementById('timeline-start-input');
+  const labelColResizeHandle = document.getElementById('label-col-resize-handle');
+  const exportBtn = document.getElementById('export-btn');
+  const exportMenu = document.getElementById('export-menu');
+  const backupDataBtn = document.getElementById('backup-data-btn');
+  const exportPngBtn = document.getElementById('export-png-btn');
+  const exportPdfBtn = document.getElementById('export-pdf-btn');
+  const exportCsvBtn = document.getElementById('export-csv-btn');
+
+  let tasks = [];
+  let tagOptions = DEFAULT_TAG_OPTIONS.slice();
+  let rowRefs = new Map(); // id -> { rowEl, barEl }
+  let fileHandle = null;
+  let currentProjectTitle = '';
+
+  // '' represents tasks with no tag / no color set.
+  let filterTags = new Set();
+  let filterPhases = new Set();
+  let filterColors = new Set();
+
+  let viewMode = DEFAULT_VIEW_MODE;
+  try {
+    const stored = localStorage.getItem(VIEW_STORAGE_KEY);
+    if (VIEW_MODES.includes(stored)) viewMode = stored;
+  } catch (err) {
+    // localStorage unavailable (e.g. private mode) — fall back to the default view.
+  }
+
+  let zoomLevel = DEFAULT_ZOOM;
+  try {
+    const storedZoom = parseFloat(localStorage.getItem(ZOOM_STORAGE_KEY));
+    if (!Number.isNaN(storedZoom) && storedZoom >= ZOOM_MIN && storedZoom <= ZOOM_MAX) zoomLevel = storedZoom;
+  } catch (err) {
+    // localStorage unavailable — fall back to the default zoom.
+  }
+
+  let theme = 'light';
+  try {
+    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (storedTheme === 'light' || storedTheme === 'dark') theme = storedTheme;
+  } catch (err) {
+    // localStorage unavailable — fall back to the default theme.
+  }
+
+  let datelineVisible = true;
+  try {
+    const storedDatelineVisible = localStorage.getItem(DATELINE_STORAGE_KEY);
+    if (storedDatelineVisible === 'true' || storedDatelineVisible === 'false') {
+      datelineVisible = storedDatelineVisible === 'true';
+    }
+  } catch (err) {
+    // localStorage unavailable — fall back to the default (dateline visible).
+  }
+
+  let labelWidth = LABEL_WIDTH;
+  try {
+    const storedLabelWidth = parseFloat(localStorage.getItem(LABEL_WIDTH_STORAGE_KEY));
+    if (!Number.isNaN(storedLabelWidth) && storedLabelWidth >= MIN_LABEL_WIDTH && storedLabelWidth <= MAX_LABEL_WIDTH) {
+      labelWidth = storedLabelWidth;
+    }
+  } catch (err) {
+    // localStorage unavailable — fall back to the default label width.
+  }
+
+  let labelMode = DEFAULT_LABEL_MODE;
+  try {
+    const storedLabelMode = localStorage.getItem(LABEL_MODE_STORAGE_KEY);
+    if (LABEL_MODES.includes(storedLabelMode)) labelMode = storedLabelMode;
+  } catch (err) {
+    // localStorage unavailable — fall back to the default (dates label).
+  }
+
+  let density = DEFAULT_DENSITY;
+  try {
+    const storedDensity = localStorage.getItem(DENSITY_STORAGE_KEY);
+    if (DENSITY_LEVELS.includes(storedDensity)) density = storedDensity;
+  } catch (err) {
+    // localStorage unavailable — fall back to the default density.
+  }
+
+  let ROW_HEIGHT = ROW_HEIGHTS[density];
+  let BAR_HEIGHT = BAR_HEIGHTS[density];
+
+  function firstOfCurrentMonth() {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  let timelineStartDate = firstOfCurrentMonth();
+  try {
+    const storedTimelineStart = localStorage.getItem(TIMELINE_START_STORAGE_KEY);
+    const parsedTimelineStart = storedTimelineStart ? parseISODate(storedTimelineStart) : null;
+    if (parsedTimelineStart) timelineStartDate = parsedTimelineStart;
+  } catch (err) {
+    // localStorage unavailable — fall back to the default timeline start.
+  }
+
+  function supportsFileSystemAccess() {
+    return typeof window.showOpenFilePicker === 'function';
+  }
+
+  // ---------- Date helpers ----------
+  function startOfDay(d) {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  }
+
+  function mondayOf(d) {
+    const date = startOfDay(d);
+    const day = date.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    date.setDate(date.getDate() + diff);
+    return date;
+  }
+
+  function addDays(date, n) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + n);
+    return d;
+  }
+
+  function daysBetween(a, b) {
+    return Math.round((startOfDay(b) - startOfDay(a)) / DAY_MS);
+  }
+
+  // Counts weekdays only (Mon–Fri), skipping Saturday/Sunday, across the
+  // `durationDays` calendar days starting at `start`.
+  function countWeekdays(start, durationDays) {
+    let count = 0;
+    for (let i = 0; i < durationDays; i++) {
+      const day = addDays(start, i).getDay();
+      if (day !== 0 && day !== 6) count++;
+    }
+    return count;
+  }
+
+  function formatISODate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function parseISODate(str) {
+    const parts = String(str || '').split('-').map(Number);
+    if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+
+  function formatShort(date) {
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  // ---------- Timeline / view-mode geometry ----------
+  function pxPerDay() {
+    let base;
+    if (viewMode === 'month') base = MONTH_COL_WIDTH / 30.4368;
+    else if (viewMode === 'day') base = DAY_COL_WIDTH;
+    else base = WEEK_COL_WIDTH / 7;
+    return base * zoomLevel;
+  }
+
+  function computeTimelineRange() {
+    let maxEnd = null;
+    tasks.forEach((t) => {
+      const start = parseISODate(t.startDate);
+      if (!start) return;
+      const end = addDays(start, t.durationDays);
+      if (!maxEnd || end > maxEnd) maxEnd = end;
+    });
+
+    // The chosen timeline start is a hard edge: tasks that begin earlier are
+    // clipped to it and rendered showing only their remaining duration.
+    let rangeStart = mondayOf(timelineStartDate);
+
+    if (!maxEnd) maxEnd = addDays(rangeStart, MIN_VISIBLE_WEEKS * 7);
+
+    let rangeEnd = addDays(mondayOf(addDays(maxEnd, PADDING_WEEKS_AFTER * 7)), 7);
+
+    const minEnd = addDays(rangeStart, MIN_VISIBLE_WEEKS * 7);
+    if (rangeEnd < minEnd) rangeEnd = minEnd;
+
+    if (viewMode === 'month') {
+      rangeStart = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
+      rangeEnd = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth() + 1, 1);
+    }
+
+    return { start: rangeStart, end: rangeEnd };
+  }
+
+  function buildColumns(range) {
+    const ppd = pxPerDay();
+    const cols = [];
+
+    if (viewMode === 'day') {
+      let cur = range.start;
+      while (cur < range.end) {
+        const next = addDays(cur, 1);
+        const label = `${cur.toLocaleDateString(undefined, { weekday: 'short' })} ${cur.getDate()}`;
+        const dayOfWeek = cur.getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        cols.push({ start: cur, end: next, label, isWeekend });
+        cur = next;
+      }
+    } else if (viewMode === 'week') {
+      let cur = range.start;
+      while (cur < range.end) {
+        const next = addDays(cur, 7);
+        cols.push({ start: cur, end: next, label: formatShort(cur) });
+        cur = next;
+      }
+    } else {
+      let cur = new Date(range.start.getFullYear(), range.start.getMonth(), 1);
+      while (cur < range.end) {
+        const next = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+        cols.push({ start: cur, end: next, label: cur.toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) });
+        cur = next;
+      }
+    }
+
+    return cols.map((c) => ({ ...c, widthPx: daysBetween(c.start, c.end) * ppd }));
+  }
+
+  function timelineWidthPx(range) {
+    return daysBetween(range.start, range.end) * pxPerDay();
+  }
+
+  function xForDate(range, date) {
+    return daysBetween(range.start, date) * pxPerDay();
+  }
+
+  // Tasks starting before the visible range are clipped to its left edge and
+  // drawn showing only their remaining duration, rather than being hidden.
+  function visibleStart(range, start) {
+    return start < range.start ? range.start : start;
+  }
+
+  function barLeftPx(range, task) {
+    const start = parseISODate(task.startDate);
+    return xForDate(range, visibleStart(range, start)) + 4;
+  }
+
+  function barWidthPx(range, task) {
+    const start = parseISODate(task.startDate);
+    const end = addDays(start, task.durationDays);
+    // Tasks ending before the range start are filtered out by visibleTasks()
+    // before reaching here; clamp remains as a safety net against negative
+    // widths (which would crash the canvas rounded-rect export).
+    return Math.max(0, daysBetween(visibleStart(range, start), end) * pxPerDay() - 8);
+  }
+
+  function formatDatesBarLabel(task) {
+    const start = parseISODate(task.startDate);
+    const end = addDays(start, task.durationDays - 1);
+    return `${formatShort(start)} – ${formatShort(end)}`;
+  }
+
+  function formatDaysBarLabel(task) {
+    const start = parseISODate(task.startDate);
+    const n = countWeekdays(start, task.durationDays);
+    return `${n} day${n === 1 ? '' : 's'}`;
+  }
+
+  function formatWeeksBarLabel(task) {
+    const n = Math.round((task.durationDays / 7) * 10) / 10;
+    return `${n} week${n === 1 ? '' : 's'}`;
+  }
+
+  function formatBarLabel(task) {
+    if (labelMode === 'days') return formatDaysBarLabel(task);
+    if (labelMode === 'weeks') return formatWeeksBarLabel(task);
+    return formatDatesBarLabel(task);
+  }
+
+  // ---------- Color ----------
+  function darkenColor(hex, amount) {
+    const clean = String(hex || '').replace('#', '');
+    const full = clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean;
+    const num = parseInt(full, 16);
+    if (Number.isNaN(num)) return hex;
+    let r = (num >> 16) & 0xff;
+    let g = (num >> 8) & 0xff;
+    let b = num & 0xff;
+    r = Math.max(0, Math.round(r * (1 - amount)));
+    g = Math.max(0, Math.round(g * (1 - amount)));
+    b = Math.max(0, Math.round(b * (1 - amount)));
+    return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('');
+  }
+
+  function barColors(task) {
+    if (task.color) return [task.color, darkenColor(task.color, 0.25)];
+    return [DEFAULT_COLOR_1, DEFAULT_COLOR_2];
+  }
+
+  function applyBarColor(bar, task) {
+    const [c1] = barColors(task);
+    bar.style.setProperty('--bar-color', c1);
+  }
+
+  // ---------- File handle persistence (remembers the last opened file) ----------
+  function openHandleDb() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(HANDLE_DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains(HANDLE_STORE)) req.result.createObjectStore(HANDLE_STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function storeLastHandle(handle) {
+    try {
+      const db = await openHandleDb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(HANDLE_STORE, 'readwrite');
+        tx.objectStore(HANDLE_STORE).put(handle, LAST_HANDLE_KEY);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+  }
+
+  async function loadLastHandle() {
+    try {
+      const db = await openHandleDb();
+      return await new Promise((resolve, reject) => {
+        const req = db.transaction(HANDLE_STORE, 'readonly').objectStore(HANDLE_STORE).get(LAST_HANDLE_KEY);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (err) {
+      return null;
+    }
+  }
+
+  async function clearLastHandle() {
+    try {
+      const db = await openHandleDb();
+      db.transaction(HANDLE_STORE, 'readwrite').objectStore(HANDLE_STORE).delete(LAST_HANDLE_KEY);
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+  }
+
+  // This viewer never writes, so it only ever needs "read" permission.
+  async function ensureReadPermission(handle) {
+    const opts = { mode: 'read' };
+    try {
+      if ((await handle.queryPermission(opts)) === 'granted') return true;
+      return (await handle.requestPermission(opts)) === 'granted';
+    } catch (err) {
+      return false;
+    }
+  }
+
+  // ---------- JSON ----------
+  // Accepts both the legacy format (a plain array of tasks, with the
+  // tag list only ever living in app.js) and the current format
+  // (an object with "tags" and "tasks"), so old project files keep
+  // opening without a manual migration step.
+  function buildTagsAndTasks(rawTags, rawTasks) {
+    const tags = [];
+    (rawTags || []).forEach((c) => {
+      const name = typeof c === 'string' ? c.trim() : '';
+      if (name && !tags.includes(name)) tags.push(name);
+    });
+
+    const result = (rawTasks || []).map((row, idx) => {
+      const parsed = parseISODate(row.startDate) || new Date();
+      const durationDays = row.durationDays != null
+        ? Math.max(1, parseInt(row.durationDays, 10) || 1)
+        : Math.max(1, (parseInt(row.durationWeeks, 10) || 1) * 7);
+      return {
+        id: row.id != null ? String(row.id) : 'v' + idx,
+        name: row.name || '',
+        startDate: formatISODate(parsed),
+        durationDays,
+        order: Number.isFinite(row.order) ? row.order : 0,
+        color: row.color || '',
+        tag: row.tag || '',
+        phase: PHASE_OPTIONS.includes(row.phase) ? row.phase : DEFAULT_PHASE,
+      };
+    });
+    result.sort((a, b) => a.order - b.order);
+
+    result.forEach((t) => {
+      if (t.tag && !tags.includes(t.tag)) tags.push(t.tag);
+    });
+
+    return { tags, tasks: result };
+  }
+
+  function parseJson(text) {
+    const raw = text.trim();
+    if (!raw) return { tags: DEFAULT_TAG_OPTIONS.slice(), tasks: [] };
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (err) {
+      throw new Error('Invalid JSON: ' + err.message);
+    }
+
+    let rawTasks;
+    let rawTags;
+    if (Array.isArray(data)) {
+      rawTasks = data;
+      rawTags = DEFAULT_TAG_OPTIONS;
+    } else if (data && Array.isArray(data.tasks)) {
+      rawTasks = data.tasks;
+      rawTags = Array.isArray(data.tags) ? data.tags : DEFAULT_TAG_OPTIONS;
+    } else {
+      throw new Error('Expected a JSON array of tasks, or an object with a "tasks" array.');
+    }
+
+    return buildTagsAndTasks(rawTags, rawTasks);
+  }
+
+  function projectDataToPayload(list, tags) {
+    const sorted = [...list].sort((a, b) => a.order - b.order);
+    return {
+      tags: tags.slice(),
+      tasks: sorted.map((t) => ({
+        id: t.id,
+        name: t.name,
+        startDate: t.startDate,
+        durationDays: t.durationDays,
+        order: t.order,
+        color: t.color,
+        tag: t.tag,
+        phase: t.phase,
+      })),
+    };
+  }
+
+  function serializeJson(list, tags) {
+    return JSON.stringify(projectDataToPayload(list, tags), null, 2) + '\n';
+  }
+
+  // ---------- Project connection (view-only) ----------
+  function setFileStatus(text, cls) {
+    fileStatusEl.textContent = text;
+    fileStatusEl.className = 'file-status' + (cls ? ' ' + cls : '');
+  }
+
+  function showGantt(show) {
+    emptyState.hidden = show;
+    ganttEl.hidden = !show;
+    exportBtn.disabled = !show;
+    removeProjectBtn.disabled = !show;
+  }
+
+  // The project title is derived from the filename (without its extension),
+  // capitalised — there is no separate title stored in the file.
+  function titleFromFilename(filename) {
+    const base = String(filename || '').replace(/\.[^./\\]+$/, '') || 'project';
+    return base.charAt(0).toUpperCase() + base.slice(1);
+  }
+
+  function applyProjectFile(handle, parsed) {
+    fileHandle = handle;
+    currentProjectTitle = titleFromFilename(handle.name);
+    tasks = parsed.tasks;
+    tagOptions = parsed.tags;
+    setFileStatus('Viewing: ' + currentProjectTitle, 'connected');
+    applyPageTitle(currentProjectTitle);
+    showGantt(true);
+    render();
+    storeLastHandle(handle);
+  }
+
+  async function loadFromHandle(handle) {
+    try {
+      const granted = await ensureReadPermission(handle);
+      if (!granted) {
+        setFileStatus('Permission needed for "' + handle.name + '"', 'error');
+        return false;
+      }
+      const file = await handle.getFile();
+      const parsed = parseJson(await file.text());
+      applyProjectFile(handle, parsed);
+      return true;
+    } catch (err) {
+      console.error(err);
+      setFileStatus('Could not open ' + handle.name + ': ' + err.message, 'error');
+      return false;
+    }
+  }
+
+  async function openProjectFile() {
+    if (!supportsFileSystemAccess()) return;
+    let handle;
+    try {
+      [handle] = await window.showOpenFilePicker({ types: FILE_PICKER_TYPES });
+    } catch (err) {
+      if (err.name === 'AbortError') return; // user cancelled the picker
+      console.error(err);
+      setFileStatus('Could not open file: ' + err.message, 'error');
+      return;
+    }
+    await loadFromHandle(handle);
+  }
+
+  function disconnectProject(emptyMessage) {
+    fileHandle = null;
+    currentProjectTitle = '';
+    tasks = [];
+    tagOptions = DEFAULT_TAG_OPTIONS.slice();
+    clearLastHandle();
+    showGantt(false);
+    taskRowsEl.innerHTML = '';
+    sprintHeaderEl.innerHTML = '';
+    rowRefs = new Map();
+    todayLineEl.hidden = true;
+    emptyStateMessageEl.textContent = emptyMessage || DEFAULT_EMPTY_STATE_MESSAGE;
+    applyPageTitle('Project Gantt Chart');
+    setFileStatus('No project connected', '');
+  }
+
+  function closeCurrentProject() {
+    if (!fileHandle) return;
+    disconnectProject('Ready to open the next project.');
+  }
+
+  async function tryRestoreLastFile() {
+    const handle = await loadLastHandle();
+    if (!handle) return;
+
+    setFileStatus('Reconnecting…', '');
+    const ok = await loadFromHandle(handle);
+    if (!ok) {
+      setFileStatus('Click Reconnect to reopen your last project', '');
+      const reconnectBtn = document.createElement('button');
+      reconnectBtn.className = 'btn';
+      reconnectBtn.textContent = 'Reconnect';
+      reconnectBtn.addEventListener('click', async () => {
+        reconnectBtn.remove();
+        await loadFromHandle(handle);
+      });
+      fileStatusEl.after(reconnectBtn);
+    }
+  }
+
+  // ---------- View mode ----------
+  function syncViewButtons() {
+    viewButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.view === viewMode));
+  }
+
+  function setViewMode(mode) {
+    if (!VIEW_MODES.includes(mode) || mode === viewMode) return;
+    viewMode = mode;
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, viewMode);
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+    syncViewButtons();
+    render();
+  }
+
+  // ---------- Zoom ----------
+  function syncZoomButtons() {
+    zoomLevelEl.textContent = Math.round(zoomLevel * 100) + '%';
+    zoomOutBtn.disabled = zoomLevel <= ZOOM_MIN;
+    zoomInBtn.disabled = zoomLevel >= ZOOM_MAX;
+  }
+
+  function setZoom(level) {
+    const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, level));
+    if (clamped === zoomLevel) return;
+    zoomLevel = clamped;
+    try {
+      localStorage.setItem(ZOOM_STORAGE_KEY, String(zoomLevel));
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+    syncZoomButtons();
+    render();
+  }
+
+  function zoomIn() {
+    setZoom(zoomLevel + ZOOM_STEP);
+  }
+
+  function zoomOut() {
+    setZoom(zoomLevel - ZOOM_STEP);
+  }
+
+  // ---------- Theme ----------
+  function applyTheme() {
+    document.documentElement.dataset.theme = theme;
+  }
+
+  function setTheme(next) {
+    if ((next !== 'dark' && next !== 'light') || next === theme) return;
+    theme = next;
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+    applyTheme();
+    syncDisplayDialog();
+  }
+
+  // ---------- Dateline (today marker) ----------
+  function setDatelineVisible(next) {
+    if (next === datelineVisible) return;
+    datelineVisible = next;
+    try {
+      localStorage.setItem(DATELINE_STORAGE_KEY, String(datelineVisible));
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+    syncDisplayDialog();
+    render();
+  }
+
+  // ---------- Task column width ----------
+  function applyLabelWidth() {
+    document.documentElement.style.setProperty('--label-width', labelWidth + 'px');
+  }
+
+  function startLabelColResize(e) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = labelWidth;
+
+    labelColResizeHandle.classList.add('active');
+    document.body.style.userSelect = 'none';
+
+    function onMove(ev) {
+      const dx = ev.clientX - startX;
+      labelWidth = Math.max(MIN_LABEL_WIDTH, Math.min(MAX_LABEL_WIDTH, startWidth + dx));
+      applyLabelWidth();
+    }
+
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      labelColResizeHandle.classList.remove('active');
+      document.body.style.userSelect = '';
+      try {
+        localStorage.setItem(LABEL_WIDTH_STORAGE_KEY, String(labelWidth));
+      } catch (err) {
+        // ignore — persistence is a convenience, not a requirement
+      }
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  // ---------- Bar label mode (off / weeks / dates) ----------
+  function setLabelMode(mode) {
+    if (!LABEL_MODES.includes(mode) || mode === labelMode) return;
+    labelMode = mode;
+    try {
+      localStorage.setItem(LABEL_MODE_STORAGE_KEY, labelMode);
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+    syncDisplayDialog();
+    render();
+  }
+
+  // ---------- Density (row height) ----------
+  function applyDensity() {
+    document.documentElement.dataset.density = density;
+    ROW_HEIGHT = ROW_HEIGHTS[density];
+    BAR_HEIGHT = BAR_HEIGHTS[density];
+  }
+
+  function setDensity(level) {
+    if (!DENSITY_LEVELS.includes(level) || level === density) return;
+    density = level;
+    try {
+      localStorage.setItem(DENSITY_STORAGE_KEY, density);
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+    applyDensity();
+    syncDisplayDialog();
+    render();
+  }
+
+  // ---------- Display options popup (label / density / theme) ----------
+  function syncDisplayDialog() {
+    const current = { label: labelMode, density, theme, dateline: datelineVisible ? 'on' : 'off' };
+    displayGroupButtons.forEach((btn) => {
+      const { group, value } = btn.dataset;
+      btn.classList.toggle('active', current[group] === value);
+    });
+  }
+
+  function openDisplayDialog() {
+    syncDisplayDialog();
+    displayDialog.showModal();
+  }
+
+  // ---------- Filter popup (tag / color) ----------
+  function tagsInUse() {
+    const present = new Set(tasks.map((t) => t.tag || ''));
+    const ordered = tagOptions.filter((c) => present.has(c));
+    if (present.has('')) ordered.push('');
+    return ordered;
+  }
+
+  function phasesInUse() {
+    const present = new Set(tasks.map((t) => (PHASE_OPTIONS.includes(t.phase) ? t.phase : DEFAULT_PHASE)));
+    return PHASE_OPTIONS.filter((p) => present.has(p));
+  }
+
+  function colorsInUse() {
+    const present = new Set(tasks.map((t) => (t.color || '').toLowerCase()));
+    const ordered = [...present].filter((c) => c).sort();
+    if (present.has('')) ordered.push('');
+    return ordered;
+  }
+
+  function toggleFilterValue(set, value) {
+    if (set.has(value)) set.delete(value);
+    else set.add(value);
+  }
+
+  function syncFilterButton() {
+    filterBtn.classList.toggle('active', filterTags.size > 0 || filterPhases.size > 0 || filterColors.size > 0);
+  }
+
+  function renderFilterDialog() {
+    filterTagListEl.innerHTML = '';
+    const tagOpts = tagsInUse();
+    if (!tagOpts.length) {
+      const empty = document.createElement('p');
+      empty.className = 'filter-empty';
+      empty.textContent = 'No tags set yet.';
+      filterTagListEl.appendChild(empty);
+    }
+    tagOpts.forEach((tag) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'filter-option-btn';
+      btn.textContent = tag || 'None';
+      btn.classList.toggle('active', filterTags.has(tag));
+      btn.addEventListener('click', () => {
+        toggleFilterValue(filterTags, tag);
+        btn.classList.toggle('active', filterTags.has(tag));
+        syncFilterButton();
+        render();
+      });
+      filterTagListEl.appendChild(btn);
+    });
+
+    filterPhaseListEl.innerHTML = '';
+    const phaseOptions = phasesInUse();
+    if (!phaseOptions.length) {
+      const empty = document.createElement('p');
+      empty.className = 'filter-empty';
+      empty.textContent = 'No progress values set yet.';
+      filterPhaseListEl.appendChild(empty);
+    }
+    phaseOptions.forEach((phase) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'filter-option-btn';
+      btn.textContent = PHASE_LABELS[phase] || phase;
+      btn.classList.toggle('active', filterPhases.has(phase));
+      btn.addEventListener('click', () => {
+        toggleFilterValue(filterPhases, phase);
+        btn.classList.toggle('active', filterPhases.has(phase));
+        syncFilterButton();
+        render();
+      });
+      filterPhaseListEl.appendChild(btn);
+    });
+
+    filterColorListEl.innerHTML = '';
+    const colorOptions = colorsInUse();
+    if (!colorOptions.length) {
+      const empty = document.createElement('p');
+      empty.className = 'filter-empty';
+      empty.textContent = 'No colors set yet.';
+      filterColorListEl.appendChild(empty);
+    }
+    colorOptions.forEach((hex) => {
+      const swatch = document.createElement('button');
+      swatch.type = 'button';
+      swatch.className = 'color-swatch filter-color-swatch';
+      swatch.style.background = hex || `linear-gradient(135deg, ${DEFAULT_COLOR_1}, ${DEFAULT_COLOR_2})`;
+      swatch.title = hex || 'Default';
+      swatch.setAttribute('aria-label', hex || 'Default');
+      swatch.classList.toggle('selected', filterColors.has(hex));
+      swatch.addEventListener('click', () => {
+        toggleFilterValue(filterColors, hex);
+        swatch.classList.toggle('selected', filterColors.has(hex));
+        syncFilterButton();
+        render();
+      });
+      filterColorListEl.appendChild(swatch);
+    });
+  }
+
+  function openFilterDialog() {
+    renderFilterDialog();
+    filterDialog.showModal();
+  }
+
+  function clearFilters() {
+    filterTags.clear();
+    filterPhases.clear();
+    filterColors.clear();
+    renderFilterDialog();
+    syncFilterButton();
+    render();
+  }
+
+  // ---------- Timeline start date ----------
+  function syncTimelineStartInput() {
+    timelineStartInput.value = formatISODate(timelineStartDate);
+  }
+
+  function setTimelineStartDate(date) {
+    timelineStartDate = startOfDay(date);
+    try {
+      localStorage.setItem(TIMELINE_START_STORAGE_KEY, formatISODate(timelineStartDate));
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+    render();
+  }
+
+  // ---------- Page title ----------
+  // Always mirrors the open file's name (see titleFromFilename).
+  function applyPageTitle(title) {
+    const text = title || 'Project';
+    pageTitleEl.value = text;
+    document.title = text;
+  }
+
+  // ---------- Rendering (read-only: no drag, resize, or inline editing) ----------
+  function sortedTasks() {
+    return [...tasks].sort((a, b) => a.order - b.order);
+  }
+
+  // Tasks that end before the visible range starts have no remaining
+  // duration to show, so they're left out of the timeline entirely.
+  function taskPassesFilter(t) {
+    if (filterTags.size && !filterTags.has(t.tag || '')) return false;
+    if (filterPhases.size && !filterPhases.has(PHASE_OPTIONS.includes(t.phase) ? t.phase : DEFAULT_PHASE)) return false;
+    if (filterColors.size && !filterColors.has((t.color || '').toLowerCase())) return false;
+    return true;
+  }
+
+  function visibleTasks(range) {
+    return sortedTasks().filter((t) => {
+      if (!taskPassesFilter(t)) return false;
+      const start = parseISODate(t.startDate);
+      if (!start) return false;
+      const end = addDays(start, t.durationDays);
+      return end > range.start;
+    });
+  }
+
+  function renderColumnCells(container, columns, withLabel) {
+    container.innerHTML = '';
+    columns.forEach((col) => {
+      const el = document.createElement('div');
+      el.className = withLabel ? 'grid-col sprint-col' : 'grid-col';
+      if (col.isWeekend) el.classList.add('weekend-col');
+      el.style.width = col.widthPx + 'px';
+      if (withLabel) el.textContent = col.label;
+      container.appendChild(el);
+    });
+  }
+
+  function renderTodayLine(range) {
+    const today = startOfDay(new Date());
+    if (!datelineVisible || today < range.start || today >= range.end) {
+      todayLineEl.hidden = true;
+      return;
+    }
+    todayLineEl.hidden = false;
+    todayLineEl.style.left = (labelWidth + xForDate(range, today)) + 'px';
+  }
+
+  function render() {
+    const range = computeTimelineRange();
+    const columns = buildColumns(range);
+    const totalWidth = timelineWidthPx(range);
+
+    renderColumnCells(sprintHeaderEl, columns, true);
+    sprintHeaderEl.style.width = totalWidth + 'px';
+
+    renderTodayLine(range);
+
+    taskRowsEl.innerHTML = '';
+    rowRefs = new Map();
+
+    visibleTasks(range).forEach((task) => {
+      const row = document.createElement('div');
+      row.className = 'task-row';
+      row.dataset.id = task.id;
+
+      const label = document.createElement('div');
+      label.className = 'task-label';
+
+      const phaseIcon = document.createElement('img');
+      phaseIcon.className = 'phase-icon';
+      const phase = PHASE_OPTIONS.includes(task.phase) ? task.phase : DEFAULT_PHASE;
+      phaseIcon.src = PHASE_ICON_FILES[phase];
+      phaseIcon.alt = PHASE_LABELS[phase] || phase;
+      phaseIcon.title = `Status: ${PHASE_LABELS[phase] || phase}`;
+      label.appendChild(phaseIcon);
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'task-name';
+      nameEl.textContent = task.name;
+      label.appendChild(nameEl);
+
+      row.appendChild(label);
+
+      const track = document.createElement('div');
+      track.className = 'row-track';
+      track.style.width = totalWidth + 'px';
+      renderColumnCells(track, columns, false);
+
+      const bar = document.createElement('div');
+      bar.className = phase === 'Headline' ? 'bar headline' : 'bar';
+      bar.style.left = barLeftPx(range, task) + 'px';
+      bar.style.width = barWidthPx(range, task) + 'px';
+      applyBarColor(bar, task);
+
+      if (labelMode !== 'off' && phase !== 'Headline') {
+        const barLabel = document.createElement('span');
+        barLabel.className = 'bar-label';
+        barLabel.textContent = formatBarLabel(task);
+        bar.appendChild(barLabel);
+      }
+
+      track.appendChild(bar);
+      row.appendChild(track);
+      taskRowsEl.appendChild(row);
+
+      rowRefs.set(task.id, { rowEl: row, barEl: bar });
+    });
+  }
+
+  // ---------- Export ----------
+  function baseFileName() {
+    if (!currentProjectTitle) return 'project';
+    const slug = currentProjectTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    return slug || 'project';
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function truncateToWidth(ctx, text, maxWidth) {
+    if (ctx.measureText(text).width <= maxWidth) return text;
+    let truncated = text;
+    while (truncated.length > 1 && ctx.measureText(truncated + '…').width > maxWidth) {
+      truncated = truncated.slice(0, -1);
+    }
+    return truncated + '…';
+  }
+
+  function drawGanttToCanvas() {
+    const range = computeTimelineRange();
+    const order = visibleTasks(range);
+    const columns = buildColumns(range);
+    const width = labelWidth + timelineWidthPx(range);
+    const height = HEADER_HEIGHT + order.length * ROW_HEIGHT;
+
+    const scale = 2; // render at 2x for a crisp export
+    const canvas = document.createElement('canvas');
+    canvas.width = width * scale;
+    canvas.height = Math.max(height, 1) * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+
+    const colors = {
+      bg: '#ffffff',
+      panelAlt: '#f4f5f7',
+      border: '#d7dae0',
+      text: '#16181d',
+      muted: '#5b6472',
+      accent: '#3b6fe0',
+    };
+
+    ctx.fillStyle = colors.bg;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = colors.panelAlt;
+    ctx.fillRect(0, 0, width, HEADER_HEIGHT);
+
+    ctx.strokeStyle = colors.border;
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(0, HEADER_HEIGHT + 0.5);
+    ctx.lineTo(width, HEADER_HEIGHT + 0.5);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(labelWidth + 0.5, 0);
+    ctx.lineTo(labelWidth + 0.5, height);
+    ctx.stroke();
+
+    ctx.fillStyle = colors.muted;
+    ctx.font = "600 11px -apple-system, 'Segoe UI', Roboto, sans-serif";
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText('TASK', 12, HEADER_HEIGHT / 2);
+
+    let colX = labelWidth;
+    columns.forEach((col) => {
+      ctx.strokeStyle = colors.border;
+      ctx.beginPath();
+      ctx.moveTo(colX + col.widthPx + 0.5, 0);
+      ctx.lineTo(colX + col.widthPx + 0.5, HEADER_HEIGHT);
+      ctx.stroke();
+
+      ctx.fillStyle = colors.muted;
+      ctx.font = "600 12px -apple-system, 'Segoe UI', Roboto, sans-serif";
+      ctx.textAlign = 'left';
+      ctx.fillText(col.label, colX + 4, HEADER_HEIGHT / 2);
+      colX += col.widthPx;
+    });
+
+    order.forEach((task, idx) => {
+      const y = HEADER_HEIGHT + idx * ROW_HEIGHT;
+
+      ctx.strokeStyle = colors.border;
+      ctx.beginPath();
+      ctx.moveTo(0, y + ROW_HEIGHT + 0.5);
+      ctx.lineTo(width, y + ROW_HEIGHT + 0.5);
+      ctx.stroke();
+
+      let gx = labelWidth;
+      columns.forEach((col) => {
+        gx += col.widthPx;
+        ctx.beginPath();
+        ctx.moveTo(gx + 0.5, y);
+        ctx.lineTo(gx + 0.5, y + ROW_HEIGHT);
+        ctx.stroke();
+      });
+
+      ctx.fillStyle = colors.text;
+      ctx.font = "13px -apple-system, 'Segoe UI', Roboto, sans-serif";
+      ctx.textBaseline = 'middle';
+      const name = truncateToWidth(ctx, task.name || '', labelWidth - 24);
+      ctx.fillText(name, 16, y + ROW_HEIGHT / 2);
+
+      const barX = labelWidth + barLeftPx(range, task);
+      const barY = y + (ROW_HEIGHT - BAR_HEIGHT) / 2;
+      const barW = barWidthPx(range, task);
+      const barH = BAR_HEIGHT;
+      const [c1] = barColors(task);
+      const isHeadline = (PHASE_OPTIONS.includes(task.phase) ? task.phase : DEFAULT_PHASE) === 'Headline';
+
+      ctx.fillStyle = c1;
+      if (isHeadline) {
+        const lineY = y + ROW_HEIGHT / 2;
+        ctx.fillRect(barX, lineY - 1.5, barW, 3);
+        ctx.beginPath();
+        ctx.arc(barX, lineY, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(barX + barW, lineY, 5, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        roundRectPath(ctx, barX, barY, barW, barH, 6);
+        ctx.fill();
+      }
+
+      if (labelMode !== 'off' && !isHeadline) {
+        ctx.save();
+        roundRectPath(ctx, barX, barY, barW, barH, 6);
+        ctx.clip();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = "600 12px -apple-system, 'Segoe UI', Roboto, sans-serif";
+        ctx.fillText(formatBarLabel(task), barX + 10, y + ROW_HEIGHT / 2);
+        ctx.restore();
+      }
+    });
+
+    const today = startOfDay(new Date());
+    if (datelineVisible && today >= range.start && today < range.end) {
+      const todayX = labelWidth + xForDate(range, today);
+      ctx.strokeStyle = colors.accent;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath();
+      ctx.moveTo(todayX, 0);
+      ctx.lineTo(todayX, height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineWidth = 1;
+    }
+
+    return canvas;
+  }
+
+  function backupData() {
+    const blob = new Blob([serializeJson(tasks, tagOptions)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const stamp = formatISODate(new Date());
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = baseFileName() + '-backup-' + stamp + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportPng() {
+    const canvas = drawGanttToCanvas();
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = baseFileName() + '.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  }
+
+  function csvField(value) {
+    const str = String(value == null ? '' : value);
+    return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+  }
+
+  function exportCsv() {
+    const rows = sortedTasks().map((t) => [t.name, t.startDate, t.durationDays, t.tag, t.phase]);
+    const lines = [
+      ['name', 'startDate', 'durationDays', 'tag', 'phase'],
+      ...rows,
+    ].map((row) => row.map(csvField).join(','));
+    const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = baseFileName() + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportPdf() {
+    const range = computeTimelineRange();
+    const ganttWidth = labelWidth + timelineWidthPx(range);
+    const scale = Math.min(1, PRINT_PAGE_WIDTH_PX / ganttWidth);
+    document.documentElement.style.setProperty('--print-scale', scale);
+
+    const prevTitle = document.title;
+    document.title = baseFileName();
+
+    function restoreTitle() {
+      document.title = prevTitle;
+      window.removeEventListener('afterprint', restoreTitle);
+    }
+    window.addEventListener('afterprint', restoreTitle);
+
+    window.print();
+  }
+
+  // ---------- Init ----------
+  openFileBtn.addEventListener('click', openProjectFile);
+
+  function closeExportMenu() {
+    exportMenu.hidden = true;
+    exportBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  exportBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const willOpen = exportMenu.hidden;
+    closeExportMenu();
+    if (willOpen) {
+      exportMenu.hidden = false;
+      exportBtn.setAttribute('aria-expanded', 'true');
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (!exportMenu.hidden && !exportMenu.contains(e.target) && e.target !== exportBtn) {
+      closeExportMenu();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeExportMenu();
+  });
+  backupDataBtn.addEventListener('click', () => { closeExportMenu(); backupData(); });
+  exportPngBtn.addEventListener('click', () => { closeExportMenu(); exportPng(); });
+  exportPdfBtn.addEventListener('click', () => { closeExportMenu(); exportPdf(); });
+  exportCsvBtn.addEventListener('click', () => { closeExportMenu(); exportCsv(); });
+  viewButtons.forEach((btn) => btn.addEventListener('click', () => setViewMode(btn.dataset.view)));
+  syncViewButtons();
+
+  zoomInBtn.addEventListener('click', zoomIn);
+  zoomOutBtn.addEventListener('click', zoomOut);
+  syncZoomButtons();
+
+  applyTheme();
+  applyDensity();
+
+  displayBtn.addEventListener('click', openDisplayDialog);
+  displayCloseBtn.addEventListener('click', () => displayDialog.close());
+  displayGroupButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const { group, value } = btn.dataset;
+      if (group === 'label') setLabelMode(value);
+      else if (group === 'density') setDensity(value);
+      else if (group === 'theme') setTheme(value);
+      else if (group === 'dateline') setDatelineVisible(value === 'on');
+    });
+  });
+
+  filterBtn.addEventListener('click', openFilterDialog);
+  filterCloseBtn.addEventListener('click', () => filterDialog.close());
+  filterClearBtn.addEventListener('click', clearFilters);
+
+  removeProjectBtn.addEventListener('click', closeCurrentProject);
+
+  labelColResizeHandle.addEventListener('mousedown', startLabelColResize);
+  applyLabelWidth();
+
+  timelineStartInput.addEventListener('change', () => {
+    const parsed = parseISODate(timelineStartInput.value);
+    if (parsed) {
+      setTimelineStartDate(parsed);
+    } else {
+      syncTimelineStartInput();
+    }
+  });
+  syncTimelineStartInput();
+
+  if (!supportsFileSystemAccess()) {
+    unsupportedBanner.hidden = false;
+    openFileBtn.disabled = true;
+    setFileStatus('File System Access API unavailable', 'error');
+  } else {
+    tryRestoreLastFile();
+  }
+})();

@@ -18,6 +18,10 @@
     --bar-top: 10px;
     --group-bar-h: 20px;
     --group-bar-top: 9px;
+
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
   }
   .app[data-view-mode="resource"] { --today-marker: var(--series-8); }
   .app[data-density="narrow"] {
@@ -61,13 +65,13 @@
   * { box-sizing: border-box; }
   body { margin: 0; }
   .app {
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family: var(--font-body);
     background: var(--page-plane);
     color: var(--text-primary);
     min-height: 100vh;
     padding: 24px;
   }
-  .header h1 { font-size: 20px; margin: 0 0 4px; }
+  .header h1 { font-family: var(--font-display); font-weight: 400; letter-spacing: 0.2px; font-size: 20px; margin: 0 0 4px; }
   .header p { margin: 0 0 18px; color: var(--text-secondary); font-size: 13px; }
 
   .field { display: flex; flex-direction: column; gap: 4px; }
