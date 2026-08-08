@@ -15,14 +15,22 @@
   const DEFAULT_COLOR_1 = '#5b8cff';
   const DEFAULT_COLOR_2 = '#7c5cff';
   const PRESET_COLORS = [
-    { name: 'Red', hex: '#ff4853' },
-    { name: 'Orange', hex: '#ff8b3e' },
-    { name: 'Yellow', hex: '#ffd505' },
-    { name: 'Green', hex: '#4fce65' },
-    { name: 'Blue', hex: '#5b8cff' },
-    { name: 'Purple', hex: '#dc60c3' },
-    { name: 'Light Grey', hex: '#dedede' },
-    { name: 'Grey', hex: '#b1b1b1' },
+    { name: 'Happy Red', hex: '#FF4853' },
+    { name: 'Happy Orange', hex: '#FF8B3E' },
+    { name: 'Happy Yellow', hex: '#FFD505' },
+    { name: 'Happy Green', hex: '#4FCE65' },
+    { name: 'Happy Blue', hex: '#5B8CFF' },
+    { name: 'Happy Purple', hex: '#DC60C3' },
+    { name: 'Light Grey', hex: '#E0E0E0' },
+    { name: '60% Grey', hex: '#666666' },
+    { name: 'Shadow Red', hex: '#B3323A' },
+    { name: 'Shadow Orange', hex: '#B3612B' },
+    { name: 'Shadow Yellow', hex: '#B39504' },
+    { name: 'Shadow Green', hex: '#379047' },
+    { name: 'Shadow Blue', hex: '#4062B3' },
+    { name: 'Shadow Purple', hex: '#9A4389' },
+    { name: '40% Grey', hex: '#999999' },
+    { name: 'Dark Grey', hex: '#1C1C1C' },
   ];
   const CAPABILITY_OPTIONS = [
     'Customer Service', 'Fulfilment', 'Payment', 'Production', 'Sales', 'Self Serve', 'Technology', 'UX and UI', 'Verfication',
