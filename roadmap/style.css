@@ -392,6 +392,14 @@ body {
   background: var(--panel);
 }
 
+.health-tag {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 18px;
+  border-radius: 3px;
+  background: transparent;
+}
+
 .phase-icon {
   flex: 0 0 auto;
   width: 14px;

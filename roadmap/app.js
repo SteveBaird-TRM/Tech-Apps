@@ -37,6 +37,8 @@
   ];
   const PHASE_OPTIONS = ['Not Started', 'Discovery', 'Build', 'Test', 'Complete'];
   const DEFAULT_PHASE = 'Not Started';
+  const HEALTH_OPTIONS = ['Green', 'Amber', 'Red'];
+  const HEALTH_COLORS = { Green: '#4FCE65', Amber: '#FFC148', Red: '#FF4853' };
   const PHASE_ICON_FILES = {
     'Not Started': 'circle-0.svg',
     'Discovery': 'circle-2.svg',
@@ -90,6 +92,7 @@
   const editColorInput = document.getElementById('edit-color');
   const editTeamInput = document.getElementById('edit-team');
   const editPhaseInput = document.getElementById('edit-phase');
+  const editHealthInput = document.getElementById('edit-health');
   const editColorPresetsEl = document.getElementById('edit-color-presets');
   const editCancelBtn = document.getElementById('edit-cancel-btn');
   const editDeleteBtn = document.getElementById('edit-delete-btn');
@@ -405,6 +408,7 @@
       color: row.color || '',
       team: row.team || '',
       phase: PHASE_OPTIONS.includes(row.phase) ? row.phase : DEFAULT_PHASE,
+      health: HEALTH_OPTIONS.includes(row.health) ? row.health : '',
     };
   }
 
@@ -418,6 +422,7 @@
       color: t.color,
       team: t.team,
       phase: t.phase,
+      health: t.health || null,
     };
   }
 
@@ -432,6 +437,7 @@
       color: t.color,
       team: t.team,
       phase: t.phase,
+      health: t.health,
     }));
     return JSON.stringify(data, null, 2) + '\n';
   }
@@ -456,6 +462,7 @@
       color: '',
       team: '',
       phase: DEFAULT_PHASE,
+      health: '',
     }));
   }
 
@@ -849,6 +856,14 @@
       const label = document.createElement('div');
       label.className = 'task-label';
 
+      const healthTag = document.createElement('span');
+      healthTag.className = 'health-tag';
+      if (HEALTH_OPTIONS.includes(task.health)) {
+        healthTag.style.background = HEALTH_COLORS[task.health];
+        healthTag.title = `Health: ${task.health}`;
+      }
+      label.appendChild(healthTag);
+
       const phaseIcon = document.createElement('img');
       phaseIcon.className = 'phase-icon';
       const phase = PHASE_OPTIONS.includes(task.phase) ? task.phase : DEFAULT_PHASE;
@@ -1142,6 +1157,7 @@
       color: '#5b8cff',
       team: '',
       phase: DEFAULT_PHASE,
+      health: '',
     };
     tasks.push(newTask);
     render();
@@ -1182,6 +1198,7 @@
     editColorInput.value = task.color || DEFAULT_COLOR_1;
     editTeamInput.value = task.team || '';
     editPhaseInput.value = task.phase || DEFAULT_PHASE;
+    editHealthInput.value = task.health || '';
     editDialog.showModal();
     editNameInput.focus();
   }
@@ -1212,6 +1229,7 @@
     task.color = editColorInput.value || '';
     task.team = editTeamInput.value || '';
     task.phase = editPhaseInput.value || DEFAULT_PHASE;
+    task.health = editHealthInput.value || '';
 
     render();
     scheduleSave();
@@ -1389,7 +1407,7 @@
 
   function serializeCsv(list) {
     const sorted = [...list].sort((a, b) => a.order - b.order);
-    const columns = ['id', 'name', 'startDate', 'durationWeeks', 'order', 'color', 'team', 'phase'];
+    const columns = ['id', 'name', 'startDate', 'durationWeeks', 'order', 'color', 'team', 'phase', 'health'];
     const lines = [columns.join(',')];
     sorted.forEach((t) => {
       lines.push(columns.map((col) => csvField(t[col])).join(','));
