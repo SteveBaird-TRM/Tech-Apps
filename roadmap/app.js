@@ -33,7 +33,7 @@
     { name: 'Dark Grey', hex: '#1C1C1C' },
   ];
   const TEAM_OPTIONS = [
-    'Customer Service', 'Fulfilment', 'Payment', 'Production', 'Sales', 'Self Serve', 'Technology', 'UX and UI', 'Verfication',
+    'Cyber', 'Data and BI', 'Delivery', 'Development', 'Digital Tech', 'Ecommerce', 'Enterprise', 'Operations',
   ];
   const PHASE_OPTIONS = ['Not Started', 'Discovery', 'Build', 'Test', 'Complete'];
   const DEFAULT_PHASE = 'Not Started';
