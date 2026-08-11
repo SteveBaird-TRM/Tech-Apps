@@ -15,6 +15,7 @@
       <button id="export-btn" class="btn hidden">Download CSV</button>
       <button id="export-png-btn" class="btn">Export to PNG</button>
       <button id="next-forum-btn" class="btn" disabled>Next Forum</button>
+      <button id="edit-sprints-btn" class="btn" disabled>Edit Sprints</button>
       <button id="add-task-btn" class="btn btn-primary" disabled>+ Add Task</button>
     </div>
   </header>
@@ -74,6 +75,24 @@
         <div class="modal-actions-right">
           <button type="button" id="next-forum-no-btn" class="btn">No</button>
           <button type="button" id="next-forum-yes-btn" class="btn btn-primary">Yes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sprints-modal-backdrop" class="modal-backdrop hidden">
+    <div class="modal modal-wide">
+      <h2>Edit Sprints</h2>
+      <div class="sprints-list-header">
+        <span>Sprint</span>
+        <span>Name</span>
+        <span>Start date</span>
+      </div>
+      <div id="sprints-list" class="sprints-list"></div>
+      <div class="modal-actions">
+        <button type="button" id="add-sprint-btn" class="btn">+ Add Sprint</button>
+        <div class="modal-actions-right">
+          <button type="button" id="sprints-close-btn" class="btn btn-primary">Close</button>
         </div>
       </div>
     </div>

@@ -11,21 +11,6 @@ const TYPE_COLORS = {
 };
 const VALID_SPRINTS = [0, 1];
 
-// Snapshot of sprintdates.csv (Sprint, StartDate). Update this list if that file changes.
-const SPRINT_DATES = [
-  { sprint: 142, date: new Date(2026, 6, 23) },
-  { sprint: 143, date: new Date(2026, 7, 6) },
-  { sprint: 144, date: new Date(2026, 7, 20) },
-  { sprint: 145, date: new Date(2026, 8, 3) },
-  { sprint: 146, date: new Date(2026, 8, 17) },
-  { sprint: 168, date: new Date(2026, 8, 31) },
-  { sprint: 169, date: new Date(2026, 9, 14) },
-  { sprint: 170, date: new Date(2026, 9, 28) },
-  { sprint: 171, date: new Date(2026, 10, 12) },
-  { sprint: 172, date: new Date(2026, 10, 26) },
-  { sprint: 173, date: new Date(2026, 11, 19) },
-  { sprint: 174, date: new Date(2026, 11, 23) },
-];
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -35,6 +20,7 @@ const sb = window.sbClient;
 function canEdit() { return window.currentAccess && window.currentAccess['implementation-forum'] === 'editor'; }
 
 let tasks = [];
+let sprints = [];
 let draggedCardId = null;
 
 // ---- Supabase row <-> task mapping ----
@@ -48,6 +34,24 @@ function rowToTask(row) {
     isNew: row.is_new,
     isChanged: row.is_changed,
   };
+}
+
+// ---- Supabase row <-> sprint mapping ----
+
+function parseIsoDate(str) {
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function rowToSprint(row) {
+  return { id: row.id, sprint: row.sprint, name: row.name, date: parseIsoDate(row.start_date) };
+}
+
+function toIsoDateString(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function taskToRow({ sprint, title, type, isNew, isChanged }) {
@@ -156,15 +160,143 @@ function formatSprintDate(date) {
   return `${date.getDate()} ${MONTH_NAMES[date.getMonth()]}`;
 }
 
+async function loadSprints() {
+  const { data, error } = await sb.from('sprints').select('*').order('start_date');
+  if (error) {
+    console.error(error);
+    return;
+  }
+  sprints = data.map(rowToSprint);
+  if (editSprintsBtn) editSprintsBtn.disabled = !canEdit();
+  updateColumnTitles();
+}
+
 function updateColumnTitles() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const upcoming = SPRINT_DATES.filter((s) => s.date >= today).sort((a, b) => a.date - b.date);
+  const upcoming = sprints.filter((s) => s.date >= today).sort((a, b) => a.date - b.date);
 
   const nextTitle = document.getElementById('column-title-0');
   const nextPlusOneTitle = document.getElementById('column-title-1');
-  if (upcoming[0]) nextTitle.textContent = `Next (${formatSprintDate(upcoming[0].date)})`;
-  if (upcoming[1]) nextPlusOneTitle.textContent = `Next+1 (${formatSprintDate(upcoming[1].date)})`;
+  if (upcoming[0]) nextTitle.textContent = `Next (Sprint ${upcoming[0].sprint}, ${formatSprintDate(upcoming[0].date)})`;
+  if (upcoming[1]) nextPlusOneTitle.textContent = `Next+1 (Sprint ${upcoming[1].sprint}, ${formatSprintDate(upcoming[1].date)})`;
+}
+
+// ---- sprint editor (admin) ----
+
+// These elements only exist on admin.html; index.html omits sprint editing entirely.
+const editSprintsBtn = document.getElementById('edit-sprints-btn');
+const sprintsModalBackdrop = document.getElementById('sprints-modal-backdrop');
+const sprintsListEl = document.getElementById('sprints-list');
+const addSprintBtn = document.getElementById('add-sprint-btn');
+const sprintsCloseBtn = document.getElementById('sprints-close-btn');
+
+function renderSprintsList() {
+  sprintsListEl.innerHTML = '';
+  const sorted = [...sprints].sort((a, b) => a.date - b.date);
+  for (const s of sorted) {
+    sprintsListEl.appendChild(renderSprintRow(s));
+  }
+}
+
+function renderSprintRow(s) {
+  const row = document.createElement('div');
+  row.className = 'sprint-row';
+
+  const numberInput = document.createElement('input');
+  numberInput.type = 'number';
+  numberInput.value = s.sprint;
+  numberInput.addEventListener('change', () => saveSprintField(s.id, 'sprint', Number(numberInput.value)));
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.value = s.name;
+  nameInput.addEventListener('change', () => saveSprintField(s.id, 'name', nameInput.value));
+
+  const dateInput = document.createElement('input');
+  dateInput.type = 'date';
+  dateInput.value = toIsoDateString(s.date);
+  dateInput.addEventListener('change', () => saveSprintField(s.id, 'start_date', dateInput.value));
+
+  const rowDeleteBtn = document.createElement('button');
+  rowDeleteBtn.type = 'button';
+  rowDeleteBtn.className = 'btn btn-danger';
+  rowDeleteBtn.textContent = 'Delete';
+  rowDeleteBtn.addEventListener('click', () => deleteSprint(s.id));
+
+  row.appendChild(numberInput);
+  row.appendChild(nameInput);
+  row.appendChild(dateInput);
+  row.appendChild(rowDeleteBtn);
+  return row;
+}
+
+async function saveSprintField(id, field, value) {
+  const patch = { [field]: value };
+  const { error } = await sb.from('sprints').update(patch).eq('id', id);
+  if (error) {
+    console.error(error);
+    alert('Failed to update sprint.');
+    renderSprintsList();
+    return;
+  }
+  const s = sprints.find((sp) => sp.id === id);
+  if (s) {
+    if (field === 'start_date') s.date = parseIsoDate(value);
+    else s[field] = value;
+  }
+  updateColumnTitles();
+}
+
+async function deleteSprint(id) {
+  const { error } = await sb.from('sprints').delete().eq('id', id);
+  if (error) {
+    console.error(error);
+    alert('Failed to delete sprint.');
+    return;
+  }
+  sprints = sprints.filter((s) => s.id !== id);
+  renderSprintsList();
+  updateColumnTitles();
+}
+
+async function addSprint() {
+  const maxSprint = sprints.reduce((max, s) => Math.max(max, s.sprint), 0);
+  const latest = [...sprints].sort((a, b) => b.date - a.date)[0];
+  const nextDate = latest
+    ? new Date(latest.date.getFullYear(), latest.date.getMonth(), latest.date.getDate() + 14)
+    : new Date();
+  const nextNumber = maxSprint + 1;
+
+  const { data, error } = await sb
+    .from('sprints')
+    .insert({ sprint: nextNumber, name: `Sprint ${nextNumber}`, start_date: toIsoDateString(nextDate) })
+    .select()
+    .single();
+  if (error) {
+    console.error(error);
+    alert('Failed to add sprint.');
+    return;
+  }
+  sprints.push(rowToSprint(data));
+  renderSprintsList();
+  updateColumnTitles();
+}
+
+if (editSprintsBtn) {
+  editSprintsBtn.addEventListener('click', () => {
+    if (!canEdit()) return;
+    renderSprintsList();
+    sprintsModalBackdrop.classList.remove('hidden');
+  });
+
+  sprintsCloseBtn.addEventListener('click', () => sprintsModalBackdrop.classList.add('hidden'));
+
+  sprintsModalBackdrop.addEventListener('click', (e) => {
+    if (e.target === sprintsModalBackdrop) sprintsModalBackdrop.classList.add('hidden');
+  });
+
+  addSprintBtn.addEventListener('click', addSprint);
 }
 
 // ---- rendering ----
@@ -537,5 +669,7 @@ deleteBtn.addEventListener('click', async () => {
 
 // ---- init ----
 
-updateColumnTitles();
-window.onAuthReady(loadTasks);
+window.onAuthReady(() => {
+  loadSprints();
+  loadTasks();
+});
