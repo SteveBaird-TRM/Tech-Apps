@@ -1341,11 +1341,18 @@
         ctx.stroke();
       });
 
+      if (HEALTH_OPTIONS.includes(task.health)) {
+        const tagH = 16;
+        roundRectPath(ctx, 8, y + (ROW_HEIGHT - tagH) / 2, 6, tagH, 3);
+        ctx.fillStyle = HEALTH_COLORS[task.health];
+        ctx.fill();
+      }
+
       ctx.fillStyle = colors.text;
       ctx.font = "13px -apple-system, 'Segoe UI', Roboto, sans-serif";
       ctx.textBaseline = 'middle';
-      const name = truncateToWidth(ctx, task.name || '', labelWidth - 24);
-      ctx.fillText(name, 16, y + ROW_HEIGHT / 2);
+      const name = truncateToWidth(ctx, task.name || '', labelWidth - 28);
+      ctx.fillText(name, 20, y + ROW_HEIGHT / 2);
 
       const barX = labelWidth + barLeftPx(range, task);
       const barY = y + (ROW_HEIGHT - BAR_HEIGHT) / 2;
