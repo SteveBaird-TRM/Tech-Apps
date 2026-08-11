@@ -209,7 +209,8 @@
     color: var(--muted);
   }
   .card .row1 img { width: 13px; height: 13px; flex: none; }
-  .card .id { white-space: nowrap; }
+  .card .id { white-space: nowrap; color: inherit; text-decoration: none; }
+  .card .id:hover { text-decoration: underline; }
   .card .title {
     font-size: 13px;
     font-weight: 600;
@@ -981,11 +982,14 @@
         var icon = document.createElement("img");
         icon.src = resolveIcon(node.state);
         icon.alt = node.state || "";
-        var idSpan = document.createElement("span");
-        idSpan.className = "id";
-        idSpan.textContent = node.id;
+        var idLink = document.createElement("a");
+        idLink.className = "id";
+        idLink.textContent = node.id;
+        idLink.href = "https://t-r-m.visualstudio/Digital%20Project/_workitems/edit/" + encodeURIComponent(node.id);
+        idLink.target = "_blank";
+        idLink.rel = "noopener noreferrer";
         row1.appendChild(icon);
-        row1.appendChild(idSpan);
+        row1.appendChild(idLink);
 
         var titleDiv = document.createElement("div");
         titleDiv.className = "title";
