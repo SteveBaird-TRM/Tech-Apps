@@ -286,7 +286,7 @@ function rowToRawMilestone(row) {
     durationWeeks: row.duration_weeks,
     order: row.sort_order,
     color: row.color,
-    capability: row.capability,
+    team: row.team,
   };
 }
 
@@ -309,7 +309,7 @@ function parseMilestones(rawRows) {
     finish.setUTCDate(finish.getUTCDate() + weeks * 7);
 
     const color = typeof r.color === "string" ? r.color.trim() : "";
-    const capability = typeof r.capability === "string" ? r.capability.trim() : "";
+    const team = typeof r.team === "string" ? r.team.trim() : "";
 
     return {
       id: r.id != null ? String(r.id) : String(idx),
@@ -319,7 +319,7 @@ function parseMilestones(rawRows) {
       durationWeeks: weeks,
       order: r.order === "" || r.order === undefined || r.order === null ? idx : Number(r.order),
       color: color || null,
-      capability: capability || null,
+      team: team || null,
     };
   });
 }

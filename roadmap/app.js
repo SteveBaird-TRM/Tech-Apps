@@ -32,7 +32,7 @@
     { name: '40% Grey', hex: '#999999' },
     { name: 'Dark Grey', hex: '#1C1C1C' },
   ];
-  const CAPABILITY_OPTIONS = [
+  const TEAM_OPTIONS = [
     'Customer Service', 'Fulfilment', 'Payment', 'Production', 'Sales', 'Self Serve', 'Technology', 'UX and UI', 'Verfication',
   ];
   const PHASE_OPTIONS = ['Not Started', 'Discovery', 'Build', 'Test', 'Complete'];
@@ -88,7 +88,7 @@
   const editStartInput = document.getElementById('edit-start');
   const editDurationInput = document.getElementById('edit-duration');
   const editColorInput = document.getElementById('edit-color');
-  const editCapabilityInput = document.getElementById('edit-capability');
+  const editTeamInput = document.getElementById('edit-team');
   const editPhaseInput = document.getElementById('edit-phase');
   const editColorPresetsEl = document.getElementById('edit-color-presets');
   const editCancelBtn = document.getElementById('edit-cancel-btn');
@@ -104,7 +104,7 @@
   const filterDialog = document.getElementById('filter-dialog');
   const filterCloseBtn = document.getElementById('filter-close-btn');
   const filterClearBtn = document.getElementById('filter-clear-btn');
-  const filterCapabilityListEl = document.getElementById('filter-capability-list');
+  const filterTeamListEl = document.getElementById('filter-team-list');
   const filterPhaseListEl = document.getElementById('filter-phase-list');
   const filterColorListEl = document.getElementById('filter-color-list');
   const cleanupBtn = document.getElementById('cleanup-btn');
@@ -125,8 +125,8 @@
   let deletedTaskIds = new Set();
   let editingTaskId = null;
 
-  // '' represents tasks with no capability / no color set.
-  let filterCapabilities = new Set();
+  // '' represents tasks with no team / no color set.
+  let filterTeams = new Set();
   let filterPhases = new Set();
   let filterColors = new Set();
 
@@ -403,7 +403,7 @@
       durationWeeks: Math.max(1, parseInt(row.duration_weeks, 10) || 1),
       order: Number.isFinite(row.sort_order) ? row.sort_order : 0,
       color: row.color || '',
-      capability: row.capability || '',
+      team: row.team || '',
       phase: PHASE_OPTIONS.includes(row.phase) ? row.phase : DEFAULT_PHASE,
     };
   }
@@ -416,7 +416,7 @@
       duration_weeks: t.durationWeeks,
       sort_order: t.order,
       color: t.color,
-      capability: t.capability,
+      team: t.team,
       phase: t.phase,
     };
   }
@@ -430,7 +430,7 @@
       durationWeeks: t.durationWeeks,
       order: t.order,
       color: t.color,
-      capability: t.capability,
+      team: t.team,
       phase: t.phase,
     }));
     return JSON.stringify(data, null, 2) + '\n';
@@ -454,7 +454,7 @@
       durationWeeks: t.durationWeeks,
       order: idx,
       color: '',
-      capability: '',
+      team: '',
       phase: DEFAULT_PHASE,
     }));
   }
@@ -648,10 +648,10 @@
     displayDialog.showModal();
   }
 
-  // ---------- Filter popup (capability / color) ----------
-  function capabilitiesInUse() {
-    const present = new Set(tasks.map((t) => t.capability || ''));
-    const ordered = CAPABILITY_OPTIONS.filter((c) => present.has(c));
+  // ---------- Filter popup (team / color) ----------
+  function teamsInUse() {
+    const present = new Set(tasks.map((t) => t.team || ''));
+    const ordered = TEAM_OPTIONS.filter((c) => present.has(c));
     if (present.has('')) ordered.push('');
     return ordered;
   }
@@ -674,31 +674,31 @@
   }
 
   function syncFilterButton() {
-    filterBtn.classList.toggle('active', filterCapabilities.size > 0 || filterPhases.size > 0 || filterColors.size > 0);
+    filterBtn.classList.toggle('active', filterTeams.size > 0 || filterPhases.size > 0 || filterColors.size > 0);
   }
 
   function renderFilterDialog() {
-    filterCapabilityListEl.innerHTML = '';
-    const capOptions = capabilitiesInUse();
-    if (!capOptions.length) {
+    filterTeamListEl.innerHTML = '';
+    const teamOptions = teamsInUse();
+    if (!teamOptions.length) {
       const empty = document.createElement('p');
       empty.className = 'filter-empty';
-      empty.textContent = 'No capabilities set yet.';
-      filterCapabilityListEl.appendChild(empty);
+      empty.textContent = 'No teams set yet.';
+      filterTeamListEl.appendChild(empty);
     }
-    capOptions.forEach((cap) => {
+    teamOptions.forEach((team) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'filter-option-btn';
-      btn.textContent = cap || 'None';
-      btn.classList.toggle('active', filterCapabilities.has(cap));
+      btn.textContent = team || 'None';
+      btn.classList.toggle('active', filterTeams.has(team));
       btn.addEventListener('click', () => {
-        toggleFilterValue(filterCapabilities, cap);
-        btn.classList.toggle('active', filterCapabilities.has(cap));
+        toggleFilterValue(filterTeams, team);
+        btn.classList.toggle('active', filterTeams.has(team));
         syncFilterButton();
         render();
       });
-      filterCapabilityListEl.appendChild(btn);
+      filterTeamListEl.appendChild(btn);
     });
 
     filterPhaseListEl.innerHTML = '';
@@ -756,7 +756,7 @@
   }
 
   function clearFilters() {
-    filterCapabilities.clear();
+    filterTeams.clear();
     filterPhases.clear();
     filterColors.clear();
     renderFilterDialog();
@@ -791,7 +791,7 @@
   // Tasks that end before the visible range starts have no remaining
   // duration to show, so they're left out of the timeline entirely.
   function taskPassesFilter(t) {
-    if (filterCapabilities.size && !filterCapabilities.has(t.capability || '')) return false;
+    if (filterTeams.size && !filterTeams.has(t.team || '')) return false;
     if (filterPhases.size && !filterPhases.has(PHASE_OPTIONS.includes(t.phase) ? t.phase : DEFAULT_PHASE)) return false;
     if (filterColors.size && !filterColors.has((t.color || '').toLowerCase())) return false;
     return true;
@@ -1140,7 +1140,7 @@
       durationWeeks: 1,
       order: tasks.length,
       color: '#5b8cff',
-      capability: '',
+      team: '',
       phase: DEFAULT_PHASE,
     };
     tasks.push(newTask);
@@ -1180,7 +1180,7 @@
     editStartInput.value = task.startDate;
     editDurationInput.value = task.durationWeeks;
     editColorInput.value = task.color || DEFAULT_COLOR_1;
-    editCapabilityInput.value = task.capability || '';
+    editTeamInput.value = task.team || '';
     editPhaseInput.value = task.phase || DEFAULT_PHASE;
     editDialog.showModal();
     editNameInput.focus();
@@ -1210,7 +1210,7 @@
     if (chosen) task.startDate = formatISODate(mondayOf(chosen));
     task.durationWeeks = Math.max(1, parseInt(editDurationInput.value, 10) || 1);
     task.color = editColorInput.value || '';
-    task.capability = editCapabilityInput.value || '';
+    task.team = editTeamInput.value || '';
     task.phase = editPhaseInput.value || DEFAULT_PHASE;
 
     render();
@@ -1389,7 +1389,7 @@
 
   function serializeCsv(list) {
     const sorted = [...list].sort((a, b) => a.order - b.order);
-    const columns = ['id', 'name', 'startDate', 'durationWeeks', 'order', 'color', 'capability', 'phase'];
+    const columns = ['id', 'name', 'startDate', 'durationWeeks', 'order', 'color', 'team', 'phase'];
     const lines = [columns.join(',')];
     sorted.forEach((t) => {
       lines.push(columns.map((col) => csvField(t[col])).join(','));

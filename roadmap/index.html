@@ -28,7 +28,7 @@
         <button type="button" id="zoom-in-btn" class="zoom-btn" title="Zoom in">+</button>
       </div>
       <button id="autosort-btn" class="btn" disabled>Auto Sort</button>
-      <button id="filter-btn" class="btn" title="Filter which task bars are shown, by capability and color">Filter</button>
+      <button id="filter-btn" class="btn" title="Filter which task bars are shown, by team and color">Filter</button>
       <button id="display-btn" class="btn" title="Change label, density, and theme display options">Display</button>
       <button id="cleanup-btn" class="btn" disabled title="Find tasks that have already finished and remove them">Data Clean Up</button>
       <button id="export-btn" class="btn" disabled title="Export the roadmap as JSON, CSV, PNG, or PDF">Export</button>
@@ -67,8 +67,8 @@
       <label>Duration (weeks)
         <input type="number" id="edit-duration" min="1" step="1" />
       </label>
-      <label>Capability
-        <select id="edit-capability">
+      <label>Team
+        <select id="edit-team">
           <option value="">—</option>
           <option value="Customer Service">Customer Service</option>
           <option value="Fulfilment">Fulfilment</option>
@@ -135,15 +135,15 @@
 
   <dialog id="filter-dialog" class="edit-dialog filter-dialog">
     <h2>Filter</h2>
-    <p class="filter-hint">Show tasks matching the selected capability, phase, and color. Nothing selected in a group shows all.</p>
+    <p class="filter-hint">Show tasks matching the selected team, phase, and color. Nothing selected in a group shows all.</p>
     <div class="filter-groups">
       <div class="filter-group">
-        <span class="display-group-label">Capability</span>
-        <div id="filter-capability-list" class="filter-capability-list"></div>
+        <span class="display-group-label">Team</span>
+        <div id="filter-team-list" class="filter-option-list"></div>
       </div>
       <div class="filter-group">
         <span class="display-group-label">Phase</span>
-        <div id="filter-phase-list" class="filter-capability-list"></div>
+        <div id="filter-phase-list" class="filter-option-list"></div>
       </div>
       <div class="filter-group">
         <span class="display-group-label">Color</span>

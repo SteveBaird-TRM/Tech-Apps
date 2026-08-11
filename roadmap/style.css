@@ -617,7 +617,7 @@ body {
   min-width: 0;
 }
 
-.filter-capability-list {
+.filter-option-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
