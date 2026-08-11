@@ -1,1072 +1,192 @@
-<title>DevOps Visualiser</title>
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Technology Web Apps Gateway</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <style>
-  :root {
-    color-scheme: light;
-    --bg: #ffffff;
-    --band-alt: #f8f8f8;
-    --ink: #1f1f1f;
-    --muted: #6b6b6b;
-    --card-border: #d9d9d9;
-
-    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
-    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: var(--font-body);
-    color: var(--ink);
-    background: var(--bg);
-  }
-
-  #toolbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 16px;
-    border-bottom: 1px solid #e5e5e5;
-    background: #fafafa;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  #toolbar h1 {
-    font-family: var(--font-display);
-    font-size: 15px;
-    font-weight: 400;
-    letter-spacing: 0.2px;
-    margin: 0 12px 0 0;
-    white-space: nowrap;
-  }
-  #toolbar button, #toolbar label.file-btn {
-    font-size: 13px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    background: #fff;
-    cursor: pointer;
-  }
-  #toolbar button:hover, #toolbar label.file-btn:hover { background: #f0f0f0; }
-  #otherToggleBtn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
-  #otherToggleBtn.active:hover { background: #1d4fd1; }
-  #fileName { font-size: 12px; color: var(--muted); }
-  .filter-wrap { display: none; align-items: center; gap: 6px; position: relative; }
-  .filter-wrap > label { font-size: 13px; color: var(--muted); }
-  #filterWrap { margin-left: auto; }
-  .filter-trigger-btn {
-    font-size: 13px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    background: #fff;
-    cursor: pointer;
-    min-width: 140px;
-    text-align: left;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .filter-trigger-btn:hover { background: #f0f0f0; }
-  .filter-trigger-btn .chevron { font-size: 10px; color: var(--muted); }
-  .filter-panel {
-    position: absolute;
-    top: calc(100% + 4px);
-    right: 0;
-    width: 300px;
-    max-height: 360px;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-    display: flex;
-    flex-direction: column;
-    z-index: 20;
-  }
-  .filter-panel[hidden] { display: none; }
-  .filter-panel-actions {
-    display: flex;
-    gap: 8px;
-    padding: 8px 10px;
-    border-bottom: 1px solid #eee;
-  }
-  .filter-panel-actions button {
-    font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    background: #fafafa;
-    cursor: pointer;
-  }
-  .filter-panel-actions button:hover { background: #f0f0f0; }
-  .filter-panel-search {
-    padding: 8px 10px;
-    border-bottom: 1px solid #eee;
-  }
-  .filter-search-input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 5px 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 13px;
-  }
-  .filter-panel-body { overflow-y: auto; padding: 4px 0; }
-  .filter-group-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    color: #888;
-    padding: 8px 10px 4px;
-    cursor: pointer;
-    user-select: none;
-  }
-  .filter-group-label:hover { color: #555; }
-  .filter-group-chevron {
-    display: inline-block;
-    font-size: 9px;
-    transition: transform 0.1s ease;
-  }
-  .filter-group.collapsed .filter-group-chevron { transform: rotate(-90deg); }
-  .filter-group.collapsed .filter-group-rows { display: none; }
-  .filter-option {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 5px 10px;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .filter-option:hover { background: #f5f5f5; }
-  .filter-option.search-hidden { display: none; }
-  .filter-option input { flex: none; }
-  .filter-option span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  #error {
-    display: none;
-    margin: 10px 16px;
-    padding: 10px 14px;
-    background: #fff3f3;
-    border: 1px solid #f3c2c2;
-    color: #a12525;
-    border-radius: 6px;
-    font-size: 13px;
-  }
-
-  #dropzone {
-    margin: 40px;
-    padding: 60px 20px;
-    border: 2px dashed #ccc;
-    border-radius: 10px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 14px;
-  }
-  #dropzone.dragover { border-color: #888; background: #f5f5f5; }
-
-  #diagramWrap { overflow: auto; }
-  #diagram { position: relative; }
-
-  .band {
-    position: absolute;
-    left: 0;
-    right: 0;
-  }
-
-  .col-header {
-    position: absolute;
-    top: 0;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: #444;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #ddd;
-  }
-
-  .card {
-    position: absolute;
-    background: #fff;
-    border: 1px solid var(--card-border);
-    border-left-width: 4px;
-    border-radius: 6px;
-    padding: 5px 10px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    overflow: hidden;
-  }
-  .card .row1 {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .card .row1 img { width: 13px; height: 13px; flex: none; }
-  .card .id { white-space: nowrap; color: inherit; text-decoration: none; }
-  .card .id:hover { text-decoration: underline; }
-  .card .title {
-    font-size: 13px;
-    font-weight: 600;
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  svg.connectors { position: absolute; top: 0; left: 0; overflow: visible; }
+    :root {
+        --ink: #1c1d2e;
+        --sub: #55576e;
+        --border: #d9dae8;
+        --accent: #4b3fae;
+        --accent-soft: #efedfb;
+    }
+    * { box-sizing: border-box; }
+    body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        margin: 0;
+        color: var(--ink);
+        background: #fff;
+    }
+    .banner {
+        position: relative;
+        width: 100%;
+        height: 300px;
+        overflow: hidden;
+    }
+    .banner img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .banner .title {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        color: #fff;
+        margin: 0;
+        font-size: 34px;
+        font-weight: 600;
+        text-align: center;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.45);
+    }
+    main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 40px 32px 20px;
+    }
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+    @media (max-width: 780px) {
+        .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px) {
+        .grid { grid-template-columns: 1fr; }
+        .banner .title { font-size: 24px; }
+    }
+    .card {
+        display: block;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        text-decoration: none;
+        color: inherit;
+        transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+    .card:hover {
+        box-shadow: 0 8px 24px rgba(28, 29, 46, 0.10);
+        border-color: var(--accent);
+        transform: translateY(-2px);
+    }
+    .icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: var(--accent-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+    }
+    .icon svg {
+        width: 20px;
+        height: 20px;
+        stroke: var(--accent);
+        fill: none;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .card h2 {
+        font-size: 16px;
+        margin: 0 0 6px;
+    }
+    .card p {
+        font-size: 14px;
+        color: var(--sub);
+        margin: 0;
+        line-height: 1.4;
+    }
+    footer {
+        max-width: 1040px;
+        margin: 20px auto 50px;
+        padding: 0 32px;
+        text-align: center;
+    }
+    footer p {
+        color: #236fa1;
+        font-style: italic;
+        font-size: 14px;
+    }
 </style>
+</head>
+<body>
 
-<div id="toolbar">
-  <h1>DevOps Visualiser</h1>
-  <label class="file-btn">
-    Choose CSV…
-    <input id="fileInput" type="file" accept=".csv,text/csv" style="display:none">
-  </label>
-  <span id="fileName"></span>
-  <div id="filterWrap" class="filter-wrap">
-    <label>Show connected to:</label>
-    <button id="filterBtn" type="button" class="filter-trigger-btn"><span id="filterBtnLabel">All</span><span class="chevron">▾</span></button>
-    <div id="filterPanel" class="filter-panel" hidden>
-      <div class="filter-panel-search">
-        <input type="text" id="filterSearchInput" class="filter-search-input" placeholder="Search…" autocomplete="off">
-      </div>
-      <div class="filter-panel-actions">
-        <button type="button" id="selectAllBtn">Select all</button>
-        <button type="button" id="selectNoneBtn">Select none</button>
-      </div>
-      <div class="filter-panel-body" id="filterPanelBody"></div>
+<div class="banner">
+    <img src="4x1-banner.jpg" alt="">
+    <h1 class="title">Technology Web Apps Gateway</h1>
+</div>
+
+<main>
+    <div class="grid">
+
+        <a class="card" href="/intake/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M4 12h4l2 3h4l2-3h4"/><path d="M4 12l1.5-7h13L20 12"/><path d="M4 12v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6"/></svg></span>
+            <h2>Intake</h2>
+            <p>Technology project intake pathway</p>
+        </a>
+
+        <a class="card" href="/roadmap/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg></span>
+            <h2>Technology Roadmap</h2>
+            <p>The Technology roadmap and planner</p>
+        </a>
+
+        <a class="card" href="/roadmap/releases.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="m8 14 2.5 2.5L15 12"/></svg></span>
+            <h2>Release Plan</h2>
+            <p>Feature releases by month</p>
+        </a>
+
+        <a class="card" href="/schedule-a/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></svg></span>
+            <h2>Schedule A</h2>
+            <p>Resource and capacity planner</p>
+        </a>
+
+        <a class="card" href="/comparison/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M8 3 4 7l4 4"/><path d="M4 7h13a3 3 0 0 1 3 3v1"/><path d="m16 21 4-4-4-4"/><path d="M20 17H7a3 3 0 0 1-3-3v-1"/></svg></span>
+            <h2>Compare</h2>
+            <p>Compares the roadmap to Schedule A</p>
+        </a>
+
+        <a class="card" href="/implementation-forum/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h16"/><path d="m17 9 3 3-3 3"/></svg></span>
+            <h2>Next / Plus 1</h2>
+            <p>Next and next+1 sprint overview</p>
+        </a>
+
+        <a class="card" href="/intake/intake-full-kpis.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M4 15a8 8 0 0 1 16 0"/><path d="M12 15 16 9"/><circle cx="12" cy="15" r="1"/><path d="M4 15h1"/><path d="M19 15h1"/></svg></span>
+            <h2>KPIs</h2>
+            <p>Delivery tram KPIs</p>
+        </a>
+
+        <a class="card" href="/gantt-chart/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M7 13h6"/><path d="M7 17h10"/></svg></span>
+            <h2>Gantt Chart Maker</h2>
+            <p>Gantt chart visualisation. Save your project locally.</p>
+        </a>
+
+        <a class="card" href="/devops-visualiser/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><path d="M12 9v3"/><path d="M6 15v-2a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2"/></svg></span>
+            <h2>DevOps Visualiser</h2>
+            <p>Shows hierarchy of DevOps tickets</p>
+        </a>
+
     </div>
-  </div>
-  <div id="tagFilterWrap" class="filter-wrap">
-    <label>Tags:</label>
-    <button id="tagFilterBtn" type="button" class="filter-trigger-btn"><span id="tagFilterBtnLabel">All</span><span class="chevron">▾</span></button>
-    <div id="tagFilterPanel" class="filter-panel" hidden>
-      <div class="filter-panel-actions">
-        <button type="button" id="tagSelectAllBtn">Select all</button>
-        <button type="button" id="tagSelectNoneBtn">Select none</button>
-      </div>
-      <div class="filter-panel-body" id="tagFilterPanelBody"></div>
-    </div>
-  </div>
-  <button id="otherToggleBtn" type="button">Hide Other</button>
-  <button id="exportHtmlBtn" type="button">Export HTML…</button>
-</div>
+</main>
 
-<div id="error"></div>
+<footer>
+    <p>Most apps require a password</p>
+</footer>
 
-<div id="dropzone">
-  Drop a CSV file here, or use "Choose CSV…" above.<br>
-  Expected columns: <strong>ID</strong>, <strong>Work Item Type</strong>, <strong>Title</strong>, <strong>State</strong> (optional), <strong>Parent</strong>, <strong>Tags</strong> (optional, semicolon-separated).
-</div>
-
-<div id="diagramWrap" style="display:none">
-  <div id="diagram"></div>
-</div>
-
-<script>
-(function () {
-  "use strict";
-
-  // ---- Configuration -------------------------------------------------
-
-  var CARD_WIDTH = 210;
-  var CARD_HEIGHT = 44;
-  var ROW_GAP = 16;
-  var ROW_HEIGHT = CARD_HEIGHT + ROW_GAP;
-  var COLUMN_GAP = 56;
-  var COLUMN_WIDTH = CARD_WIDTH + COLUMN_GAP;
-  var LEFT_MARGIN = 24;
-  var TOP_MARGIN = 40; // header row height
-  var GROUP_PADDING = 14; // top/bottom padding inside each root-tree band
-
-  // Ordered column slots. A ticket's Work Item Type is matched (case-insensitive)
-  // against `types`; first slot that matches wins. Anything unmatched falls
-  // into a trailing "OTHER" column created on demand.
-  var COLUMN_SLOTS = [
-    { label: "EPIC", types: { "epic": "#ff7b00" } },
-    { label: "FEATURE", types: { "feature": "#773b93" } },
-    { label: "ELEMENT", types: {
-        "pbi": "#73accc",
-        "product backlog item": "#73accc",
-        "user story": "#73accc",
-        "bug": "#d40000",
-        "prebuild": "#73accc"
-      } },
-    { label: "TASK", types: {
-        "task": "#fbbc3d",
-        "sprint": "#fbbc3d",
-        "spike": "#fbbc3d",
-        "be task": "#fbbc3d",
-        "fe task": "#fbbc3d",
-        "cms task": "#fbbc3d",
-        "data": "#fbbc3d",
-        "ssqp": "#fbbc3d",
-        "design": "#ec008c",
-        "cr": "#ec008c",
-        "change request": "#ec008c"
-      } }
-  ];
-  var DEFAULT_COLOR = "#808080";
-
-  // Inlined as data URIs (rather than referencing the .svg files by relative
-  // path) so a card's icon still renders when the diagram is exported as a
-  // standalone HTML file and opened somewhere the original files aren't.
-  var ICON_NEW = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyMi4wLjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4KCjxzdmcKICAgdmVyc2lvbj0iMS4xIgogICBpZD0iaWNvbiIKICAgeD0iMHB4IgogICB5PSIwcHgiCiAgIHdpZHRoPSIyNHB4IgogICBoZWlnaHQ9IjI0cHgiCiAgIHZpZXdCb3g9IjAgMCAyNCAyNCIKICAgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgMjQgMjQiCiAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgIHNvZGlwb2RpOmRvY25hbWU9ImNpcmNsZS1vdXRsaW5lLnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4zLjIgKDA5MWUyMGUsIDIwMjMtMTEtMjUsIGN1c3RvbSkiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnMKICAgaWQ9ImRlZnMxIiAvPjxzb2RpcG9kaTpuYW1lZHZpZXcKICAgaWQ9Im5hbWVkdmlldzEiCiAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgYm9yZGVyY29sb3I9IiMwMDAwMDAiCiAgIGJvcmRlcm9wYWNpdHk9IjAuMjUiCiAgIGlua3NjYXBlOnNob3dwYWdlc2hhZG93PSIyIgogICBpbmtzY2FwZTpwYWdlb3BhY2l0eT0iMC4wIgogICBpbmtzY2FwZTpwYWdlY2hlY2tlcmJvYXJkPSIwIgogICBpbmtzY2FwZTpkZXNrY29sb3I9IiNkMWQxZDEiCiAgIGlua3NjYXBlOnpvb209IjM0LjIwODMzMyIKICAgaW5rc2NhcGU6Y3g9IjEyIgogICBpbmtzY2FwZTpjeT0iMTIiCiAgIGlua3NjYXBlOndpbmRvdy13aWR0aD0iMTkyMCIKICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iMTAxNyIKICAgaW5rc2NhcGU6d2luZG93LXg9Ii04IgogICBpbmtzY2FwZTp3aW5kb3cteT0iLTgiCiAgIGlua3NjYXBlOndpbmRvdy1tYXhpbWl6ZWQ9IjEiCiAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9Imljb24iIC8+CjxwYXRoCiAgIGlkPSJDaXJjbGVfT3V0bGluZV85XyIKICAgZD0iTTEyLDJjNS41LDAsMTAsNC41LDEwLDEwcy00LjUsMTAtMTAsMTBTMiwxNy41LDIsMTJTNi41LDIsMTIsMnogTTEyLDRjLTQuNCwwLTgsMy42LTgsOHMzLjYsOCw4LDggIHM4LTMuNiw4LThTMTYuNCw0LDEyLDR6IgogICBzdHlsZT0iZmlsbDojMzMzMzMzIiAvPgo8L3N2Zz4K";
-  var ICON_IN_PROGRESS = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyMi4wLjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4KCjxzdmcKICAgdmVyc2lvbj0iMS4xIgogICBpZD0iaWNvbiIKICAgeD0iMHB4IgogICB5PSIwcHgiCiAgIHdpZHRoPSIyNHB4IgogICBoZWlnaHQ9IjI0cHgiCiAgIHZpZXdCb3g9IjAgMCAyNCAyNCIKICAgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgMjQgMjQiCiAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgIHNvZGlwb2RpOmRvY25hbWU9ImNpcmNsZS00LnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4zLjIgKDA5MWUyMGUsIDIwMjMtMTEtMjUsIGN1c3RvbSkiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnMKICAgaWQ9ImRlZnMxIiAvPjxzb2RpcG9kaTpuYW1lZHZpZXcKICAgaWQ9Im5hbWVkdmlldzEiCiAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgYm9yZGVyY29sb3I9IiMwMDAwMDAiCiAgIGJvcmRlcm9wYWNpdHk9IjAuMjUiCiAgIGlua3NjYXBlOnNob3dwYWdlc2hhZG93PSIyIgogICBpbmtzY2FwZTpwYWdlb3BhY2l0eT0iMC4wIgogICBpbmtzY2FwZTpwYWdlY2hlY2tlcmJvYXJkPSIwIgogICBpbmtzY2FwZTpkZXNrY29sb3I9IiNkMWQxZDEiCiAgIGlua3NjYXBlOnpvb209IjM0LjIwODMzMyIKICAgaW5rc2NhcGU6Y3g9IjEyIgogICBpbmtzY2FwZTpjeT0iMTIiCiAgIGlua3NjYXBlOndpbmRvdy13aWR0aD0iMTkyMCIKICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iMTAxNyIKICAgaW5rc2NhcGU6d2luZG93LXg9Ii04IgogICBpbmtzY2FwZTp3aW5kb3cteT0iLTgiCiAgIGlua3NjYXBlOndpbmRvdy1tYXhpbWl6ZWQ9IjEiCiAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9Imljb24iIC8+CjxnCiAgIGlkPSJnMSIKICAgc3R5bGU9ImZpbGw6IzMzMzMzMyI+Cgk8cGF0aAogICBpZD0iQ2lyY2xlX091dGxpbmVfNV8iCiAgIGQ9Ik0xMiwyYzUuNSwwLDEwLDQuNSwxMCwxMHMtNC41LDEwLTEwLDEwUzIsMTcuNSwyLDEyUzYuNSwyLDEyLDJ6IE0xMiw0Yy00LjQsMC04LDMuNi04LDhzMy42LDgsOCw4ICAgczgtMy42LDgtOFMxNi40LDQsMTIsNHoiCiAgIHN0eWxlPSJmaWxsOiMzMzMzMzMiIC8+Cgk8cGF0aAogICBkPSJNMTYuOSw3LjFDMTUuNyw1LjgsMTMuOSw1LDEyLDV2N3Y3YzEuOSwwLDMuNy0wLjgsNC45LTIuMXMyLjEtMywyLjEtNC45UzE4LjIsOC4zLDE2LjksNy4xeiIKICAgaWQ9InBhdGgxIgogICBzdHlsZT0iZmlsbDojMzMzMzMzIiAvPgo8L2c+Cjwvc3ZnPgo=";
-  var ICON_DONE = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyMi4wLjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4KCjxzdmcKICAgdmVyc2lvbj0iMS4xIgogICBpZD0iTGF5ZXJfMSIKICAgeD0iMHB4IgogICB5PSIwcHgiCiAgIHdpZHRoPSIyNHB4IgogICBoZWlnaHQ9IjI0cHgiCiAgIHZpZXdCb3g9IjAgMCAyNCAyNCIKICAgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgMjQgMjQiCiAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgIHNvZGlwb2RpOmRvY25hbWU9ImNpcmNsZS04LnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4zLjIgKDA5MWUyMGUsIDIwMjMtMTEtMjUsIGN1c3RvbSkiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnMKICAgaWQ9ImRlZnMxIiAvPjxzb2RpcG9kaTpuYW1lZHZpZXcKICAgaWQ9Im5hbWVkdmlldzEiCiAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgYm9yZGVyY29sb3I9IiMwMDAwMDAiCiAgIGJvcmRlcm9wYWNpdHk9IjAuMjUiCiAgIGlua3NjYXBlOnNob3dwYWdlc2hhZG93PSIyIgogICBpbmtzY2FwZTpwYWdlb3BhY2l0eT0iMC4wIgogICBpbmtzY2FwZTpwYWdlY2hlY2tlcmJvYXJkPSIwIgogICBpbmtzY2FwZTpkZXNrY29sb3I9IiNkMWQxZDEiCiAgIGlua3NjYXBlOnpvb209IjM0LjIwODMzMyIKICAgaW5rc2NhcGU6Y3g9IjEyIgogICBpbmtzY2FwZTpjeT0iMTIiCiAgIGlua3NjYXBlOndpbmRvdy13aWR0aD0iMTkyMCIKICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iMTAxNyIKICAgaW5rc2NhcGU6d2luZG93LXg9Ii04IgogICBpbmtzY2FwZTp3aW5kb3cteT0iLTgiCiAgIGlua3NjYXBlOndpbmRvdy1tYXhpbWl6ZWQ9IjEiCiAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9IkxheWVyXzEiIC8+CjxnCiAgIGlkPSJnMSIKICAgc3R5bGU9ImZpbGw6IzMzMzMzMyI+Cgk8cGF0aAogICBpZD0iQ2lyY2xlX091dGxpbmVfMV8iCiAgIGQ9Ik0xMiwyYzUuNSwwLDEwLDQuNSwxMCwxMHMtNC41LDEwLTEwLDEwUzIsMTcuNSwyLDEyUzYuNSwyLDEyLDJ6IE0xMiw0Yy00LjQsMC04LDMuNi04LDhzMy42LDgsOCw4ICAgczgtMy42LDgtOFMxNi40LDQsMTIsNHoiCiAgIHN0eWxlPSJmaWxsOiMzMzMzMzMiIC8+Cgk8cGF0aAogICBkPSJNMTIsMTljLTEuOSwwLTMuNy0wLjgtNC45LTIuMVM1LDEzLjksNSwxMnMwLjgtMy43LDIuMS00LjlTMTAuMSw1LDEyLDVzMy43LDAuOCw0LjksMi4xczIuMSwzLDIuMSw0LjlzLTAuOCwzLjctMi4xLDQuOSAgIFMxMy45LDE5LDEyLDE5eiIKICAgaWQ9InBhdGgxIgogICBzdHlsZT0iZmlsbDojMzMzMzMzIiAvPgo8L2c+Cjwvc3ZnPgo=";
-  var ICON_BLOCKED = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyMi4wLjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4KCjxzdmcKICAgdmVyc2lvbj0iMS4xIgogICBpZD0iaWNvbiIKICAgeD0iMHB4IgogICB5PSIwcHgiCiAgIHdpZHRoPSIyNHB4IgogICBoZWlnaHQ9IjI0cHgiCiAgIHZpZXdCb3g9IjAgMCAyNCAyNCIKICAgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgMjQgMjQiCiAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgIHNvZGlwb2RpOmRvY25hbWU9ImNpcmNsZS0wLnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4zLjIgKDA5MWUyMGUsIDIwMjMtMTEtMjUsIGN1c3RvbSkiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnMKICAgaWQ9ImRlZnMxIiAvPjxzb2RpcG9kaTpuYW1lZHZpZXcKICAgaWQ9Im5hbWVkdmlldzEiCiAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgYm9yZGVyY29sb3I9IiMwMDAwMDAiCiAgIGJvcmRlcm9wYWNpdHk9IjAuMjUiCiAgIGlua3NjYXBlOnNob3dwYWdlc2hhZG93PSIyIgogICBpbmtzY2FwZTpwYWdlb3BhY2l0eT0iMC4wIgogICBpbmtzY2FwZTpwYWdlY2hlY2tlcmJvYXJkPSIwIgogICBpbmtzY2FwZTpkZXNrY29sb3I9IiNkMWQxZDEiCiAgIGlua3NjYXBlOnpvb209IjM0LjIwODMzMyIKICAgaW5rc2NhcGU6Y3g9IjEyIgogICBpbmtzY2FwZTpjeT0iMTEuOTcwNzY3IgogICBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjE5MjAiCiAgIGlua3NjYXBlOndpbmRvdy1oZWlnaHQ9IjEwMTciCiAgIGlua3NjYXBlOndpbmRvdy14PSItOCIKICAgaW5rc2NhcGU6d2luZG93LXk9Ii04IgogICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIgogICBpbmtzY2FwZTpjdXJyZW50LWxheWVyPSJpY29uIiAvPgo8cGF0aAogICBpZD0iQ2lyY2xlX091dGxpbmVfOV8iCiAgIGQ9Ik0xMiwyYzUuNSwwLDEwLDQuNSwxMCwxMHMtNC41LDEwLTEwLDEwUzIsMTcuNSwyLDEyUzYuNSwyLDEyLDJ6IE0xMiw0Yy00LjQsMC04LDMuNi04LDhzMy42LDgsOCw4ICBzOC0zLjYsOC04UzE2LjQsNCwxMiw0eiIKICAgc3R5bGU9ImZpbGw6I2Q0MDAwMDtmaWxsLW9wYWNpdHk6MSIgLz4KPHJlY3QKICAgc3R5bGU9ImZpbGw6I2Q0MDAwMDtmaWxsLW9wYWNpdHk6MTtzdHJva2Utd2lkdGg6MTtwYWludC1vcmRlcjptYXJrZXJzIGZpbGwgc3Ryb2tlIgogICBpZD0icmVjdDEiCiAgIHdpZHRoPSIxOCIKICAgaGVpZ2h0PSIyIgogICB4PSItOSIKICAgeT0iMTUuOTcwNTYzIgogICByeD0iMS4yNjY3NDg0IgogICByeT0iMS4yNDczMzk3IgogICB0cmFuc2Zvcm09InJvdGF0ZSgtNDUpIiAvPjwvc3ZnPgo=";
-
-  var STATUS_ICONS = {
-    "new": ICON_NEW,
-    "done": ICON_DONE,
-    "blocked": ICON_BLOCKED
-  };
-  var DEFAULT_ICON = ICON_IN_PROGRESS;
-
-  // ---- DOM refs --------------------------------------------------------
-
-  var fileInput = document.getElementById("fileInput");
-  var fileNameEl = document.getElementById("fileName");
-  var errorEl = document.getElementById("error");
-  var dropzone = document.getElementById("dropzone");
-  var diagramWrap = document.getElementById("diagramWrap");
-  var diagram = document.getElementById("diagram");
-  var filterWrap = document.getElementById("filterWrap");
-  var filterBtn = document.getElementById("filterBtn");
-  var filterBtnLabel = document.getElementById("filterBtnLabel");
-  var filterPanel = document.getElementById("filterPanel");
-  var filterPanelBody = document.getElementById("filterPanelBody");
-  var filterSearchInput = document.getElementById("filterSearchInput");
-  var selectAllBtn = document.getElementById("selectAllBtn");
-  var selectNoneBtn = document.getElementById("selectNoneBtn");
-  var otherToggleBtn = document.getElementById("otherToggleBtn");
-  var tagFilterWrap = document.getElementById("tagFilterWrap");
-  var tagFilterBtn = document.getElementById("tagFilterBtn");
-  var tagFilterBtnLabel = document.getElementById("tagFilterBtnLabel");
-  var tagFilterPanel = document.getElementById("tagFilterPanel");
-  var tagFilterPanelBody = document.getElementById("tagFilterPanelBody");
-  var tagSelectAllBtn = document.getElementById("tagSelectAllBtn");
-  var tagSelectNoneBtn = document.getElementById("tagSelectNoneBtn");
-  var exportHtmlBtn = document.getElementById("exportHtmlBtn");
-
-  // Full (unfiltered) graph for the currently loaded file — used to populate
-  // the filter panel and to walk ancestors/descendants regardless of
-  // whatever subset is currently on screen.
-  var allRecords = [];
-  var fullById = {};
-  var fullChildrenOf = {};
-  var filterableItems = []; // Epics + Features available in the current file
-  var selectedFilterIds = new Set(); // currently checked items (default: all)
-  var filterGroupCollapsed = {}; // group label -> collapsed?, persists across file loads
-  var otherHidden = false; // Hide Other toggle — excludes unmatched work item types
-  var NO_TAGS_KEY = "__NO_TAGS__"; // sentinel selection key for untagged tickets
-  var allTags = []; // distinct tag values in the current file, sorted
-  var hasUntaggedTag = false; // whether any ticket in the current file has no tags
-  var selectedTags = new Set(); // currently checked tags (default: all, including "no tags")
-
-  otherToggleBtn.addEventListener("click", function () {
-    if (!allRecords.length) return;
-    otherHidden = !otherHidden;
-    otherToggleBtn.classList.toggle("active", otherHidden);
-    otherToggleBtn.textContent = otherHidden ? "Show Other" : "Hide Other";
-    applyFilter();
-  });
-
-  exportHtmlBtn.addEventListener("click", exportDiagramAsHtml);
-
-  filterBtn.addEventListener("click", function (e) {
-    e.stopPropagation();
-    filterPanel.hidden = !filterPanel.hidden;
-  });
-  document.addEventListener("click", function (e) {
-    if (!filterPanel.hidden && !filterWrap.contains(e.target)) filterPanel.hidden = true;
-  });
-  selectAllBtn.addEventListener("click", function () {
-    filterableItems.forEach(function (t) { selectedFilterIds.add(t.id); });
-    syncCheckboxes();
-    updateFilterButtonLabel();
-    applyFilter();
-  });
-  selectNoneBtn.addEventListener("click", function () {
-    selectedFilterIds.clear();
-    syncCheckboxes();
-    updateFilterButtonLabel();
-    applyFilter();
-  });
-  filterSearchInput.addEventListener("input", applyFilterSearch);
-  filterSearchInput.addEventListener("click", function (e) { e.stopPropagation(); });
-
-  tagFilterBtn.addEventListener("click", function (e) {
-    e.stopPropagation();
-    tagFilterPanel.hidden = !tagFilterPanel.hidden;
-  });
-  document.addEventListener("click", function (e) {
-    if (!tagFilterPanel.hidden && !tagFilterWrap.contains(e.target)) tagFilterPanel.hidden = true;
-  });
-  tagSelectAllBtn.addEventListener("click", function () {
-    allTags.forEach(function (tag) { selectedTags.add(tag); });
-    if (hasUntaggedTag) selectedTags.add(NO_TAGS_KEY);
-    syncTagCheckboxes();
-    updateTagFilterButtonLabel();
-    applyFilter();
-  });
-  tagSelectNoneBtn.addEventListener("click", function () {
-    selectedTags.clear();
-    syncTagCheckboxes();
-    updateTagFilterButtonLabel();
-    applyFilter();
-  });
-
-  fileInput.addEventListener("change", function (e) {
-    var f = e.target.files && e.target.files[0];
-    if (f) loadFile(f);
-  });
-
-  ["dragenter", "dragover"].forEach(function (evt) {
-    dropzone.addEventListener(evt, function (e) {
-      e.preventDefault();
-      dropzone.classList.add("dragover");
-    });
-  });
-  ["dragleave", "drop"].forEach(function (evt) {
-    dropzone.addEventListener(evt, function (e) {
-      e.preventDefault();
-      dropzone.classList.remove("dragover");
-    });
-  });
-  dropzone.addEventListener("drop", function (e) {
-    var f = e.dataTransfer.files && e.dataTransfer.files[0];
-    if (f) loadFile(f);
-  });
-
-  function loadFile(file) {
-    fileNameEl.textContent = file.name;
-    var reader = new FileReader();
-    reader.onload = function () { renderFromText(reader.result); };
-    reader.onerror = function () { showError("Could not read file: " + file.name); };
-    reader.readAsText(file);
-  }
-
-  function showError(msg) {
-    errorEl.textContent = msg;
-    errorEl.style.display = "block";
-  }
-  function clearError() {
-    errorEl.style.display = "none";
-    errorEl.textContent = "";
-  }
-
-  // ---- CSV parsing -------------------------------------------------
-
-  function parseCSV(text) {
-    var rows = [];
-    var row = [];
-    var field = "";
-    var inQuotes = false;
-    text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-    for (var i = 0; i < text.length; i++) {
-      var c = text[i];
-      if (inQuotes) {
-        if (c === '"') {
-          if (text[i + 1] === '"') { field += '"'; i++; }
-          else inQuotes = false;
-        } else field += c;
-      } else {
-        if (c === '"') inQuotes = true;
-        else if (c === ",") { row.push(field); field = ""; }
-        else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
-        else field += c;
-      }
-    }
-    if (field.length || row.length) { row.push(field); rows.push(row); }
-    // Drop trailing blank rows
-    rows = rows.filter(function (r) { return !(r.length === 1 && r[0] === ""); });
-    if (!rows.length) return [];
-
-    var headers = rows[0].map(function (h) { return h.trim().toLowerCase(); });
-    function pick(obj, names) {
-      for (var n = 0; n < names.length; n++) {
-        var idx = headers.indexOf(names[n]);
-        if (idx !== -1) return obj[idx];
-      }
-      return "";
-    }
-
-    var records = [];
-    for (var r = 1; r < rows.length; r++) {
-      var cols = rows[r];
-      if (cols.length === 1 && cols[0].trim() === "") continue;
-      var tagsRaw = String(pick(cols, ["tags"])).trim();
-      var tags = tagsRaw ? tagsRaw.split(";").map(function (s) { return s.trim(); }).filter(function (s) { return s.length; }) : [];
-      records.push({
-        id: String(pick(cols, ["id"])).trim(),
-        type: String(pick(cols, ["work item type", "type"])).trim(),
-        title: String(pick(cols, ["title"])).trim(),
-        state: String(pick(cols, ["state", "status"])).trim(),
-        parent: String(pick(cols, ["parent"])).trim(),
-        tags: tags
-      });
-    }
-    return records;
-  }
-
-  // ---- Column / icon lookup -------------------------------------------------
-
-  function resolveColumn(type) {
-    var key = (type || "").trim().toLowerCase();
-    for (var i = 0; i < COLUMN_SLOTS.length; i++) {
-      if (COLUMN_SLOTS[i].types[key]) {
-        return { index: i, label: COLUMN_SLOTS[i].label, color: COLUMN_SLOTS[i].types[key] };
-      }
-    }
-    return { index: -1, label: "OTHER", color: DEFAULT_COLOR };
-  }
-
-  function resolveIcon(state) {
-    var key = (state || "").trim().toLowerCase();
-    return STATUS_ICONS[key] || DEFAULT_ICON;
-  }
-
-  // ---- Filtering -------------------------------------------------
-
-  // Builds a lookup + children map across the WHOLE loaded file (not
-  // whatever subset is currently rendered), so the filter can always find
-  // the full ancestor/descendant chain for a selected Epic or Feature.
-  function indexFull(records) {
-    fullById = {};
-    records.forEach(function (t) { if (t.id) fullById[t.id] = t; });
-    fullChildrenOf = {};
-    records.forEach(function (t) {
-      if (t.parent && fullById[t.parent] && t.parent !== t.id) {
-        (fullChildrenOf[t.parent] = fullChildrenOf[t.parent] || []).push(t);
-      }
-    });
-  }
-
-  function populateFilter(records) {
-    var epics = [];
-    var features = [];
-    var noParent = [];
-    records.forEach(function (t) {
-      var idx = resolveColumn(t.type).index;
-      if (idx === 0) epics.push(t);
-      else if (idx === 1) features.push(t);
-      else if (!t.parent || !fullById[t.parent]) noParent.push(t);
-    });
-    function byNumericId(a, b) { return a.id.localeCompare(b.id, undefined, { numeric: true }); }
-    epics.sort(byNumericId);
-    features.sort(byNumericId);
-    noParent.sort(byNumericId);
-
-    filterableItems = epics.concat(features).concat(noParent);
-    selectedFilterIds = new Set(filterableItems.map(function (t) { return t.id; })); // default: all selected
-
-    filterSearchInput.value = "";
-    filterPanelBody.innerHTML = "";
-    function addGroup(label, items, showType) {
-      if (!items.length) return;
-      if (!(label in filterGroupCollapsed)) filterGroupCollapsed[label] = false;
-
-      var group = document.createElement("div");
-      group.className = "filter-group";
-      group.dataset.groupKey = label;
-
-      var heading = document.createElement("div");
-      heading.className = "filter-group-label";
-      var chevron = document.createElement("span");
-      chevron.className = "filter-group-chevron";
-      chevron.textContent = "▾";
-      var text = document.createElement("span");
-      text.textContent = label + " (" + items.length + ")";
-      heading.appendChild(chevron);
-      heading.appendChild(text);
-      heading.addEventListener("click", function () {
-        filterGroupCollapsed[label] = !filterGroupCollapsed[label];
-        applyFilterSearch();
-      });
-      group.appendChild(heading);
-
-      var rows = document.createElement("div");
-      rows.className = "filter-group-rows";
-      items.forEach(function (t) {
-        var row = document.createElement("label");
-        row.className = "filter-option";
-        row.dataset.search = (t.id + " " + t.title).toLowerCase();
-        var cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.checked = true;
-        cb.dataset.id = t.id;
-        cb.addEventListener("change", function () {
-          if (cb.checked) selectedFilterIds.add(t.id);
-          else selectedFilterIds.delete(t.id);
-          updateFilterButtonLabel();
-          applyFilter();
-        });
-        var span = document.createElement("span");
-        span.textContent = t.id + " — " + t.title + (showType ? " (" + t.type + ")" : "");
-        row.appendChild(cb);
-        row.appendChild(span);
-        rows.appendChild(row);
-      });
-      group.appendChild(rows);
-      filterPanelBody.appendChild(group);
-    }
-    addGroup("Epics", epics);
-    addGroup("Features", features);
-    addGroup("No Parent", noParent, true);
-
-    applyFilterSearch();
-    updateFilterButtonLabel();
-    filterWrap.style.display = filterableItems.length ? "flex" : "none";
-  }
-
-  // Applies the search box text to row/group visibility, and falls back to
-  // each group's collapsed state when there's no active search term.
-  function applyFilterSearch() {
-    var term = filterSearchInput.value.trim().toLowerCase();
-    var groups = filterPanelBody.querySelectorAll(".filter-group");
-    groups.forEach(function (group) {
-      var anyMatch = false;
-      var rows = group.querySelectorAll(".filter-option");
-      rows.forEach(function (row) {
-        var match = !term || row.dataset.search.indexOf(term) !== -1;
-        row.classList.toggle("search-hidden", !match);
-        if (match) anyMatch = true;
-      });
-      group.style.display = anyMatch ? "" : "none";
-      group.classList.toggle("collapsed", term ? false : !!filterGroupCollapsed[group.dataset.groupKey]);
-    });
-  }
-
-  function syncCheckboxes() {
-    var boxes = filterPanelBody.querySelectorAll("input[type=checkbox]");
-    for (var i = 0; i < boxes.length; i++) {
-      boxes[i].checked = selectedFilterIds.has(boxes[i].dataset.id);
-    }
-  }
-
-  function updateFilterButtonLabel() {
-    var total = filterableItems.length;
-    var n = selectedFilterIds.size;
-    if (n === total) filterBtnLabel.textContent = "All";
-    else if (n === 0) filterBtnLabel.textContent = "None";
-    else filterBtnLabel.textContent = n + " selected";
-  }
-
-  // ---- Tag filtering -------------------------------------------------
-
-  function populateTagFilter(records) {
-    var tagSet = {};
-    hasUntaggedTag = false;
-    records.forEach(function (t) {
-      if (t.tags.length) t.tags.forEach(function (tag) { tagSet[tag] = true; });
-      else hasUntaggedTag = true;
-    });
-    allTags = Object.keys(tagSet).sort(function (a, b) { return a.localeCompare(b, undefined, { sensitivity: "base" }); });
-    selectedTags = new Set(allTags);
-    if (hasUntaggedTag) selectedTags.add(NO_TAGS_KEY);
-
-    tagFilterPanelBody.innerHTML = "";
-    function addTagOption(label, key) {
-      var row = document.createElement("label");
-      row.className = "filter-option";
-      var cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = true;
-      cb.dataset.tag = key;
-      cb.addEventListener("change", function () {
-        if (cb.checked) selectedTags.add(key);
-        else selectedTags.delete(key);
-        updateTagFilterButtonLabel();
-        applyFilter();
-      });
-      var span = document.createElement("span");
-      span.textContent = label;
-      row.appendChild(cb);
-      row.appendChild(span);
-      tagFilterPanelBody.appendChild(row);
-    }
-    allTags.forEach(function (tag) { addTagOption(tag, tag); });
-    if (hasUntaggedTag) addTagOption("(No tags)", NO_TAGS_KEY);
-
-    updateTagFilterButtonLabel();
-    tagFilterWrap.style.display = (allTags.length || hasUntaggedTag) ? "flex" : "none";
-  }
-
-  function syncTagCheckboxes() {
-    var boxes = tagFilterPanelBody.querySelectorAll("input[type=checkbox]");
-    for (var i = 0; i < boxes.length; i++) {
-      boxes[i].checked = selectedTags.has(boxes[i].dataset.tag);
-    }
-  }
-
-  function updateTagFilterButtonLabel() {
-    var total = allTags.length + (hasUntaggedTag ? 1 : 0);
-    var n = selectedTags.size;
-    if (n === total) tagFilterBtnLabel.textContent = "All";
-    else if (n === 0) tagFilterBtnLabel.textContent = "None";
-    else tagFilterBtnLabel.textContent = n + " selected";
-  }
-
-  function ticketMatchesTagFilter(t) {
-    var total = allTags.length + (hasUntaggedTag ? 1 : 0);
-    if (total === 0 || selectedTags.size === total) return true;
-    if (!t.tags.length) return selectedTags.has(NO_TAGS_KEY);
-    return t.tags.some(function (tag) { return selectedTags.has(tag); });
-  }
-
-  // All descendants of `id`, plus its ancestor chain (e.g. a Feature's
-  // parent Epic) so the filtered view still shows how the selection fits
-  // into the wider hierarchy.
-  function connectedIds(id) {
-    var result = {};
-    (function walkDown(nodeId) {
-      if (result[nodeId]) return;
-      result[nodeId] = true;
-      (fullChildrenOf[nodeId] || []).forEach(function (c) { walkDown(c.id); });
-    })(id);
-
-    var cur = fullById[id];
-    while (cur && cur.parent && fullById[cur.parent]) {
-      result[cur.parent] = true;
-      cur = fullById[cur.parent];
-    }
-    return result;
-  }
-
-  function applyFilter() {
-    var total = filterableItems.length;
-    var records;
-    if (total === 0 || selectedFilterIds.size === total) {
-      records = allRecords;
-    } else if (selectedFilterIds.size === 0) {
-      renderEmptyState();
-      return;
-    } else {
-      var ids = {};
-      selectedFilterIds.forEach(function (id) {
-        var c = connectedIds(id);
-        Object.keys(c).forEach(function (k) { ids[k] = true; });
-      });
-      records = allRecords.filter(function (t) { return ids[t.id]; });
-    }
-    if (otherHidden) {
-      records = records.filter(function (t) { return resolveColumn(t.type).index !== -1; });
-    }
-    records = records.filter(ticketMatchesTagFilter);
-    renderDiagram(records);
-  }
-
-  function renderEmptyState() {
-    diagram.innerHTML = "";
-    diagram.style.width = "";
-    diagram.style.height = "";
-    var msg = document.createElement("div");
-    msg.style.margin = "40px";
-    msg.style.color = "#888";
-    msg.style.fontSize = "14px";
-    msg.textContent = "No Epics or Features selected — check at least one in the filter, or click \"Select all\".";
-    diagram.appendChild(msg);
-    dropzone.style.display = "none";
-    diagramWrap.style.display = "block";
-  }
-
-  // ---- Render -------------------------------------------------
-
-  function renderFromText(text) {
-    clearError();
-    var records;
-    try {
-      records = parseCSV(text);
-    } catch (e) {
-      showError("Failed to parse CSV: " + e.message);
-      return;
-    }
-    if (!records.length) {
-      showError("No data rows found in this CSV.");
-      return;
-    }
-
-    var seen = {};
-    var duplicates = [];
-    records.forEach(function (t) {
-      if (!t.id) return;
-      if (seen[t.id]) duplicates.push(t.id);
-      seen[t.id] = true;
-    });
-    if (duplicates.length) {
-      showError("Warning: duplicate ticket IDs found (" + duplicates.join(", ") + "). Later rows overwrite earlier ones in lookups.");
-    }
-
-    allRecords = records;
-    indexFull(records);
-    populateFilter(records);
-    populateTagFilter(records);
-    applyFilter();
-  }
-
-  function renderDiagram(records) {
-    var byId = {};
-    records.forEach(function (t) {
-      if (t.id) byId[t.id] = t;
-    });
-
-    // children map — a ticket only counts as a "child" if its parent resolves
-    // to a ticket that's actually in this file. Otherwise it becomes a root
-    // of its own tree (robust against typos / partial exports).
-    var childrenOf = {};
-    var roots = [];
-    records.forEach(function (t) {
-      if (t.parent && byId[t.parent] && t.parent !== t.id) {
-        (childrenOf[t.parent] = childrenOf[t.parent] || []).push(t);
-      } else {
-        roots.push(t);
-      }
-    });
-
-    // Order every level of the hierarchy (root/Epic, then each parent's
-    // Feature/Element/Task children) by ID.
-    var byNumericIdSort = function (a, b) { return a.id.localeCompare(b.id, undefined, { numeric: true }); };
-    roots.sort(byNumericIdSort);
-    Object.keys(childrenOf).forEach(function (k) { childrenOf[k].sort(byNumericIdSort); });
-
-    // assign dynamic column slots (base slots + OTHER if needed)
-    var slots = COLUMN_SLOTS.map(function (s) { return { label: s.label, used: false }; });
-    var otherSlot = { label: "OTHER", used: false };
-    var colAssignment = {}; // id -> column index (into final columns array)
-    records.forEach(function (t) {
-      var res = resolveColumn(t.type);
-      if (res.index === -1) otherSlot.used = true;
-      else slots[res.index].used = true;
-    });
-    var columns = [];
-    slots.forEach(function (s, i) {
-      if (s.used) columns.push({ label: s.label, baseIndex: i });
-    });
-    var otherColIndex = -1;
-    if (otherSlot.used) {
-      otherColIndex = columns.length;
-      columns.push({ label: "OTHER", baseIndex: -1 });
-    }
-    var baseIndexToColumn = {};
-    columns.forEach(function (c, i) { if (c.baseIndex !== -1) baseIndexToColumn[c.baseIndex] = i; });
-
-    function columnFor(ticket) {
-      var res = resolveColumn(ticket.type);
-      if (res.index === -1) return otherColIndex;
-      return baseIndexToColumn[res.index];
-    }
-
-    // ---- vertical layout (tidy-tree style) -------------------------------------------------
-
-    var leafCounter = 0;
-    function assign(node) {
-      var kids = childrenOf[node.id] || [];
-      if (!kids.length) {
-        node._center = leafCounter * ROW_HEIGHT + CARD_HEIGHT / 2;
-        leafCounter++;
-      } else {
-        kids.forEach(assign);
-        var centers = kids.map(function (k) { return k._center; });
-        node._center = (Math.min.apply(null, centers) + Math.max.apply(null, centers)) / 2;
-      }
-    }
-
-    var groups = []; // { root, nodes: [...], pixelTop, pixelHeight }
-    var pixelCursor = TOP_MARGIN;
-    roots.forEach(function (root) {
-      leafCounter = 0;
-      assign(root);
-      var leafCount = Math.max(leafCounter, 1);
-      var groupContentHeight = leafCount * ROW_HEIGHT - ROW_GAP;
-      var groupHeight = groupContentHeight + GROUP_PADDING * 2;
-
-      var nodes = [];
-      (function collect(node) {
-        nodes.push(node);
-        (childrenOf[node.id] || []).forEach(collect);
-      })(root);
-
-      groups.push({
-        root: root,
-        nodes: nodes,
-        pixelTop: pixelCursor,
-        pixelHeight: groupHeight
-      });
-      pixelCursor += groupHeight;
-    });
-
-    var totalHeight = pixelCursor;
-    var totalWidth = LEFT_MARGIN + columns.length * COLUMN_WIDTH - COLUMN_GAP + LEFT_MARGIN;
-
-    // ---- build DOM -------------------------------------------------
-
-    diagram.innerHTML = "";
-    diagram.style.width = totalWidth + "px";
-    diagram.style.height = totalHeight + "px";
-
-    // column headers
-    columns.forEach(function (col, i) {
-      var el = document.createElement("div");
-      el.className = "col-header";
-      el.style.left = (LEFT_MARGIN + i * COLUMN_WIDTH) + "px";
-      el.style.width = CARD_WIDTH + "px";
-      el.textContent = col.label;
-      diagram.appendChild(el);
-    });
-
-    // alternating bands
-    groups.forEach(function (g, i) {
-      var band = document.createElement("div");
-      band.className = "band";
-      band.style.top = g.pixelTop + "px";
-      band.style.height = g.pixelHeight + "px";
-      band.style.background = (i % 2 === 0) ? "var(--band-alt)" : "transparent";
-      diagram.appendChild(band);
-    });
-
-    // connectors (single svg overlay, drawn above bands, below cards)
-    var svgNS = "http://www.w3.org/2000/svg";
-    var svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("class", "connectors");
-    svg.setAttribute("width", totalWidth);
-    svg.setAttribute("height", totalHeight);
-    diagram.appendChild(svg);
-
-    function nodeGeom(node, groupTop) {
-      var col = columnFor(node);
-      var x = LEFT_MARGIN + col * COLUMN_WIDTH;
-      var y = groupTop + GROUP_PADDING + node._center - CARD_HEIGHT / 2;
-      return { col: col, x: x, y: y, centerY: y + CARD_HEIGHT / 2 };
-    }
-
-    function addLine(x1, y1, x2, y2) {
-      var line = document.createElementNS(svgNS, "line");
-      line.setAttribute("x1", x1);
-      line.setAttribute("y1", y1);
-      line.setAttribute("x2", x2);
-      line.setAttribute("y2", y2);
-      line.setAttribute("stroke", "#a9a9a9");
-      line.setAttribute("stroke-width", "1.5");
-      svg.appendChild(line);
-    }
-
-    groups.forEach(function (g) {
-      g.nodes.forEach(function (node) {
-        var kids = childrenOf[node.id] || [];
-        if (!kids.length) return;
-        var pg = nodeGeom(node, g.pixelTop);
-        var kidGeoms = kids.map(function (k) { return nodeGeom(k, g.pixelTop); });
-        var trunkX = pg.x + CARD_WIDTH + COLUMN_GAP / 2;
-        var minY = Math.min.apply(null, kidGeoms.map(function (k) { return k.centerY; }));
-        var maxY = Math.max.apply(null, kidGeoms.map(function (k) { return k.centerY; }));
-
-        addLine(pg.x + CARD_WIDTH, pg.centerY, trunkX, pg.centerY);
-        if (minY !== maxY) addLine(trunkX, minY, trunkX, maxY);
-        kidGeoms.forEach(function (kg) {
-          addLine(trunkX, kg.centerY, kg.x, kg.centerY);
-        });
-      });
-    });
-
-    // cards
-    groups.forEach(function (g) {
-      g.nodes.forEach(function (node) {
-        var geom = nodeGeom(node, g.pixelTop);
-        var res = resolveColumn(node.type);
-        var card = document.createElement("div");
-        card.className = "card";
-        card.style.left = geom.x + "px";
-        card.style.top = geom.y + "px";
-        card.style.width = CARD_WIDTH + "px";
-        card.style.height = CARD_HEIGHT + "px";
-        card.style.borderLeftColor = res.color;
-
-        var row1 = document.createElement("div");
-        row1.className = "row1";
-        var icon = document.createElement("img");
-        icon.src = resolveIcon(node.state);
-        icon.alt = node.state || "";
-        var idLink = document.createElement("a");
-        idLink.className = "id";
-        idLink.textContent = node.id;
-        idLink.href = "https://t-r-m.visualstudio.com/Digital%20Project/_workitems/edit/" + encodeURIComponent(node.id);
-        idLink.target = "_blank";
-        idLink.rel = "noopener noreferrer";
-        row1.appendChild(icon);
-        row1.appendChild(idLink);
-
-        var titleDiv = document.createElement("div");
-        titleDiv.className = "title";
-        titleDiv.textContent = node.title;
-        titleDiv.title = node.title;
-
-        card.appendChild(row1);
-        card.appendChild(titleDiv);
-        diagram.appendChild(card);
-      });
-    });
-
-    dropzone.style.display = "none";
-    diagramWrap.style.display = "block";
-  }
-
-  // ---- Export -------------------------------------------------
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"]/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c];
-    });
-  }
-
-  // Snapshots whatever is currently on screen (respecting the active
-  // Show-connected-to / Tags / Hide Other filters) into a single
-  // self-contained HTML file — no external CSS, JS, or image files — so it
-  // can be emailed and opened anywhere with the layout and ID links intact.
-  function exportDiagramAsHtml() {
-    if (!allRecords.length) return;
-
-    var shownCount = diagram.querySelectorAll(".card").length;
-    var totalCount = allRecords.length;
-    var pageTitle = "DevOps Visualiser";
-
-    var metaBits = ["Exported " + new Date().toLocaleString(), "showing " + shownCount + " of " + totalCount + " items"];
-    if (otherHidden) metaBits.push("Other hidden");
-
-    var styleText = document.querySelector("style").textContent;
-    var diagramHtml = diagram.outerHTML;
-
-    var html = "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n" +
-      "<title>" + escapeHtml(pageTitle) + "</title>\n" +
-      "<style>\n" + styleText + "\n" +
-      "  .export-caption { padding: 16px 20px 0; }\n" +
-      "  .export-title { font-size: 18px; font-weight: 700; }\n" +
-      "  .export-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }\n" +
-      "  #diagramWrap { overflow: auto; padding: 12px 20px 30px; }\n" +
-      "</style>\n</head>\n<body>\n" +
-      "<div class=\"export-caption\">\n" +
-      "  <div class=\"export-title\">" + escapeHtml(pageTitle) + "</div>\n" +
-      "  <div class=\"export-meta\">" + escapeHtml(metaBits.join(" — ")) + "</div>\n" +
-      "</div>\n" +
-      "<div id=\"diagramWrap\">" + diagramHtml + "</div>\n" +
-      "</body>\n</html>\n";
-
-    var blob = new Blob([html], { type: "text/html" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = "DevOps-Visualiser.html";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-})();
-</script>
+</body>
+</html>
