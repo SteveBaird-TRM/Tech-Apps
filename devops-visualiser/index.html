@@ -256,6 +256,7 @@
     </div>
   </div>
   <button id="otherToggleBtn" type="button">Hide Other</button>
+  <button id="exportHtmlBtn" type="button">Export HTML…</button>
 </div>
 
 <div id="error"></div>
@@ -314,12 +315,20 @@
   ];
   var DEFAULT_COLOR = "#808080";
 
+  // Inlined as data URIs (rather than referencing the .svg files by relative
+  // path) so a card's icon still renders when the diagram is exported as a
+  // standalone HTML file and opened somewhere the original files aren't.
+  var ICON_NEW = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyMi4wLjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4KCjxzdmcKICAgdmVyc2lvbj0iMS4xIgogICBpZD0iaWNvbiIKICAgeD0iMHB4IgogICB5PSIwcHgiCiAgIHdpZHRoPSIyNHB4IgogICBoZWlnaHQ9IjI0cHgiCiAgIHZpZXdCb3g9IjAgMCAyNCAyNCIKICAgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgMjQgMjQiCiAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgIHNvZGlwb2RpOmRvY25hbWU9ImNpcmNsZS1vdXRsaW5lLnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4zLjIgKDA5MWUyMGUsIDIwMjMtMTEtMjUsIGN1c3RvbSkiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnMKICAgaWQ9ImRlZnMxIiAvPjxzb2RpcG9kaTpuYW1lZHZpZXcKICAgaWQ9Im5hbWVkdmlldzEiCiAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgYm9yZGVyY29sb3I9IiMwMDAwMDAiCiAgIGJvcmRlcm9wYWNpdHk9IjAuMjUiCiAgIGlua3NjYXBlOnNob3dwYWdlc2hhZG93PSIyIgogICBpbmtzY2FwZTpwYWdlb3BhY2l0eT0iMC4wIgogICBpbmtzY2FwZTpwYWdlY2hlY2tlcmJvYXJkPSIwIgogICBpbmtzY2FwZTpkZXNrY29sb3I9IiNkMWQxZDEiCiAgIGlua3NjYXBlOnpvb209IjM0LjIwODMzMyIKICAgaW5rc2NhcGU6Y3g9IjEyIgogICBpbmtzY2FwZTpjeT0iMTIiCiAgIGlua3NjYXBlOndpbmRvdy13aWR0aD0iMTkyMCIKICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iMTAxNyIKICAgaW5rc2NhcGU6d2luZG93LXg9Ii04IgogICBpbmtzY2FwZTp3aW5kb3cteT0iLTgiCiAgIGlua3NjYXBlOndpbmRvdy1tYXhpbWl6ZWQ9IjEiCiAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9Imljb24iIC8+CjxwYXRoCiAgIGlkPSJDaXJjbGVfT3V0bGluZV85XyIKICAgZD0iTTEyLDJjNS41LDAsMTAsNC41LDEwLDEwcy00LjUsMTAtMTAsMTBTMiwxNy41LDIsMTJTNi41LDIsMTIsMnogTTEyLDRjLTQuNCwwLTgsMy42LTgsOHMzLjYsOCw4LDggIHM4LTMuNiw4LThTMTYuNCw0LDEyLDR6IgogICBzdHlsZT0iZmlsbDojMzMzMzMzIiAvPgo8L3N2Zz4K";
+  var ICON_IN_PROGRESS = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyMi4wLjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4KCjxzdmcKICAgdmVyc2lvbj0iMS4xIgogICBpZD0iaWNvbiIKICAgeD0iMHB4IgogICB5PSIwcHgiCiAgIHdpZHRoPSIyNHB4IgogICBoZWlnaHQ9IjI0cHgiCiAgIHZpZXdCb3g9IjAgMCAyNCAyNCIKICAgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgMjQgMjQiCiAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgIHNvZGlwb2RpOmRvY25hbWU9ImNpcmNsZS00LnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4zLjIgKDA5MWUyMGUsIDIwMjMtMTEtMjUsIGN1c3RvbSkiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnMKICAgaWQ9ImRlZnMxIiAvPjxzb2RpcG9kaTpuYW1lZHZpZXcKICAgaWQ9Im5hbWVkdmlldzEiCiAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgYm9yZGVyY29sb3I9IiMwMDAwMDAiCiAgIGJvcmRlcm9wYWNpdHk9IjAuMjUiCiAgIGlua3NjYXBlOnNob3dwYWdlc2hhZG93PSIyIgogICBpbmtzY2FwZTpwYWdlb3BhY2l0eT0iMC4wIgogICBpbmtzY2FwZTpwYWdlY2hlY2tlcmJvYXJkPSIwIgogICBpbmtzY2FwZTpkZXNrY29sb3I9IiNkMWQxZDEiCiAgIGlua3NjYXBlOnpvb209IjM0LjIwODMzMyIKICAgaW5rc2NhcGU6Y3g9IjEyIgogICBpbmtzY2FwZTpjeT0iMTIiCiAgIGlua3NjYXBlOndpbmRvdy13aWR0aD0iMTkyMCIKICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iMTAxNyIKICAgaW5rc2NhcGU6d2luZG93LXg9Ii04IgogICBpbmtzY2FwZTp3aW5kb3cteT0iLTgiCiAgIGlua3NjYXBlOndpbmRvdy1tYXhpbWl6ZWQ9IjEiCiAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9Imljb24iIC8+CjxnCiAgIGlkPSJnMSIKICAgc3R5bGU9ImZpbGw6IzMzMzMzMyI+Cgk8cGF0aAogICBpZD0iQ2lyY2xlX091dGxpbmVfNV8iCiAgIGQ9Ik0xMiwyYzUuNSwwLDEwLDQuNSwxMCwxMHMtNC41LDEwLTEwLDEwUzIsMTcuNSwyLDEyUzYuNSwyLDEyLDJ6IE0xMiw0Yy00LjQsMC04LDMuNi04LDhzMy42LDgsOCw4ICAgczgtMy42LDgtOFMxNi40LDQsMTIsNHoiCiAgIHN0eWxlPSJmaWxsOiMzMzMzMzMiIC8+Cgk8cGF0aAogICBkPSJNMTYuOSw3LjFDMTUuNyw1LjgsMTMuOSw1LDEyLDV2N3Y3YzEuOSwwLDMuNy0wLjgsNC45LTIuMXMyLjEtMywyLjEtNC45UzE4LjIsOC4zLDE2LjksNy4xeiIKICAgaWQ9InBhdGgxIgogICBzdHlsZT0iZmlsbDojMzMzMzMzIiAvPgo8L2c+Cjwvc3ZnPgo=";
+  var ICON_DONE = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyMi4wLjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4KCjxzdmcKICAgdmVyc2lvbj0iMS4xIgogICBpZD0iTGF5ZXJfMSIKICAgeD0iMHB4IgogICB5PSIwcHgiCiAgIHdpZHRoPSIyNHB4IgogICBoZWlnaHQ9IjI0cHgiCiAgIHZpZXdCb3g9IjAgMCAyNCAyNCIKICAgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgMjQgMjQiCiAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgIHNvZGlwb2RpOmRvY25hbWU9ImNpcmNsZS04LnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4zLjIgKDA5MWUyMGUsIDIwMjMtMTEtMjUsIGN1c3RvbSkiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnMKICAgaWQ9ImRlZnMxIiAvPjxzb2RpcG9kaTpuYW1lZHZpZXcKICAgaWQ9Im5hbWVkdmlldzEiCiAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgYm9yZGVyY29sb3I9IiMwMDAwMDAiCiAgIGJvcmRlcm9wYWNpdHk9IjAuMjUiCiAgIGlua3NjYXBlOnNob3dwYWdlc2hhZG93PSIyIgogICBpbmtzY2FwZTpwYWdlb3BhY2l0eT0iMC4wIgogICBpbmtzY2FwZTpwYWdlY2hlY2tlcmJvYXJkPSIwIgogICBpbmtzY2FwZTpkZXNrY29sb3I9IiNkMWQxZDEiCiAgIGlua3NjYXBlOnpvb209IjM0LjIwODMzMyIKICAgaW5rc2NhcGU6Y3g9IjEyIgogICBpbmtzY2FwZTpjeT0iMTIiCiAgIGlua3NjYXBlOndpbmRvdy13aWR0aD0iMTkyMCIKICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iMTAxNyIKICAgaW5rc2NhcGU6d2luZG93LXg9Ii04IgogICBpbmtzY2FwZTp3aW5kb3cteT0iLTgiCiAgIGlua3NjYXBlOndpbmRvdy1tYXhpbWl6ZWQ9IjEiCiAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9IkxheWVyXzEiIC8+CjxnCiAgIGlkPSJnMSIKICAgc3R5bGU9ImZpbGw6IzMzMzMzMyI+Cgk8cGF0aAogICBpZD0iQ2lyY2xlX091dGxpbmVfMV8iCiAgIGQ9Ik0xMiwyYzUuNSwwLDEwLDQuNSwxMCwxMHMtNC41LDEwLTEwLDEwUzIsMTcuNSwyLDEyUzYuNSwyLDEyLDJ6IE0xMiw0Yy00LjQsMC04LDMuNi04LDhzMy42LDgsOCw4ICAgczgtMy42LDgtOFMxNi40LDQsMTIsNHoiCiAgIHN0eWxlPSJmaWxsOiMzMzMzMzMiIC8+Cgk8cGF0aAogICBkPSJNMTIsMTljLTEuOSwwLTMuNy0wLjgtNC45LTIuMVM1LDEzLjksNSwxMnMwLjgtMy43LDIuMS00LjlTMTAuMSw1LDEyLDVzMy43LDAuOCw0LjksMi4xczIuMSwzLDIuMSw0LjlzLTAuOCwzLjctMi4xLDQuOSAgIFMxMy45LDE5LDEyLDE5eiIKICAgaWQ9InBhdGgxIgogICBzdHlsZT0iZmlsbDojMzMzMzMzIiAvPgo8L2c+Cjwvc3ZnPgo=";
+  var ICON_BLOCKED = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyMi4wLjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4KCjxzdmcKICAgdmVyc2lvbj0iMS4xIgogICBpZD0iaWNvbiIKICAgeD0iMHB4IgogICB5PSIwcHgiCiAgIHdpZHRoPSIyNHB4IgogICBoZWlnaHQ9IjI0cHgiCiAgIHZpZXdCb3g9IjAgMCAyNCAyNCIKICAgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgMjQgMjQiCiAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgIHNvZGlwb2RpOmRvY25hbWU9ImNpcmNsZS0wLnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4zLjIgKDA5MWUyMGUsIDIwMjMtMTEtMjUsIGN1c3RvbSkiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnMKICAgaWQ9ImRlZnMxIiAvPjxzb2RpcG9kaTpuYW1lZHZpZXcKICAgaWQ9Im5hbWVkdmlldzEiCiAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgYm9yZGVyY29sb3I9IiMwMDAwMDAiCiAgIGJvcmRlcm9wYWNpdHk9IjAuMjUiCiAgIGlua3NjYXBlOnNob3dwYWdlc2hhZG93PSIyIgogICBpbmtzY2FwZTpwYWdlb3BhY2l0eT0iMC4wIgogICBpbmtzY2FwZTpwYWdlY2hlY2tlcmJvYXJkPSIwIgogICBpbmtzY2FwZTpkZXNrY29sb3I9IiNkMWQxZDEiCiAgIGlua3NjYXBlOnpvb209IjM0LjIwODMzMyIKICAgaW5rc2NhcGU6Y3g9IjEyIgogICBpbmtzY2FwZTpjeT0iMTEuOTcwNzY3IgogICBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjE5MjAiCiAgIGlua3NjYXBlOndpbmRvdy1oZWlnaHQ9IjEwMTciCiAgIGlua3NjYXBlOndpbmRvdy14PSItOCIKICAgaW5rc2NhcGU6d2luZG93LXk9Ii04IgogICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIgogICBpbmtzY2FwZTpjdXJyZW50LWxheWVyPSJpY29uIiAvPgo8cGF0aAogICBpZD0iQ2lyY2xlX091dGxpbmVfOV8iCiAgIGQ9Ik0xMiwyYzUuNSwwLDEwLDQuNSwxMCwxMHMtNC41LDEwLTEwLDEwUzIsMTcuNSwyLDEyUzYuNSwyLDEyLDJ6IE0xMiw0Yy00LjQsMC04LDMuNi04LDhzMy42LDgsOCw4ICBzOC0zLjYsOC04UzE2LjQsNCwxMiw0eiIKICAgc3R5bGU9ImZpbGw6I2Q0MDAwMDtmaWxsLW9wYWNpdHk6MSIgLz4KPHJlY3QKICAgc3R5bGU9ImZpbGw6I2Q0MDAwMDtmaWxsLW9wYWNpdHk6MTtzdHJva2Utd2lkdGg6MTtwYWludC1vcmRlcjptYXJrZXJzIGZpbGwgc3Ryb2tlIgogICBpZD0icmVjdDEiCiAgIHdpZHRoPSIxOCIKICAgaGVpZ2h0PSIyIgogICB4PSItOSIKICAgeT0iMTUuOTcwNTYzIgogICByeD0iMS4yNjY3NDg0IgogICByeT0iMS4yNDczMzk3IgogICB0cmFuc2Zvcm09InJvdGF0ZSgtNDUpIiAvPjwvc3ZnPgo=";
+
   var STATUS_ICONS = {
-    "new": "circle-0.svg",
-    "done": "circle-8.svg",
-    "blocked": "circle-blocked.svg"
+    "new": ICON_NEW,
+    "done": ICON_DONE,
+    "blocked": ICON_BLOCKED
   };
-  var DEFAULT_ICON = "circle-4.svg";
+  var DEFAULT_ICON = ICON_IN_PROGRESS;
 
   // ---- DOM refs --------------------------------------------------------
 
@@ -345,6 +354,7 @@
   var tagFilterPanelBody = document.getElementById("tagFilterPanelBody");
   var tagSelectAllBtn = document.getElementById("tagSelectAllBtn");
   var tagSelectNoneBtn = document.getElementById("tagSelectNoneBtn");
+  var exportHtmlBtn = document.getElementById("exportHtmlBtn");
 
   // Full (unfiltered) graph for the currently loaded file — used to populate
   // the filter panel and to walk ancestors/descendants regardless of
@@ -368,6 +378,8 @@
     otherToggleBtn.textContent = otherHidden ? "Show Other" : "Hide Other";
     applyFilter();
   });
+
+  exportHtmlBtn.addEventListener("click", exportDiagramAsHtml);
 
   filterBtn.addEventListener("click", function (e) {
     e.stopPropagation();
@@ -985,7 +997,7 @@
         var idLink = document.createElement("a");
         idLink.className = "id";
         idLink.textContent = node.id;
-        idLink.href = "https://t-r-m.visualstudio.com/Digital%20Project/_workitems/edit/" + encodeURIComponent(node.id);
+        idLink.href = "https://t-r-m.visualstudio/Digital%20Project/_workitems/edit/" + encodeURIComponent(node.id);
         idLink.target = "_blank";
         idLink.rel = "noopener noreferrer";
         row1.appendChild(icon);
@@ -1004,6 +1016,57 @@
 
     dropzone.style.display = "none";
     diagramWrap.style.display = "block";
+  }
+
+  // ---- Export -------------------------------------------------
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c];
+    });
+  }
+
+  // Snapshots whatever is currently on screen (respecting the active
+  // Show-connected-to / Tags / Hide Other filters) into a single
+  // self-contained HTML file — no external CSS, JS, or image files — so it
+  // can be emailed and opened anywhere with the layout and ID links intact.
+  function exportDiagramAsHtml() {
+    if (!allRecords.length) return;
+
+    var shownCount = diagram.querySelectorAll(".card").length;
+    var totalCount = allRecords.length;
+    var pageTitle = "DevOps Visualiser";
+
+    var metaBits = ["Exported " + new Date().toLocaleString(), "showing " + shownCount + " of " + totalCount + " items"];
+    if (otherHidden) metaBits.push("Other hidden");
+
+    var styleText = document.querySelector("style").textContent;
+    var diagramHtml = diagram.outerHTML;
+
+    var html = "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n" +
+      "<title>" + escapeHtml(pageTitle) + "</title>\n" +
+      "<style>\n" + styleText + "\n" +
+      "  .export-caption { padding: 16px 20px 0; }\n" +
+      "  .export-title { font-size: 18px; font-weight: 700; }\n" +
+      "  .export-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }\n" +
+      "  #diagramWrap { overflow: auto; padding: 12px 20px 30px; }\n" +
+      "</style>\n</head>\n<body>\n" +
+      "<div class=\"export-caption\">\n" +
+      "  <div class=\"export-title\">" + escapeHtml(pageTitle) + "</div>\n" +
+      "  <div class=\"export-meta\">" + escapeHtml(metaBits.join(" — ")) + "</div>\n" +
+      "</div>\n" +
+      "<div id=\"diagramWrap\">" + diagramHtml + "</div>\n" +
+      "</body>\n</html>\n";
+
+    var blob = new Blob([html], { type: "text/html" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "DevOps-Visualiser.html";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 })();
 </script>
