@@ -482,14 +482,14 @@
       rmTrackTd.appendChild(rmSubLabel);
 
       if (project.roadmap) {
-        const bar = document.createElement('div');
-        bar.className = 'rm-bar';
+        const line = document.createElement('div');
+        line.className = 'rm-line';
         const left = Math.max(0, xForDate(range, project.roadmap.start));
         const width = Math.max(4, xForDate(range, project.roadmap.end) - left);
-        bar.style.left = left + 'px';
-        bar.style.width = width + 'px';
-        bar.title = project.name + ' — Roadmap-DB: ' + formatShort(project.roadmap.start) + ' – ' + formatShort(addDays(project.roadmap.end, -1));
-        rmTrackTd.appendChild(bar);
+        line.style.left = left + 'px';
+        line.style.width = width + 'px';
+        line.title = project.name + ' — Roadmap-DB: ' + formatShort(project.roadmap.start) + ' – ' + formatShort(addDays(project.roadmap.end, -1));
+        rmTrackTd.appendChild(line);
       } else {
         const note = document.createElement('span');
         note.className = 'missing-note';
@@ -514,14 +514,14 @@
       schedTrackTd.appendChild(schedSubLabel);
 
       if (project.schedule) {
-        const line = document.createElement('div');
-        line.className = 'sched-line';
+        const bar = document.createElement('div');
+        bar.className = 'sched-bar';
         const left = Math.max(0, xForDate(range, project.schedule.start));
         const width = Math.max(4, xForDate(range, project.schedule.end) - left);
-        line.style.left = left + 'px';
-        line.style.width = width + 'px';
-        line.title = project.name + ' — Schedule-A-DB v2: ' + formatShort(project.schedule.start) + ' – ' + formatShort(addDays(project.schedule.end, -1));
-        schedTrackTd.appendChild(line);
+        bar.style.left = left + 'px';
+        bar.style.width = width + 'px';
+        bar.title = project.name + ' — Schedule-A-DB v2: ' + formatShort(project.schedule.start) + ' – ' + formatShort(addDays(project.schedule.end, -1));
+        schedTrackTd.appendChild(bar);
       } else {
         const note = document.createElement('span');
         note.className = 'missing-note';
