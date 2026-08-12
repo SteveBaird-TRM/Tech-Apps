@@ -885,7 +885,7 @@
       editBtn.type = 'button';
       editBtn.className = 'edit-btn';
       editBtn.textContent = '✎';
-      editBtn.title = 'Edit task';
+      editBtn.title = 'Edit project';
       editBtn.addEventListener('click', () => openEditDialog(task));
       label.appendChild(editBtn);
 
@@ -1097,10 +1097,10 @@
     cleanupTaskListEl.innerHTML = '';
 
     if (!finished.length) {
-      cleanupHintEl.textContent = 'No finished tasks found — nothing to remove.';
+      cleanupHintEl.textContent = 'No finished projects found — nothing to remove.';
       cleanupOkBtn.hidden = true;
     } else {
-      cleanupHintEl.textContent = 'These tasks have already finished. Remove them?';
+      cleanupHintEl.textContent = 'These projects have already finished. Remove them?';
       cleanupOkBtn.hidden = false;
       finished.forEach((t) => {
         const li = document.createElement('li');
@@ -1150,7 +1150,7 @@
     if (!canEdit()) return;
     const newTask = {
       id: uid(),
-      name: 'New Task',
+      name: 'New Project',
       startDate: formatISODate(mondayOf(new Date())),
       durationWeeks: 1,
       order: tasks.length,

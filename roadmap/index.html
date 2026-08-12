@@ -15,7 +15,7 @@
       <span id="save-status" class="save-status"></span>
       <div class="timeline-start-group" role="group" aria-label="Timeline start date">
         <label for="timeline-start-input">Start</label>
-        <input type="date" id="timeline-start-input" class="timeline-start-input" title="Tasks starting before this date are clipped to show only their remaining duration; tasks that end before this date are hidden" />
+        <input type="date" id="timeline-start-input" class="timeline-start-input" title="Projects starting before this date are clipped to show only their remaining duration; projects that end before this date are hidden" />
       </div>
       <div class="view-toggle" role="group" aria-label="Timeline view">
         <button type="button" class="view-btn" data-view="week">Week</button>
@@ -28,9 +28,9 @@
         <button type="button" id="zoom-in-btn" class="zoom-btn" title="Zoom in">+</button>
       </div>
       <button id="autosort-btn" class="btn" disabled>Auto Sort</button>
-      <button id="filter-btn" class="btn" title="Filter which task bars are shown, by team and color">Filter</button>
+      <button id="filter-btn" class="btn" title="Filter which project bars are shown, by team and color">Filter</button>
       <button id="display-btn" class="btn" title="Change label, density, and theme display options">Display</button>
-      <button id="cleanup-btn" class="btn" disabled title="Find tasks that have already finished and remove them">Data Clean Up</button>
+      <button id="cleanup-btn" class="btn" disabled title="Find projects that have already finished and remove them">Data Clean Up</button>
       <button id="export-btn" class="btn" disabled title="Export the roadmap as JSON, CSV, PNG, or PDF">Export</button>
       <button id="add-task-btn" class="btn btn-primary" disabled>+ Project</button>
     </div>
@@ -45,8 +45,8 @@
     <div id="gantt" class="gantt" hidden>
       <div class="gantt-header-row">
         <div class="label-col label-col-header">
-          Task
-          <div id="label-col-resize-handle" class="col-resize-handle" title="Drag to resize the Task column"></div>
+          Project
+          <div id="label-col-resize-handle" class="col-resize-handle" title="Drag to resize the Project column"></div>
         </div>
         <div id="sprint-header" class="timeline-track timeline-header"></div>
       </div>
@@ -57,7 +57,7 @@
 
   <dialog id="edit-dialog" class="edit-dialog">
     <form id="edit-form">
-      <h2>Edit Task</h2>
+      <h2>Edit Project</h2>
       <label>Name
         <input type="text" id="edit-name" />
       </label>
@@ -114,7 +114,7 @@
     <h2>Display</h2>
     <div class="display-group">
       <span class="display-group-label">Label</span>
-      <div class="view-toggle" role="group" aria-label="Task bar label">
+      <div class="view-toggle" role="group" aria-label="Project bar label">
         <button type="button" class="view-btn" data-group="label" data-value="off">Off</button>
         <button type="button" class="view-btn" data-group="label" data-value="weeks">Weeks</button>
         <button type="button" class="view-btn" data-group="label" data-value="dates">Dates</button>
@@ -142,7 +142,7 @@
 
   <dialog id="filter-dialog" class="edit-dialog filter-dialog">
     <h2>Filter</h2>
-    <p class="filter-hint">Show tasks matching the selected team, phase, and color. Nothing selected in a group shows all.</p>
+    <p class="filter-hint">Show projects matching the selected team, phase, and color. Nothing selected in a group shows all.</p>
     <div class="filter-groups">
       <div class="filter-group">
         <span class="display-group-label">Team</span>
@@ -166,7 +166,7 @@
   <dialog id="cleanup-dialog" class="edit-dialog cleanup-dialog">
     <h2>Data Clean Up</h2>
     <p class="cleanup-warning"><strong>Don't forget to take a back up!</strong></p>
-    <p id="cleanup-hint" class="filter-hint">These tasks have already finished. Remove them?</p>
+    <p id="cleanup-hint" class="filter-hint">These projects have already finished. Remove them?</p>
     <ul id="cleanup-task-list" class="cleanup-task-list"></ul>
     <div class="edit-dialog-actions">
       <button type="button" id="cleanup-cancel-btn" class="btn">Cancel</button>
