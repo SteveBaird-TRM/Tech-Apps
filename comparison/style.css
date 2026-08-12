@@ -14,7 +14,7 @@
   --faint-text:     #898781;
   --baseline:       #c3c2b7;
   --accent:         #2a78d6;   /* series-1: Roadmap-DB */
-  --accent-2:       #eb6834;   /* series-2: Schedule-A-DB v2 */
+  --accent-2:       #2f9e44;   /* series-2: Schedule-A-DB v2 */
   --danger:         #d03b3b;
   --success:        #006300;
   --hover-bg:        #eceae2;
@@ -36,7 +36,7 @@
     --faint-text:     #898781;
     --baseline:       #383835;
     --accent:         #3987e5;
-    --accent-2:       #d95926;
+    --accent-2:       #37b24d;
     --danger:         #e66767;
     --success:        #0ca30c;
     --hover-bg:       #242423;
@@ -54,7 +54,7 @@
   --faint-text:     #898781;
   --baseline:       #383835;
   --accent:         #3987e5;
-  --accent-2:       #d95926;
+  --accent-2:       #37b24d;
   --danger:         #e66767;
   --success:        #0ca30c;
   --hover-bg:       #242423;
@@ -388,22 +388,15 @@ th.label-col-header {
 
 .track-row.roadmap-row td.track-cell { border-bottom: none; }
 
+.track-row.row-alt td.track-cell,
+.track-row.row-alt .label-cell {
+  background-color: var(--panel-alt);
+}
+
 .track-cell {
   position: relative;
   height: var(--row-height);
   padding: 0;
-}
-
-.row-sub-label {
-  position: absolute;
-  left: 8px;
-  top: 3px;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--faint-text);
-  pointer-events: none;
-  z-index: 1;
 }
 
 .sched-bar {

@@ -440,9 +440,11 @@
       bodyEl.appendChild(tr);
     }
 
-    shown.forEach((project) => {
+    shown.forEach((project, projectIndex) => {
+      const altRowClass = projectIndex % 2 === 1 ? ' row-alt' : '';
+
       const roadmapTr = document.createElement('tr');
-      roadmapTr.className = 'track-row roadmap-row';
+      roadmapTr.className = 'track-row roadmap-row' + altRowClass;
 
       const labelTd = document.createElement('td');
       labelTd.className = 'label-cell';
@@ -476,11 +478,6 @@
       rmTrackTd.style.backgroundImage = gridlineBackground();
       rmTrackTd.style.backgroundSize = weekWidthPx() + 'px 100%';
 
-      const rmSubLabel = document.createElement('span');
-      rmSubLabel.className = 'row-sub-label';
-      rmSubLabel.textContent = 'Roadmap';
-      rmTrackTd.appendChild(rmSubLabel);
-
       if (project.roadmap) {
         const line = document.createElement('div');
         line.className = 'rm-line';
@@ -500,18 +497,13 @@
       bodyEl.appendChild(roadmapTr);
 
       const schedTr = document.createElement('tr');
-      schedTr.className = 'track-row schedule-row';
+      schedTr.className = 'track-row schedule-row' + altRowClass;
 
       const schedTrackTd = document.createElement('td');
       schedTrackTd.className = 'track-cell';
       schedTrackTd.colSpan = weeks.length;
       schedTrackTd.style.backgroundImage = gridlineBackground();
       schedTrackTd.style.backgroundSize = weekWidthPx() + 'px 100%';
-
-      const schedSubLabel = document.createElement('span');
-      schedSubLabel.className = 'row-sub-label';
-      schedSubLabel.textContent = 'Schedule';
-      schedTrackTd.appendChild(schedSubLabel);
 
       if (project.schedule) {
         const bar = document.createElement('div');
