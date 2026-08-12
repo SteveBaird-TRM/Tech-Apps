@@ -870,6 +870,7 @@
       phaseIcon.src = PHASE_ICON_FILES[phase];
       phaseIcon.alt = phase;
       phaseIcon.title = `Phase: ${phase}`;
+      phaseIcon.addEventListener('click', () => openEditDialog(task));
       label.appendChild(phaseIcon);
 
       const nameInput = document.createElement('input');
@@ -878,6 +879,10 @@
       nameInput.addEventListener('input', () => {
         task.name = nameInput.value;
         scheduleSave();
+      });
+      nameInput.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        openEditDialog(task);
       });
       label.appendChild(nameInput);
 
