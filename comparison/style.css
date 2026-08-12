@@ -13,8 +13,8 @@
   --muted-text:     #52514e;
   --faint-text:     #898781;
   --baseline:       #c3c2b7;
-  --accent:         #2a78d6;   /* series-1: Roadmap-DB */
-  --accent-2:       #2f9e44;   /* series-2: Schedule-A-DB v2 */
+  --accent:         #5b8cff;   /* series-1: Roadmap-DB */
+  --accent-2:       #4fce65;   /* series-2: Schedule-A-DB v2 */
   --danger:         #d03b3b;
   --success:        #006300;
   --hover-bg:        #eceae2;
@@ -408,9 +408,20 @@ th.label-col-header {
   box-shadow: 0 0 0 2px var(--surface);
 }
 
+.rm-line-wrap {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.rm-line-wrap.editable { cursor: grab; }
+.rm-line-wrap.editable.dragging { cursor: grabbing; }
+
 .rm-line {
   position: absolute;
   top: 50%;
+  left: 0;
+  right: 0;
   height: 2px;
   margin-top: -1px;
   background: var(--accent);
@@ -431,6 +442,21 @@ th.label-col-header {
 
 .rm-line::before { left: 0; }
 .rm-line::after { left: 100%; }
+
+.rm-handle {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin-top: -8px;
+  cursor: ew-resize;
+  z-index: 3;
+}
+
+.rm-handle-start { left: -8px; }
+.rm-handle-end { right: -8px; }
+
+body.rm-dragging-active { user-select: none; }
 
 .missing-note {
   position: absolute;

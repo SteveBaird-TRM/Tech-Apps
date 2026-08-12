@@ -53,6 +53,14 @@
     return true;
   }
 
+  // The roadmap line can be dragged/resized independently of schedule access —
+  // it only ever writes to roadmap_tasks, so only roadmap-db editor is required.
+  function canEditRoadmap(project) {
+    if (!project.roadmap) return false;
+    const access = window.currentAccess || {};
+    return access['roadmap-db'] === 'editor';
+  }
+
   let roadmapRows = [];
   let scheduleData = null;
   let projects = [];
@@ -211,7 +219,7 @@
       const start = parseISODate(r.start_date);
       if (!start) return;
       const durationWeeks = Math.max(1, parseInt(r.duration_weeks, 10) || 1);
-      roadmapByName.set(name, { id: r.id, start, end: addDays(start, durationWeeks * 7) });
+      roadmapByName.set(name, { id: r.id, start, end: addDays(start, durationWeeks * 7), durationWeeks });
     });
 
     const scheduleGroups = new Map();
@@ -234,7 +242,7 @@
         const sg = scheduleGroups.get(name);
         return {
           name,
-          roadmap: rm ? { id: rm.id, start: rm.start, end: rm.end } : null,
+          roadmap: rm ? { id: rm.id, start: rm.start, end: rm.end, durationWeeks: rm.durationWeeks } : null,
           schedule: sg
             ? { start: addWeeks(DATA_EPOCH, sg.minStart), end: addWeeks(DATA_EPOCH, sg.maxEnd), count: sg.count }
             : null,
@@ -375,8 +383,11 @@
   }
 
   // ---------- Rendering ----------
+  let lastRange = null;
+
   function render() {
     const range = computeRange();
+    lastRange = range;
     const weeks = buildWeeks(range);
     const totalWidthPx = weeks.length * weekWidthPx();
 
@@ -479,14 +490,31 @@
       rmTrackTd.style.backgroundSize = weekWidthPx() + 'px 100%';
 
       if (project.roadmap) {
-        const line = document.createElement('div');
-        line.className = 'rm-line';
+        const editable = canEditRoadmap(project);
+        const wrap = document.createElement('div');
+        wrap.className = 'rm-line-wrap' + (editable ? ' editable' : '');
+        wrap.dataset.name = project.name;
         const left = Math.max(0, xForDate(range, project.roadmap.start));
         const width = Math.max(4, xForDate(range, project.roadmap.end) - left);
-        line.style.left = left + 'px';
-        line.style.width = width + 'px';
-        line.title = project.name + ' — Roadmap-DB: ' + formatShort(project.roadmap.start) + ' – ' + formatShort(addDays(project.roadmap.end, -1));
-        rmTrackTd.appendChild(line);
+        wrap.style.left = left + 'px';
+        wrap.style.width = width + 'px';
+        wrap.title = project.name + ' — Roadmap-DB: ' + formatShort(project.roadmap.start) + ' – ' + formatShort(addDays(project.roadmap.end, -1)) +
+          (editable ? ' (drag to reschedule, drag ends to resize)' : '');
+
+        const line = document.createElement('div');
+        line.className = 'rm-line';
+        wrap.appendChild(line);
+
+        if (editable) {
+          const startHandle = document.createElement('div');
+          startHandle.className = 'rm-handle rm-handle-start';
+          wrap.appendChild(startHandle);
+          const endHandle = document.createElement('div');
+          endHandle.className = 'rm-handle rm-handle-end';
+          wrap.appendChild(endHandle);
+        }
+
+        rmTrackTd.appendChild(wrap);
       } else {
         const note = document.createElement('span');
         note.className = 'missing-note';
@@ -653,6 +681,113 @@
       }
     }
     renameProject(oldName, newName);
+  });
+
+  // ---------- Roadmap line drag (move / resize) ----------
+  // The schedule bar is intentionally never wired up to any of this — it has
+  // no drag handles and no listeners, so it can't be moved or resized.
+  let dragState = null;
+
+  async function updateRoadmapSchedule(name, newStart, newDurationWeeks) {
+    setSaveStatus('Saving...', 'saving');
+    try {
+      const project = projectsByName.get(name);
+      if (!project || !project.roadmap) throw new Error('Project not found');
+      if (!canEditRoadmap(project)) throw new Error("You don't have edit access to the roadmap.");
+
+      const { error } = await supabaseClient
+        .from(ROADMAP_TABLE)
+        .update({ start_date: formatISODate(newStart), duration_weeks: newDurationWeeks })
+        .eq('id', project.roadmap.id);
+      if (error) throw error;
+
+      setSaveStatus('Saved', '');
+      await loadAll();
+    } catch (err) {
+      console.error(err);
+      setSaveStatus('Save error', 'error');
+      render();
+    }
+  }
+
+  function onRoadmapDragMove(e) {
+    if (!dragState) return;
+    const dx = e.clientX - dragState.startX;
+    const deltaWeeks = Math.round(dx / dragState.weekWidthPx);
+
+    if (dragState.mode === 'move') {
+      dragState.appliedDeltaWeeks = deltaWeeks;
+      dragState.wrap.style.left = (dragState.originalLeftPx + deltaWeeks * dragState.weekWidthPx) + 'px';
+    } else if (dragState.mode === 'resize-start') {
+      const maxDeltaWeeks = dragState.originalDurationWeeks - 1;
+      const clamped = Math.min(maxDeltaWeeks, deltaWeeks);
+      dragState.appliedDeltaWeeks = clamped;
+      dragState.wrap.style.left = (dragState.originalLeftPx + clamped * dragState.weekWidthPx) + 'px';
+      dragState.wrap.style.width = (dragState.originalWidthPx - clamped * dragState.weekWidthPx) + 'px';
+    } else if (dragState.mode === 'resize-end') {
+      const minDeltaWeeks = -(dragState.originalDurationWeeks - 1);
+      const clamped = Math.max(minDeltaWeeks, deltaWeeks);
+      dragState.appliedDeltaWeeks = clamped;
+      dragState.wrap.style.width = (dragState.originalWidthPx + clamped * dragState.weekWidthPx) + 'px';
+    }
+  }
+
+  function onRoadmapDragEnd() {
+    if (!dragState) return;
+    const { mode, wrap, name, originalStart, originalDurationWeeks, appliedDeltaWeeks } = dragState;
+    wrap.classList.remove('dragging');
+    document.body.classList.remove('rm-dragging-active');
+    document.removeEventListener('mousemove', onRoadmapDragMove);
+    document.removeEventListener('mouseup', onRoadmapDragEnd);
+    dragState = null;
+
+    const delta = appliedDeltaWeeks || 0;
+    if (delta === 0) return;
+
+    let newStart = originalStart;
+    let newDurationWeeks = originalDurationWeeks;
+
+    if (mode === 'move') {
+      newStart = addWeeks(originalStart, delta);
+    } else if (mode === 'resize-start') {
+      newStart = addWeeks(originalStart, delta);
+      newDurationWeeks = originalDurationWeeks - delta;
+    } else if (mode === 'resize-end') {
+      newDurationWeeks = originalDurationWeeks + delta;
+    }
+
+    updateRoadmapSchedule(name, newStart, newDurationWeeks);
+  }
+
+  bodyEl.addEventListener('mousedown', (e) => {
+    const wrap = e.target.closest('.rm-line-wrap.editable');
+    if (!wrap) return;
+    e.preventDefault();
+
+    const name = wrap.dataset.name;
+    const project = projectsByName.get(name);
+    if (!project || !project.roadmap || !lastRange) return;
+
+    const mode = e.target.closest('.rm-handle-start') ? 'resize-start'
+      : e.target.closest('.rm-handle-end') ? 'resize-end'
+      : 'move';
+
+    dragState = {
+      mode,
+      wrap,
+      name,
+      startX: e.clientX,
+      originalStart: project.roadmap.start,
+      originalDurationWeeks: project.roadmap.durationWeeks,
+      originalLeftPx: parseFloat(wrap.style.left) || 0,
+      originalWidthPx: parseFloat(wrap.style.width) || 0,
+      weekWidthPx: weekWidthPx(),
+      appliedDeltaWeeks: 0,
+    };
+    wrap.classList.add('dragging');
+    document.body.classList.add('rm-dragging-active');
+    document.addEventListener('mousemove', onRoadmapDragMove);
+    document.addEventListener('mouseup', onRoadmapDragEnd);
   });
 
   // ---------- Init ----------
