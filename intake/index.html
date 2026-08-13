@@ -190,6 +190,8 @@
     color: var(--text-muted);
   }
   .btn-quiet:hover { background: var(--surface-alt); color: var(--text); }
+  .btn-icon { padding: 7px; }
+  .btn-icon svg { display: block; }
 
   #importInput { display: none; }
   #btnImport { display: none; }
@@ -675,6 +677,12 @@
       <button class="btn btn-primary" id="btnNew" style="display:none;">+ New request</button>
       <button class="btn" id="btnExport">Export JSON</button>
       <button class="btn" id="btnExportCsv">Export CSV</button>
+      <a class="btn btn-icon" href="admin.html" target="_blank" rel="noopener" title="Settings" aria-label="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </a>
       <input type="file" id="importInput" accept="application/json" />
     </div>
   </div>
@@ -738,16 +746,21 @@
 
   var ADO_WORK_ITEM_URL = "https://t-r-m.visualstudio.com/Digital%20Project/_workitems/edit/";
 
-  var COLUMNS = [
-    { id: "received", label: "Received" },
-    { id: "ipa", label: "Initial Project Assessment" },
-    { id: "business_case", label: "Business Case" },
-    { id: "roadmap", label: "Roadmap" },
-    { id: "in_progress", label: "In Progress" },
-    { id: "delivered", label: "Delivered" },
-    { id: "on_hold", label: "On Hold" },
-    { id: "rejected", label: "Rejected" }
+  var COLUMNS_TABLE = "intake_columns";
+  var COLUMNS_STORAGE_KEY = "intake-columns-v1";
+
+  var DEFAULT_COLUMNS = [
+    { id: "received", label: "Received", position: 0, visible: true, listed: true },
+    { id: "ipa", label: "Initial Project Assessment", position: 1, visible: true, listed: true },
+    { id: "business_case", label: "Business Case", position: 2, visible: true, listed: true },
+    { id: "roadmap", label: "Roadmap", position: 3, visible: true, listed: true },
+    { id: "in_progress", label: "In Progress", position: 4, visible: true, listed: true },
+    { id: "delivered", label: "Delivered", position: 5, visible: true, listed: true },
+    { id: "on_hold", label: "On Hold", position: 6, visible: true, listed: true },
+    { id: "rejected", label: "Rejected", position: 7, visible: true, listed: true }
   ];
+
+  var COLUMNS = [];
 
   var TYPES = [
     { id: "Epic", var: "--type-epic" },
@@ -884,6 +897,43 @@
     });
   }
 
+  function loadCachedColumns() {
+    try {
+      var raw = localStorage.getItem(COLUMNS_STORAGE_KEY);
+      if (!raw) return DEFAULT_COLUMNS;
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) && parsed.length ? parsed : DEFAULT_COLUMNS;
+    } catch (e) {
+      return DEFAULT_COLUMNS;
+    }
+  }
+
+  function cacheColumnsLocally() {
+    try { localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(COLUMNS)); } catch (e) { /* ignore quota errors */ }
+  }
+
+  function statusSelectOptions(currentStatus) {
+    var opts = COLUMNS.filter(function (c) { return c.listed !== false; });
+    if (currentStatus && !opts.some(function (c) { return c.id === currentStatus; })) {
+      var cur = COLUMNS.find(function (c) { return c.id === currentStatus; });
+      if (cur) opts = opts.concat([cur]);
+    }
+    return opts.map(function (c) { return { value: c.id, label: c.label }; });
+  }
+
+  function fetchColumns() {
+    return sb.from(COLUMNS_TABLE).select("id, data").then(function (res) {
+      if (res.error) throw res.error;
+      var columns = res.data.map(function (row) {
+        var col = Object.assign({}, row.data);
+        col.id = row.id;
+        return col;
+      });
+      columns.sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
+      return columns.length ? columns : DEFAULT_COLUMNS;
+    });
+  }
+
   function persistCard(card) {
     if (!canEdit()) return;
     setSyncStatus("saving");
@@ -945,14 +995,17 @@
   }
 
   function init() {
-    fetchCards().then(function (cards) {
-      state.cards = cards;
+    Promise.all([fetchColumns(), fetchCards()]).then(function (results) {
+      COLUMNS = results[0];
+      state.cards = results[1];
       render();
       setSyncStatus("synced");
       cacheLocally();
+      cacheColumnsLocally();
     }).catch(function (err) {
       toast("Couldn't load from Supabase: " + err.message);
       setSyncStatus("offline");
+      COLUMNS = loadCachedColumns();
       state.cards = loadCachedCards();
       render();
     });
@@ -1074,7 +1127,8 @@
   function renderBoard() {
     var board = document.getElementById("board");
     board.innerHTML = "";
-    COLUMNS.forEach(function (col, idx) {
+    var boardColumns = COLUMNS.filter(function (c) { return c.visible !== false; });
+    boardColumns.forEach(function (col, idx) {
       if (col.id === "rejected") {
         var divider = document.createElement("div");
         divider.className = "column-divider";
@@ -1340,7 +1394,8 @@
     } else if (f.type === "select") {
       input = document.createElement("select");
       input.className = "field-select";
-      f.options.forEach(function (o) {
+      var options = f.key === "status" ? statusSelectOptions(card.status) : f.options;
+      options.forEach(function (o) {
         var opt = document.createElement("option");
         opt.value = o.value;
         opt.textContent = o.label;

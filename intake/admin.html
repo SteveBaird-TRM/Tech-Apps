@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Manage Columns</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  :root {
+    --bg: #EAEDF1;
+    --surface: #FFFFFF;
+    --surface-alt: #F2F4F7;
+    --border: #DBE0E7;
+    --text: #191D23;
+    --text-muted: #5E6572;
+    --text-faint: #9BA1AC;
+    --accent: #0E7A6C;
+    --accent-contrast: #FFFFFF;
+    --accent-tint: #0E7A6C1A;
+    --danger: #C0362C;
+    --shadow: 0 1px 2px rgba(20, 24, 30, 0.06), 0 1px 1px rgba(20, 24, 30, 0.04);
+
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171C;
+      --surface: #1C2027;
+      --surface-alt: #20242C;
+      --border: #2C313B;
+      --text: #E8EAED;
+      --text-muted: #99A0AC;
+      --text-faint: #6B717C;
+      --accent: #3FC7B3;
+      --accent-contrast: #0A1512;
+      --accent-tint: #3FC7B326;
+      --danger: #F0685F;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171C;
+    --surface: #1C2027;
+    --surface-alt: #20242C;
+    --border: #2C313B;
+    --text: #E8EAED;
+    --text-muted: #99A0AC;
+    --text-faint: #6B717C;
+    --accent: #3FC7B3;
+    --accent-contrast: #0A1512;
+    --accent-tint: #3FC7B326;
+    --danger: #F0685F;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+  :root[data-theme="light"] {
+    --bg: #EAEDF1;
+    --surface: #FFFFFF;
+    --surface-alt: #F2F4F7;
+    --border: #DBE0E7;
+    --text: #191D23;
+    --text-muted: #5E6572;
+    --text-faint: #9BA1AC;
+    --accent: #0E7A6C;
+    --accent-contrast: #FFFFFF;
+    --accent-tint: #0E7A6C1A;
+    --danger: #C0362C;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    padding-top: 34px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  button { font-family: inherit; cursor: pointer; }
+
+  .app {
+    min-height: calc(100vh - 34px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex: none;
+    flex-wrap: wrap;
+  }
+  .topbar h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: 0.2px;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .topbar .sub {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-left: 10px;
+  }
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .file-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    margin-right: 2px;
+  }
+  .btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 7px 13px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease;
+  }
+  .btn:hover { background: var(--surface-alt); }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+  }
+  .btn-primary:hover { filter: brightness(1.06); }
+
+  .main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding: 28px 24px 60px;
+  }
+  .panel {
+    width: 100%;
+    max-width: 720px;
+  }
+  .panel-intro {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 20px;
+    max-width: 60ch;
+  }
+  .columns-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  table.columns-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .columns-table th {
+    text-align: left;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-faint);
+    font-weight: 600;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-alt);
+  }
+  .columns-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .columns-table tr:last-child td { border-bottom: none; }
+  .col-label-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .label-input {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    padding: 4px 6px;
+    border-radius: 6px;
+    width: 100%;
+    max-width: 260px;
+  }
+  .label-input:hover { border-color: var(--border); }
+  .label-input:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+    outline: none;
+  }
+  .col-meta {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-faint);
+    padding-left: 6px;
+  }
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: relative;
+    width: 34px;
+    height: 20px;
+    border-radius: 999px;
+    background: var(--border);
+    transition: background-color 120ms ease;
+    flex: none;
+  }
+  .toggle-track::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    transition: transform 120ms ease;
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle input:checked + .toggle-track::before { transform: translateX(14px); }
+  .toggle input:focus-visible + .toggle-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .toggle-text {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    min-width: 58px;
+  }
+  .add-row {
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--surface-alt);
+    border-top: 1px solid var(--border);
+  }
+  .add-row input {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 8px 11px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .add-row input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+  .empty-note {
+    padding: 20px 16px;
+    font-size: 13px;
+    color: var(--text-faint);
+    font-style: italic;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease;
+    z-index: 50;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="topbar">
+    <div>
+      <h1>Manage Columns</h1><span class="sub">Board lanes &amp; status list for Intake Tracker</span>
+    </div>
+    <div class="topbar-actions">
+      <span class="file-status" id="syncStatusLabel"></span>
+      <a class="btn" href="index.html">Back to board</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="panel">
+      <p class="panel-intro">
+        <strong>Show / Hide</strong> controls whether a column appears as a lane on the board.
+        <strong>List / Unlisted</strong> controls whether it can be chosen as a request's status.
+        Neither ever changes or deletes existing requests — a request keeps its status even if
+        that column is later hidden or unlisted, so nothing is lost.
+      </p>
+      <div class="columns-card">
+        <table class="columns-table">
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Show on board</th>
+              <th>Selectable status</th>
+            </tr>
+          </thead>
+          <tbody id="columnsBody"></tbody>
+        </table>
+        <form class="add-row" id="addColumnForm">
+          <input type="text" id="newColumnLabel" placeholder="New column name" maxlength="60" />
+          <button type="submit" class="btn btn-primary">Add column</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>window.AUTH_REQUIREMENTS = [{ project: 'intake', role: 'editor' }];</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-gate.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var COLUMNS_TABLE = "intake_columns";
+  var CARDS_TABLE = "intake_cards";
+
+  var sb = window.sbClient;
+  var columns = [];
+  var statusCounts = {};
+
+  function toast(msg) {
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove("show"); }, 2600);
+  }
+
+  function setSyncStatus(status, detail) {
+    var label = document.getElementById("syncStatusLabel");
+    if (!label) return;
+    if (status === "saving") label.textContent = "Saving…";
+    else if (status === "synced") label.textContent = "Synced with Supabase";
+    else if (status === "error") label.textContent = "Sync error" + (detail ? " — " + detail : "");
+  }
+
+  function fetchColumns() {
+    return sb.from(COLUMNS_TABLE).select("id, data").then(function (res) {
+      if (res.error) throw res.error;
+      var cols = res.data.map(function (row) {
+        var c = Object.assign({}, row.data);
+        c.id = row.id;
+        return c;
+      });
+      cols.sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
+      return cols;
+    });
+  }
+
+  function fetchStatusCounts() {
+    return sb.from(CARDS_TABLE).select("data").then(function (res) {
+      if (res.error) throw res.error;
+      var counts = {};
+      res.data.forEach(function (row) {
+        var status = row.data && row.data.status;
+        if (!status) return;
+        counts[status] = (counts[status] || 0) + 1;
+      });
+      return counts;
+    });
+  }
+
+  function persistColumn(col) {
+    setSyncStatus("saving");
+    return sb.from(COLUMNS_TABLE).upsert({
+      id: col.id,
+      data: { label: col.label, position: col.position, visible: col.visible, listed: col.listed }
+    }).then(function (res) {
+      if (res.error) throw res.error;
+      setSyncStatus("synced");
+    }).catch(function (err) {
+      setSyncStatus("error", err.message);
+      toast("Couldn't save: " + err.message);
+    });
+  }
+
+  function slugify(label) {
+    var base = label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    if (!base) base = "column";
+    var id = base;
+    var n = 2;
+    while (columns.some(function (c) { return c.id === id; })) {
+      id = base + "_" + n;
+      n++;
+    }
+    return id;
+  }
+
+  function buildToggleCell(col, key, onLabel, offLabel) {
+    var td = document.createElement("td");
+    var wrap = document.createElement("label");
+    wrap.className = "toggle";
+
+    var input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = col[key] !== false;
+
+    var track = document.createElement("span");
+    track.className = "toggle-track";
+
+    var text = document.createElement("span");
+    text.className = "toggle-text";
+    text.textContent = input.checked ? onLabel : offLabel;
+
+    input.addEventListener("change", function () {
+      col[key] = input.checked;
+      text.textContent = input.checked ? onLabel : offLabel;
+      persistColumn(col);
+    });
+
+    wrap.appendChild(input);
+    wrap.appendChild(track);
+    wrap.appendChild(text);
+    td.appendChild(wrap);
+    return td;
+  }
+
+  function render() {
+    var body = document.getElementById("columnsBody");
+    body.innerHTML = "";
+
+    if (!columns.length) {
+      var tr0 = document.createElement("tr");
+      var td0 = document.createElement("td");
+      td0.colSpan = 3;
+      td0.className = "empty-note";
+      td0.textContent = "No columns yet — add one below.";
+      tr0.appendChild(td0);
+      body.appendChild(tr0);
+      return;
+    }
+
+    columns.forEach(function (col) {
+      var tr = document.createElement("tr");
+
+      var tdLabel = document.createElement("td");
+      var cell = document.createElement("div");
+      cell.className = "col-label-cell";
+
+      var labelInput = document.createElement("input");
+      labelInput.type = "text";
+      labelInput.className = "label-input";
+      labelInput.value = col.label;
+      labelInput.maxLength = 60;
+      labelInput.addEventListener("change", function () {
+        var val = labelInput.value.trim();
+        col.label = val || col.label;
+        labelInput.value = col.label;
+        persistColumn(col);
+      });
+      cell.appendChild(labelInput);
+
+      var count = statusCounts[col.id] || 0;
+      var meta = document.createElement("div");
+      meta.className = "col-meta";
+      meta.textContent = col.id + " · " + count + (count === 1 ? " request" : " requests");
+      cell.appendChild(meta);
+
+      tdLabel.appendChild(cell);
+      tr.appendChild(tdLabel);
+
+      tr.appendChild(buildToggleCell(col, "visible", "Shown", "Hidden"));
+      tr.appendChild(buildToggleCell(col, "listed", "Listed", "Unlisted"));
+
+      body.appendChild(tr);
+    });
+  }
+
+  document.getElementById("addColumnForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var input = document.getElementById("newColumnLabel");
+    var label = input.value.trim();
+    if (!label) return;
+    var maxPos = columns.reduce(function (m, c) { return Math.max(m, c.position || 0); }, -1);
+    var col = { id: slugify(label), label: label, position: maxPos + 1, visible: true, listed: true };
+    columns.push(col);
+    input.value = "";
+    render();
+    persistColumn(col).then(function () { toast("Added \"" + col.label + "\""); });
+  });
+
+  function init() {
+    Promise.all([fetchColumns(), fetchStatusCounts()]).then(function (results) {
+      columns = results[0];
+      statusCounts = results[1];
+      render();
+      setSyncStatus("synced");
+    }).catch(function (err) {
+      toast("Couldn't load columns: " + err.message);
+      setSyncStatus("error", err.message);
+    });
+  }
+
+  window.onAuthReady(init);
+})();
+</script>
+</body>
+</html>
