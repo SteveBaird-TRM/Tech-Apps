@@ -194,6 +194,22 @@
     vertical-align: middle;
   }
   .columns-table tr:last-child td { border-bottom: none; }
+  .drag-th, .drag-cell { width: 30px; padding-left: 14px; padding-right: 2px; }
+  .drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 6px;
+    color: var(--text-faint);
+    cursor: grab;
+    touch-action: none;
+  }
+  .drag-handle:hover { background: var(--surface-alt); color: var(--text-muted); }
+  .drag-handle:active { cursor: grabbing; }
+  .columns-table tr.dragging { opacity: 0.5; }
+  .columns-table tr.drag-over-top td { box-shadow: inset 0 2px 0 var(--accent); }
+  .columns-table tr.drag-over-bottom td { box-shadow: inset 0 -2px 0 var(--accent); }
   .col-label-cell {
     display: flex;
     flex-direction: column;
@@ -333,6 +349,7 @@
         <table class="columns-table">
           <thead>
             <tr>
+              <th class="drag-th"></th>
               <th>Column</th>
               <th>Show on board</th>
               <th>Selectable status</th>
@@ -364,6 +381,7 @@
   var sb = window.sbClient;
   var columns = [];
   var statusCounts = {};
+  var draggedId = null;
 
   function toast(msg) {
     var el = document.getElementById("toast");
@@ -462,6 +480,27 @@
     return td;
   }
 
+  function clearDragOverStyles() {
+    document.querySelectorAll(".columns-table tr").forEach(function (row) {
+      row.classList.remove("drag-over-top", "drag-over-bottom");
+    });
+  }
+
+  function reorderColumns(fromId, targetId, before) {
+    var fromIdx = columns.findIndex(function (c) { return c.id === fromId; });
+    if (fromIdx === -1) return;
+    var moved = columns.splice(fromIdx, 1)[0];
+    var toIdx = columns.findIndex(function (c) { return c.id === targetId; });
+    var insertIdx = toIdx === -1 ? columns.length : (before ? toIdx : toIdx + 1);
+    columns.splice(insertIdx, 0, moved);
+    columns.forEach(function (c, idx) { c.position = idx; });
+    render();
+    setSyncStatus("saving");
+    Promise.all(columns.map(function (c) { return persistColumn(c); })).then(function () {
+      toast("Reordered columns");
+    });
+  }
+
   function render() {
     var body = document.getElementById("columnsBody");
     body.innerHTML = "";
@@ -469,7 +508,7 @@
     if (!columns.length) {
       var tr0 = document.createElement("tr");
       var td0 = document.createElement("td");
-      td0.colSpan = 3;
+      td0.colSpan = 4;
       td0.className = "empty-note";
       td0.textContent = "No columns yet — add one below.";
       tr0.appendChild(td0);
@@ -479,6 +518,50 @@
 
     columns.forEach(function (col) {
       var tr = document.createElement("tr");
+
+      var tdHandle = document.createElement("td");
+      tdHandle.className = "drag-cell";
+      var handle = document.createElement("span");
+      handle.className = "drag-handle";
+      handle.setAttribute("draggable", "true");
+      handle.setAttribute("aria-label", "Drag to reorder " + col.label);
+      handle.title = "Drag to reorder";
+      handle.innerHTML =
+        '<svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">' +
+        '<circle cx="2.5" cy="2" r="1.5"></circle><circle cx="7.5" cy="2" r="1.5"></circle>' +
+        '<circle cx="2.5" cy="8" r="1.5"></circle><circle cx="7.5" cy="8" r="1.5"></circle>' +
+        '<circle cx="2.5" cy="14" r="1.5"></circle><circle cx="7.5" cy="14" r="1.5"></circle></svg>';
+      handle.addEventListener("dragstart", function (e) {
+        draggedId = col.id;
+        tr.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", col.id);
+        try { e.dataTransfer.setDragImage(tr, 20, 20); } catch (err) {}
+      });
+      handle.addEventListener("dragend", function () {
+        tr.classList.remove("dragging");
+        draggedId = null;
+        clearDragOverStyles();
+      });
+      tdHandle.appendChild(handle);
+      tr.appendChild(tdHandle);
+
+      tr.addEventListener("dragover", function (e) {
+        if (!draggedId || draggedId === col.id) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        var rect = tr.getBoundingClientRect();
+        var before = (e.clientY - rect.top) < rect.height / 2;
+        clearDragOverStyles();
+        tr.classList.add(before ? "drag-over-top" : "drag-over-bottom");
+      });
+      tr.addEventListener("drop", function (e) {
+        if (!draggedId || draggedId === col.id) return;
+        e.preventDefault();
+        var rect = tr.getBoundingClientRect();
+        var before = (e.clientY - rect.top) < rect.height / 2;
+        reorderColumns(draggedId, col.id, before);
+      });
 
       var tdLabel = document.createElement("td");
       var cell = document.createElement("div");
