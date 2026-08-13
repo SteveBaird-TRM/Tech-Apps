@@ -505,10 +505,26 @@
   }
   .panel-head-number {
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted);
     margin-bottom: 4px;
     font-variant-numeric: tabular-nums;
+  }
+  .panel-head-number-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: inherit;
+    text-decoration: none;
+  }
+  .panel-head-number-link:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+  .panel-head-number-icon {
+    width: 12px;
+    height: 12px;
+    flex: none;
   }
   .panel-head-title {
     font-family: var(--font-display);
@@ -1102,6 +1118,17 @@
     });
   }
 
+  function panelHeadNumberHtml(card) {
+    if (card.projectNumber) {
+      var workItemUrl = ADO_WORK_ITEM_URL + encodeURIComponent(card.projectNumber);
+      return '<a class="panel-head-number-link" href="' + escapeHtml(workItemUrl) + '" target="_blank" rel="noopener noreferrer" title="Open work item ' + escapeHtml(card.projectNumber) + '">' +
+        escapeHtml(card.projectNumber) +
+        '<img class="panel-head-number-icon" src="devops-logo.svg" alt="" />' +
+        "</a>";
+    }
+    return escapeHtml("—");
+  }
+
   function cardNumberHtml(card) {
     if (card.projectNumber) {
       var workItemUrl = ADO_WORK_ITEM_URL + encodeURIComponent(card.projectNumber);
@@ -1229,7 +1256,7 @@
     var head = document.createElement("div");
     head.className = "panel-head";
     head.innerHTML =
-      "<div><div class=\"panel-head-number\">" + escapeHtml(card.projectNumber || "—") + "</div>" +
+      "<div><div class=\"panel-head-number\">" + panelHeadNumberHtml(card) + "</div>" +
       "<div class=\"panel-head-title\">" + escapeHtml(card.projectTitle) + "</div></div>" +
       '<button class="panel-close" title="Close">×</button>';
     head.querySelector(".panel-close").addEventListener("click", function () {
@@ -1393,7 +1420,7 @@
     el.querySelector(".card-title").textContent = card.projectTitle || "";
     var headNumber = document.querySelector(".panel-head-number");
     var headTitle = document.querySelector(".panel-head-title");
-    if (headNumber) headNumber.textContent = card.projectNumber || "—";
+    if (headNumber) headNumber.innerHTML = panelHeadNumberHtml(card);
     if (headTitle) headTitle.textContent = card.projectTitle || "";
   }
 
