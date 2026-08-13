@@ -457,6 +457,7 @@
   }
   .card-number-link {
     cursor: pointer;
+    text-decoration: none;
   }
   .card-number-link:hover {
     color: var(--accent);
@@ -1101,6 +1102,32 @@
     });
   }
 
+  function cardNumberHtml(card) {
+    if (card.projectNumber) {
+      var workItemUrl = ADO_WORK_ITEM_URL + encodeURIComponent(card.projectNumber);
+      return '<a class="card-number card-number-link" href="' + escapeHtml(workItemUrl) + '" target="_blank" rel="noopener noreferrer" draggable="false" title="Open work item ' + escapeHtml(card.projectNumber) + '">' + escapeHtml(card.projectNumber) + "</a>";
+    }
+    return '<span class="card-number">—</span>';
+  }
+
+  function attachCardNumberHandlers(el) {
+    var numberEl = el.querySelector(".card-number-link");
+    if (!numberEl) return;
+    numberEl.addEventListener("click", function (e) {
+      e.stopPropagation();
+    });
+    numberEl.addEventListener("mousedown", function (e) {
+      e.stopPropagation();
+    });
+    numberEl.addEventListener("keydown", function (e) {
+      e.stopPropagation();
+    });
+    numberEl.addEventListener("dragstart", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  }
+
   function buildCardEl(card) {
     var el = document.createElement("div");
     el.className = "card" + (card.id === state.selectedId ? " selected" : "");
@@ -1110,20 +1137,10 @@
     el.style.setProperty("--card-type-color", typeVar(card.projectType));
 
     el.innerHTML =
-      '<div class="card-top">' +
-        '<span class="card-number">' + escapeHtml(card.projectNumber || "—") + "</span>" +
-      "</div>" +
+      '<div class="card-top">' + cardNumberHtml(card) + "</div>" +
       '<div class="card-title">' + escapeHtml(card.projectTitle) + "</div>";
 
-    var numberEl = el.querySelector(".card-number");
-    if (card.projectNumber) {
-      numberEl.classList.add("card-number-link");
-      numberEl.title = "Open work item " + card.projectNumber;
-      numberEl.addEventListener("click", function (e) {
-        e.stopPropagation();
-        window.open(ADO_WORK_ITEM_URL + encodeURIComponent(card.projectNumber), "_blank", "noopener");
-      });
-    }
+    attachCardNumberHandlers(el);
 
     el.addEventListener("click", function () {
       state.selectedId = card.id;
@@ -1368,7 +1385,11 @@
     var el = document.querySelector('.card[data-id="' + card.id + '"]');
     if (!el) return;
     el.style.setProperty("--card-type-color", typeVar(card.projectType));
-    el.querySelector(".card-number").textContent = card.projectNumber || "—";
+    var cardTop = el.querySelector(".card-top");
+    if (cardTop) {
+      cardTop.innerHTML = cardNumberHtml(card);
+      attachCardNumberHandlers(el);
+    }
     el.querySelector(".card-title").textContent = card.projectTitle || "";
     var headNumber = document.querySelector(".panel-head-number");
     var headTitle = document.querySelector(".panel-head-title");
