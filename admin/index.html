@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>User Access Admin</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  :root {
+    --bg: #EAEDF1;
+    --surface: #FFFFFF;
+    --surface-alt: #F2F4F7;
+    --border: #DBE0E7;
+    --text: #191D23;
+    --text-muted: #5E6572;
+    --text-faint: #9BA1AC;
+    --accent: #0E7A6C;
+    --accent-contrast: #FFFFFF;
+    --accent-tint: #0E7A6C1A;
+    --danger: #C0362C;
+    --danger-tint: #C0362C1A;
+    --shadow: 0 1px 2px rgba(20, 24, 30, 0.06), 0 1px 1px rgba(20, 24, 30, 0.04);
+
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171C; --surface: #1C2027; --surface-alt: #20242C; --border: #2C313B;
+      --text: #E8EAED; --text-muted: #99A0AC; --text-faint: #6B717C;
+      --accent: #3FC7B3; --accent-contrast: #0A1512; --accent-tint: #3FC7B326;
+      --danger: #F0685F; --danger-tint: #F0685F26;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171C; --surface: #1C2027; --surface-alt: #20242C; --border: #2C313B;
+    --text: #E8EAED; --text-muted: #99A0AC; --text-faint: #6B717C;
+    --accent: #3FC7B3; --accent-contrast: #0A1512; --accent-tint: #3FC7B326;
+    --danger: #F0685F; --danger-tint: #F0685F26;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+  :root[data-theme="light"] {
+    --bg: #EAEDF1; --surface: #FFFFFF; --surface-alt: #F2F4F7; --border: #DBE0E7;
+    --text: #191D23; --text-muted: #5E6572; --text-faint: #9BA1AC;
+    --accent: #0E7A6C; --accent-contrast: #FFFFFF; --accent-tint: #0E7A6C1A;
+    --danger: #C0362C; --danger-tint: #C0362C1A;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button { font-family: inherit; cursor: pointer; }
+
+  .app { min-height: 100vh; display: flex; flex-direction: column; }
+  .topbar {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    padding: 18px 24px; border-bottom: 1px solid var(--border); background: var(--surface);
+    flex: none; flex-wrap: wrap;
+  }
+  .topbar h1 {
+    font-family: var(--font-display); font-weight: 400; font-size: 22px;
+    letter-spacing: 0.2px; margin: 0;
+  }
+  .topbar .sub { font-size: 12.5px; color: var(--text-muted); margin-left: 10px; }
+
+  .main { flex: 1; display: flex; justify-content: center; padding: 28px 24px 60px; }
+  .panel { width: 100%; max-width: 920px; }
+
+  .notice {
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 18px; font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .notice-info { background: var(--surface-alt); border: 1px solid var(--border); color: var(--text-muted); }
+  .notice-error { background: var(--danger-tint); border: 1px solid var(--danger); color: var(--danger); }
+  .notice-hidden { display: none; }
+
+  .password-banner {
+    background: var(--accent-tint); border: 1px solid var(--accent); border-radius: 10px;
+    padding: 14px 16px; margin-bottom: 18px; font-size: 13.5px; display: none;
+  }
+  .password-banner.show { display: block; }
+  .password-banner code {
+    display: inline-block; margin-top: 6px; padding: 4px 8px; border-radius: 6px;
+    background: var(--surface); font-family: var(--font-mono); font-size: 13px;
+  }
+  .password-banner button {
+    margin-top: 10px; border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); border-radius: 7px; padding: 5px 11px; font-size: 12.5px;
+  }
+
+  .add-user-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow); padding: 16px; margin-bottom: 20px;
+  }
+  .add-user-card h2 { font-size: 14px; margin: 0 0 10px; font-weight: 600; }
+  .add-user-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .add-user-row input {
+    flex: 1; min-width: 220px; border: 1px solid var(--border); background: var(--surface-alt);
+    color: var(--text); border-radius: 7px; padding: 8px 11px; font-size: 13px; font-family: inherit;
+  }
+  .btn {
+    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    border-radius: 7px; padding: 8px 14px; font-size: 13px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { background: var(--surface-alt); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+  .btn-danger:hover { background: var(--danger-tint); }
+  .btn:disabled { opacity: .55; cursor: default; }
+
+  .users-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  table.users-table { width: 100%; border-collapse: collapse; }
+  .users-table th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-faint); font-weight: 600; padding: 10px 14px;
+    border-bottom: 1px solid var(--border); background: var(--surface-alt); white-space: nowrap;
+  }
+  .users-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .users-table tr:last-child td { border-bottom: none; }
+  .user-email { font-weight: 500; }
+  .user-meta { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+  .role-select {
+    border: 1px solid var(--border); background: var(--surface-alt); color: var(--text);
+    border-radius: 6px; padding: 5px 7px; font-size: 12.5px; font-family: inherit;
+  }
+  .empty-note { padding: 20px 16px; font-size: 13px; color: var(--text-faint); font-style: italic; }
+
+  .toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(8px);
+    background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 8px;
+    font-size: 13px; opacity: 0; pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease; z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="topbar">
+    <div>
+      <h1>User Access Admin</h1><span class="sub">Manage login accounts and per-app roles</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="panel">
+      <div id="notAdminNotice" class="notice notice-error notice-hidden">
+        You're signed in, but this page is restricted to the account that administers user access.
+      </div>
+
+      <div id="passwordBanner" class="password-banner">
+        <div id="passwordBannerText"></div>
+        <button type="button" id="dismissPasswordBtn">Dismiss</button>
+      </div>
+
+      <div id="adminArea" class="notice-hidden">
+        <div class="add-user-card">
+          <h2>Add user</h2>
+          <form class="add-user-row" id="addUserForm">
+            <input type="email" id="newUserEmail" placeholder="name@royalmint.com" required />
+            <button type="submit" class="btn btn-primary" id="addUserBtn">Create user</button>
+          </form>
+        </div>
+
+        <div class="users-card">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>roadmap-db</th>
+                <th>schedule-a-db-v2</th>
+                <th>implementation-forum</th>
+                <th>intake</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="usersBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>window.AUTH_REQUIREMENTS = [];</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-gate.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var ADMIN_EMAIL = "steve.baird@royalmint.com";
+  var PROJECT_KEYS = ["roadmap-db", "schedule-a-db-v2", "implementation-forum", "intake"];
+
+  var sb;
+  var currentUserId = null;
+  var users = [];
+
+  function toast(msg) {
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove("show"); }, 2800);
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "never";
+    var d = new Date(iso);
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  }
+
+  function callAdminFn(payload) {
+    return sb.functions.invoke("admin-users", { body: payload }).then(function (res) {
+      if (res.error) throw res.error;
+      if (res.data && res.data.error) throw new Error(res.data.error);
+      return res.data;
+    });
+  }
+
+  function buildRoleCell(user, projectKey) {
+    var td = document.createElement("td");
+    var select = document.createElement("select");
+    select.className = "role-select";
+    [["", "No access"], ["viewer", "Viewer"], ["editor", "Editor"]].forEach(function (opt) {
+      var o = document.createElement("option");
+      o.value = opt[0];
+      o.textContent = opt[1];
+      select.appendChild(o);
+    });
+    select.value = user.access[projectKey] || "";
+
+    select.addEventListener("change", function () {
+      var role = select.value;
+      var prevValue = user.access[projectKey] || "";
+      select.disabled = true;
+
+      var op;
+      if (!role) {
+        op = sb.from("project_access").delete()
+          .eq("user_id", user.id).eq("project_key", projectKey);
+      } else {
+        op = sb.from("project_access").upsert(
+          { user_id: user.id, project_key: projectKey, role: role },
+          { onConflict: "user_id,project_key" }
+        );
+      }
+
+      op.then(function (res) {
+        select.disabled = false;
+        if (res.error) {
+          select.value = prevValue;
+          toast("Couldn't update access: " + res.error.message);
+          return;
+        }
+        if (role) user.access[projectKey] = role;
+        else delete user.access[projectKey];
+        toast("Updated " + user.email + " → " + projectKey + ": " + (role || "no access"));
+      });
+    });
+
+    td.appendChild(select);
+    return td;
+  }
+
+  function render() {
+    var body = document.getElementById("usersBody");
+    body.innerHTML = "";
+
+    if (!users.length) {
+      var tr0 = document.createElement("tr");
+      var td0 = document.createElement("td");
+      td0.colSpan = 6;
+      td0.className = "empty-note";
+      td0.textContent = "No users yet.";
+      tr0.appendChild(td0);
+      body.appendChild(tr0);
+      return;
+    }
+
+    users.forEach(function (user) {
+      var tr = document.createElement("tr");
+
+      var tdEmail = document.createElement("td");
+      var emailDiv = document.createElement("div");
+      emailDiv.className = "user-email";
+      emailDiv.textContent = user.email;
+      var metaDiv = document.createElement("div");
+      metaDiv.className = "user-meta";
+      metaDiv.textContent = "Created " + fmtDate(user.created_at) + " · Last sign-in " + fmtDate(user.last_sign_in_at);
+      tdEmail.appendChild(emailDiv);
+      tdEmail.appendChild(metaDiv);
+      tr.appendChild(tdEmail);
+
+      PROJECT_KEYS.forEach(function (key) {
+        tr.appendChild(buildRoleCell(user, key));
+      });
+
+      var tdDelete = document.createElement("td");
+      if (user.id !== currentUserId) {
+        var delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "btn btn-danger";
+        delBtn.textContent = "Delete";
+        delBtn.addEventListener("click", function () {
+          if (!window.confirm("Delete " + user.email + "? This cannot be undone.")) return;
+          delBtn.disabled = true;
+          callAdminFn({ action: "delete", userId: user.id }).then(function () {
+            toast("Deleted " + user.email);
+            loadUsers();
+          }).catch(function (err) {
+            delBtn.disabled = false;
+            toast("Couldn't delete: " + err.message);
+          });
+        });
+        tdDelete.appendChild(delBtn);
+      }
+      tr.appendChild(tdDelete);
+
+      body.appendChild(tr);
+    });
+  }
+
+  function loadUsers() {
+    return callAdminFn({ action: "list" }).then(function (data) {
+      users = data.users || [];
+      render();
+    }).catch(function (err) {
+      toast("Couldn't load users: " + err.message);
+    });
+  }
+
+  document.getElementById("addUserForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var input = document.getElementById("newUserEmail");
+    var email = input.value.trim();
+    if (!email) return;
+    var btn = document.getElementById("addUserBtn");
+    btn.disabled = true;
+    btn.textContent = "Creating…";
+
+    callAdminFn({ action: "create", email: email }).then(function (data) {
+      input.value = "";
+      var banner = document.getElementById("passwordBanner");
+      document.getElementById("passwordBannerText").innerHTML =
+        "Created <strong>" + data.user.email + "</strong>. Share this temporary password with them " +
+        "(shown once — it won't be stored anywhere):<br><code>" + data.password + "</code>";
+      banner.classList.add("show");
+      loadUsers();
+    }).catch(function (err) {
+      toast("Couldn't create user: " + err.message);
+    }).finally(function () {
+      btn.disabled = false;
+      btn.textContent = "Create user";
+    });
+  });
+
+  document.getElementById("dismissPasswordBtn").addEventListener("click", function () {
+    document.getElementById("passwordBanner").classList.remove("show");
+  });
+
+  function init() {
+    sb = window.sbClient;
+    sb.auth.getUser().then(function (res) {
+      var user = res.data && res.data.user;
+      currentUserId = user ? user.id : null;
+      if (!user || (user.email || "").toLowerCase() !== ADMIN_EMAIL) {
+        document.getElementById("notAdminNotice").classList.remove("notice-hidden");
+        return;
+      }
+      document.getElementById("adminArea").classList.remove("notice-hidden");
+      loadUsers();
+    });
+  }
+
+  window.onAuthReady(init);
+})();
+</script>
+</body>
+</html>
