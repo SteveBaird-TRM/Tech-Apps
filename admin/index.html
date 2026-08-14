@@ -170,6 +170,7 @@
           <h2>Add user</h2>
           <form class="add-user-row" id="addUserForm">
             <input type="email" id="newUserEmail" placeholder="name@royalmint.com" required />
+            <input type="text" id="newUserPassword" placeholder="Password (leave blank to auto-generate)" />
             <button type="submit" class="btn btn-primary" id="addUserBtn">Create user</button>
           </form>
         </div>
@@ -319,7 +320,30 @@
         tr.appendChild(buildRoleCell(user, key));
       });
 
-      var tdDelete = document.createElement("td");
+      var tdActions = document.createElement("td");
+
+      var resetBtn = document.createElement("button");
+      resetBtn.type = "button";
+      resetBtn.className = "btn";
+      resetBtn.textContent = "Reset password";
+      resetBtn.style.marginRight = "6px";
+      resetBtn.addEventListener("click", function () {
+        if (!window.confirm("Reset password for " + user.email + "? Their current password will stop working.")) return;
+        resetBtn.disabled = true;
+        callAdminFn({ action: "reset-password", userId: user.id }).then(function (data) {
+          resetBtn.disabled = false;
+          var banner = document.getElementById("passwordBanner");
+          document.getElementById("passwordBannerText").innerHTML =
+            "Reset password for <strong>" + user.email + "</strong>. Share this temporary password with them " +
+            "(shown once — it won't be stored anywhere):<br><code>" + data.password + "</code>";
+          banner.classList.add("show");
+        }).catch(function (err) {
+          resetBtn.disabled = false;
+          toast("Couldn't reset password: " + err.message);
+        });
+      });
+      tdActions.appendChild(resetBtn);
+
       if (user.id !== currentUserId) {
         var delBtn = document.createElement("button");
         delBtn.type = "button";
@@ -336,9 +360,9 @@
             toast("Couldn't delete: " + err.message);
           });
         });
-        tdDelete.appendChild(delBtn);
+        tdActions.appendChild(delBtn);
       }
-      tr.appendChild(tdDelete);
+      tr.appendChild(tdActions);
 
       body.appendChild(tr);
     });
@@ -356,14 +380,21 @@
   document.getElementById("addUserForm").addEventListener("submit", function (e) {
     e.preventDefault();
     var input = document.getElementById("newUserEmail");
+    var passwordInput = document.getElementById("newUserPassword");
     var email = input.value.trim();
+    var password = passwordInput.value;
     if (!email) return;
+    if (password && password.length < 8) {
+      toast("Password must be at least 8 characters");
+      return;
+    }
     var btn = document.getElementById("addUserBtn");
     btn.disabled = true;
     btn.textContent = "Creating…";
 
-    callAdminFn({ action: "create", email: email }).then(function (data) {
+    callAdminFn({ action: "create", email: email, password: password }).then(function (data) {
       input.value = "";
+      passwordInput.value = "";
       var banner = document.getElementById("passwordBanner");
       document.getElementById("passwordBannerText").innerHTML =
         "Created <strong>" + data.user.email + "</strong>. Share this temporary password with them " +
