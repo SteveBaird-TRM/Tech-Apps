@@ -15,13 +15,13 @@
   const DEFAULT_COLOR_1 = '#5b8cff';
   const DEFAULT_COLOR_2 = '#7c5cff';
   const PRESET_COLORS = [
-    { name: 'Happy Red', hex: '#FF4853' },
-    { name: 'Happy Orange', hex: '#FF8B3E' },
-    { name: 'Happy Yellow', hex: '#FFD505' },
-    { name: 'Happy Green', hex: '#4FCE65' },
-    { name: 'Happy Blue', hex: '#5B8CFF' },
-    { name: 'Happy Purple', hex: '#DC60C3' },
-    { name: 'Light Grey', hex: '#E0E0E0' },
+    { name: 'Cyber: Happy Red', hex: '#FF4853' },
+    { name: 'Ops: Happy Orange', hex: '#FF8B3E' },
+    { name: 'Data and BI: Happy Yellow', hex: '#FFD505' },
+    { name: 'WebDev: Happy Green', hex: '#4FCE65' },
+    { name: 'D365: Happy Blue', hex: '#5B8CFF' },
+    { name: 'Front End: Happy Purple', hex: '#DC60C3' },
+    { name: 'Placeholder: Light Grey', hex: '#E0E0E0' },
     { name: '60% Grey', hex: '#666666' },
     { name: 'Shadow Red', hex: '#B3323A' },
     { name: 'Shadow Orange', hex: '#B3612B' },
@@ -32,7 +32,6 @@
     { name: '40% Grey', hex: '#999999' },
     { name: 'Dark Grey', hex: '#1C1C1C' },
   ];
-  const PRESET_COLOR_NAMES = new Map(PRESET_COLORS.map((c) => [c.hex.toLowerCase(), c.name]));
   const TEAM_OPTIONS = [
     'Cyber', 'Data and BI', 'Delivery', 'Development', 'Digital Tech', 'Ecommerce', 'Enterprise', 'Operations',
   ];
@@ -64,7 +63,6 @@
   const LABEL_MODE_STORAGE_KEY = 'roadmap-gantt-label-mode';
   const DATES_STORAGE_KEY = 'roadmap-gantt-dates-visible';
   const TIMELINE_START_STORAGE_KEY = 'roadmap-gantt-timeline-start';
-  const FILTER_COLLAPSED_STORAGE_KEY = 'roadmap-gantt-filter-collapsed';
   const PRINT_PAGE_WIDTH_PX = 1050; // approx usable width for a landscape page at 96dpi
   const TABLE = 'roadmap_tasks';
 
@@ -105,13 +103,13 @@
   const displayDialog = document.getElementById('display-dialog');
   const displayCloseBtn = document.getElementById('display-close-btn');
   const displayGroupButtons = Array.from(displayDialog.querySelectorAll('.view-btn'));
-  const filterPanelEl = document.getElementById('filter-panel');
-  const filterToggleBtn = document.getElementById('filter-toggle-btn');
-  const filterActiveBadge = document.getElementById('filter-active-badge');
+  const filterBtn = document.getElementById('filter-btn');
+  const filterDialog = document.getElementById('filter-dialog');
+  const filterCloseBtn = document.getElementById('filter-close-btn');
   const filterClearBtn = document.getElementById('filter-clear-btn');
-  const filterTeamRowEl = document.getElementById('filter-team-row');
-  const filterPhaseRowEl = document.getElementById('filter-phase-row');
-  const filterColorRowEl = document.getElementById('filter-color-row');
+  const filterTeamListEl = document.getElementById('filter-team-list');
+  const filterPhaseListEl = document.getElementById('filter-phase-list');
+  const filterColorListEl = document.getElementById('filter-color-list');
   const cleanupBtn = document.getElementById('cleanup-btn');
   const cleanupDialog = document.getElementById('cleanup-dialog');
   const cleanupHintEl = document.getElementById('cleanup-hint');
@@ -134,13 +132,6 @@
   let filterTeams = new Set();
   let filterPhases = new Set();
   let filterColors = new Set();
-
-  let filterCollapsed = false;
-  try {
-    filterCollapsed = localStorage.getItem(FILTER_COLLAPSED_STORAGE_KEY) === 'true';
-  } catch (err) {
-    // localStorage unavailable — fall back to expanded.
-  }
 
   let viewMode = DEFAULT_VIEW_MODE;
   try {
@@ -689,95 +680,94 @@
     else set.add(value);
   }
 
-  function syncFilterBadge() {
-    const activeCount = filterTeams.size + filterPhases.size + filterColors.size;
-    filterActiveBadge.hidden = activeCount === 0;
-    filterActiveBadge.textContent = String(activeCount);
+  function syncFilterButton() {
+    filterBtn.classList.toggle('active', filterTeams.size > 0 || filterPhases.size > 0 || filterColors.size > 0);
   }
 
-  // Builds one row of pills for a filter category: an "All" pill that clears
-  // the category, followed by one pill per value in use.
-  function renderFilterPillRow(container, options, activeSet, pillClass, labelFn, colorFn) {
-    container.innerHTML = '';
-    if (!options.length) {
-      const empty = document.createElement('span');
+  function renderFilterDialog() {
+    filterTeamListEl.innerHTML = '';
+    const teamOptions = teamsInUse();
+    if (!teamOptions.length) {
+      const empty = document.createElement('p');
       empty.className = 'filter-empty';
-      empty.textContent = 'Nothing set yet.';
-      container.appendChild(empty);
-      return;
+      empty.textContent = 'No teams set yet.';
+      filterTeamListEl.appendChild(empty);
     }
-
-    const allPill = document.createElement('button');
-    allPill.type = 'button';
-    allPill.className = 'filter-pill all-pill';
-    allPill.textContent = 'All';
-    allPill.classList.toggle('active', activeSet.size === 0);
-    allPill.addEventListener('click', () => {
-      activeSet.clear();
-      render();
-    });
-    container.appendChild(allPill);
-
-    options.forEach((value) => {
-      const pill = document.createElement('button');
-      pill.type = 'button';
-      pill.className = `filter-pill ${pillClass}`;
-      const label = labelFn(value);
-      if (colorFn) {
-        // Color pills show the color itself rather than a text label.
-        const { background, border } = colorFn(value);
-        pill.style.background = background;
-        pill.style.setProperty('--pill-border', border);
-        pill.title = label;
-        pill.setAttribute('aria-label', label);
-      } else {
-        pill.textContent = label;
-      }
-      pill.classList.toggle('active', activeSet.has(value));
-      pill.addEventListener('click', () => {
-        toggleFilterValue(activeSet, value);
+    teamOptions.forEach((team) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'filter-option-btn';
+      btn.textContent = team || 'None';
+      btn.classList.toggle('active', filterTeams.has(team));
+      btn.addEventListener('click', () => {
+        toggleFilterValue(filterTeams, team);
+        btn.classList.toggle('active', filterTeams.has(team));
+        syncFilterButton();
         render();
       });
-      container.appendChild(pill);
+      filterTeamListEl.appendChild(btn);
+    });
+
+    filterPhaseListEl.innerHTML = '';
+    const phaseOptions = phasesInUse();
+    if (!phaseOptions.length) {
+      const empty = document.createElement('p');
+      empty.className = 'filter-empty';
+      empty.textContent = 'No phases set yet.';
+      filterPhaseListEl.appendChild(empty);
+    }
+    phaseOptions.forEach((phase) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'filter-option-btn';
+      btn.textContent = phase;
+      btn.classList.toggle('active', filterPhases.has(phase));
+      btn.addEventListener('click', () => {
+        toggleFilterValue(filterPhases, phase);
+        btn.classList.toggle('active', filterPhases.has(phase));
+        syncFilterButton();
+        render();
+      });
+      filterPhaseListEl.appendChild(btn);
+    });
+
+    filterColorListEl.innerHTML = '';
+    const colorOptions = colorsInUse();
+    if (!colorOptions.length) {
+      const empty = document.createElement('p');
+      empty.className = 'filter-empty';
+      empty.textContent = 'No colors set yet.';
+      filterColorListEl.appendChild(empty);
+    }
+    colorOptions.forEach((hex) => {
+      const swatch = document.createElement('button');
+      swatch.type = 'button';
+      swatch.className = 'color-swatch filter-color-swatch';
+      swatch.style.background = hex || `linear-gradient(135deg, ${DEFAULT_COLOR_1}, ${DEFAULT_COLOR_2})`;
+      swatch.title = hex || 'Default';
+      swatch.setAttribute('aria-label', hex || 'Default');
+      swatch.classList.toggle('selected', filterColors.has(hex));
+      swatch.addEventListener('click', () => {
+        toggleFilterValue(filterColors, hex);
+        swatch.classList.toggle('selected', filterColors.has(hex));
+        syncFilterButton();
+        render();
+      });
+      filterColorListEl.appendChild(swatch);
     });
   }
 
-  function renderFilterPanel() {
-    renderFilterPillRow(filterTeamRowEl, teamsInUse(), filterTeams, 'filter-pill-team', (v) => v || 'None');
-    renderFilterPillRow(filterPhaseRowEl, phasesInUse(), filterPhases, 'filter-pill-phase', (v) => v);
-    renderFilterPillRow(
-      filterColorRowEl,
-      colorsInUse(),
-      filterColors,
-      'filter-pill-color',
-      (v) => (v ? (PRESET_COLOR_NAMES.get(v) || v) : 'Default'),
-      (v) => ({
-        background: v || `linear-gradient(135deg, ${DEFAULT_COLOR_1}, ${DEFAULT_COLOR_2})`,
-        border: v || DEFAULT_COLOR_1,
-      })
-    );
-    syncFilterBadge();
-  }
-
-  function applyFilterCollapsed() {
-    filterPanelEl.classList.toggle('collapsed', filterCollapsed);
-    filterToggleBtn.setAttribute('aria-expanded', String(!filterCollapsed));
-  }
-
-  function setFilterCollapsed(collapsed) {
-    filterCollapsed = collapsed;
-    try {
-      localStorage.setItem(FILTER_COLLAPSED_STORAGE_KEY, String(filterCollapsed));
-    } catch (err) {
-      // ignore — persistence is a convenience, not a requirement
-    }
-    applyFilterCollapsed();
+  function openFilterDialog() {
+    renderFilterDialog();
+    filterDialog.showModal();
   }
 
   function clearFilters() {
     filterTeams.clear();
     filterPhases.clear();
     filterColors.clear();
+    renderFilterDialog();
+    syncFilterButton();
     render();
   }
 
@@ -846,7 +836,6 @@
   }
 
   function render() {
-    renderFilterPanel();
     const range = computeTimelineRange();
     const columns = buildColumns(range);
     const totalWidth = timelineWidthPx(range);
@@ -1531,9 +1520,9 @@
     });
   });
 
-  filterToggleBtn.addEventListener('click', () => setFilterCollapsed(!filterCollapsed));
+  filterBtn.addEventListener('click', openFilterDialog);
+  filterCloseBtn.addEventListener('click', () => filterDialog.close());
   filterClearBtn.addEventListener('click', clearFilters);
-  applyFilterCollapsed();
 
   cleanupBtn.addEventListener('click', openCleanupDialog);
   cleanupCancelBtn.addEventListener('click', () => cleanupDialog.close());

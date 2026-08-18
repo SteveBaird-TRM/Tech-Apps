@@ -28,7 +28,6 @@
         <button type="button" id="zoom-in-btn" class="zoom-btn" title="Zoom in">+</button>
       </div>
       <button id="autosort-btn" class="btn" disabled>Auto Sort</button>
-      <button id="filter-btn" class="btn" title="Filter which project bars are shown, by team and color">Filter</button>
       <button id="display-btn" class="btn" title="Change label, density, and theme display options">Display</button>
       <button id="cleanup-btn" class="btn" disabled title="Find projects that have already finished and remove them">Data Clean Up</button>
       <button id="export-btn" class="btn" disabled title="Export the roadmap as JSON, CSV, PNG, or PDF">Export</button>
@@ -37,6 +36,29 @@
   </header>
 
   <div id="unsupported-banner" class="banner" hidden></div>
+
+  <div id="filter-panel" class="filter-panel">
+    <button type="button" id="filter-toggle-btn" class="filter-toggle-btn" aria-expanded="true" aria-controls="filter-panel-body">
+      <span class="filter-toggle-caret" aria-hidden="true">▾</span>
+      <span>Filter</span>
+      <span id="filter-active-badge" class="filter-active-badge" hidden></span>
+    </button>
+    <div id="filter-panel-body" class="filter-panel-body">
+      <div class="filter-row">
+        <span class="filter-row-label">Team</span>
+        <div id="filter-team-row" class="filter-pill-list"></div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-row-label">Phase</span>
+        <div id="filter-phase-row" class="filter-pill-list"></div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-row-label">Colour</span>
+        <div id="filter-color-row" class="filter-pill-list"></div>
+      </div>
+      <button type="button" id="filter-clear-btn" class="btn filter-clear-btn">Clear filters</button>
+    </div>
+  </div>
 
   <main class="gantt-wrap">
     <div id="empty-state" class="empty-state">
@@ -137,29 +159,6 @@
     </div>
     <div class="edit-dialog-actions">
       <button type="button" id="display-close-btn" class="btn">Close</button>
-    </div>
-  </dialog>
-
-  <dialog id="filter-dialog" class="edit-dialog filter-dialog">
-    <h2>Filter</h2>
-    <p class="filter-hint">Show projects matching the selected team, phase, and color. Nothing selected in a group shows all.</p>
-    <div class="filter-groups">
-      <div class="filter-group">
-        <span class="display-group-label">Team</span>
-        <div id="filter-team-list" class="filter-option-list"></div>
-      </div>
-      <div class="filter-group">
-        <span class="display-group-label">Phase</span>
-        <div id="filter-phase-list" class="filter-option-list"></div>
-      </div>
-      <div class="filter-group">
-        <span class="display-group-label">Color</span>
-        <div id="filter-color-list" class="filter-color-list"></div>
-      </div>
-    </div>
-    <div class="edit-dialog-actions">
-      <button type="button" id="filter-clear-btn" class="btn">Clear</button>
-      <button type="button" id="filter-close-btn" class="btn btn-primary">Close</button>
     </div>
   </dialog>
 
