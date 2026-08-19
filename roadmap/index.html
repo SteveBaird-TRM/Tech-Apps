@@ -83,6 +83,11 @@
       <label>Name
         <input type="text" id="edit-name" />
       </label>
+      <div class="edit-project-link">
+        <span class="edit-project-link-label">Linked project:</span>
+        <span class="edit-project-link-name" id="edit-project-name">—</span>
+        <button type="button" id="edit-project-btn" class="btn">Change</button>
+      </div>
       <label>Start date (snaps to the start of the week)
         <input type="date" id="edit-start" />
       </label>
@@ -221,6 +226,7 @@
   <script>window.AUTH_REQUIREMENTS = [{ project: 'roadmap-db', role: 'viewer' }];</script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="auth-gate.js"></script>
+  <script src="/shared/project-picker.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

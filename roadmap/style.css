@@ -525,6 +525,32 @@ body {
   margin-bottom: 12px;
 }
 
+.edit-project-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin: -4px 0 14px;
+}
+
+.edit-project-link-label {
+  color: var(--muted);
+}
+
+.edit-project-link-name {
+  color: var(--text);
+  font-weight: 600;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-project-link .btn {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
 .edit-dialog input[type="text"],
 .edit-dialog input[type="date"],
 .edit-dialog input[type="number"],

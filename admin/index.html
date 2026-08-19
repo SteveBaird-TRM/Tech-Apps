@@ -136,6 +136,53 @@
   }
   .empty-note { padding: 20px 16px; font-size: 13px; color: var(--text-faint); font-style: italic; }
 
+  .section-heading {
+    font-family: var(--font-display); font-weight: 400; font-size: 17px;
+    margin: 32px 0 10px; letter-spacing: 0.2px;
+  }
+  .section-heading .sub { font-family: var(--font-body); font-size: 12.5px; color: var(--text-muted); margin-left: 8px; }
+
+  .projects-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .projects-toolbar {
+    display: flex; justify-content: flex-end; align-items: center;
+    padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface-alt);
+  }
+  .switch-label {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px;
+    color: var(--text-muted); cursor: pointer; user-select: none;
+  }
+  .switch { position: relative; display: inline-block; width: 34px; height: 20px; flex: none; }
+  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .switch-track {
+    position: absolute; inset: 0; background: var(--border); border-radius: 999px;
+    transition: background-color 150ms ease;
+  }
+  .switch-track::before {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--surface); box-shadow: var(--shadow);
+    transition: transform 150ms ease;
+  }
+  .switch input:checked + .switch-track { background: var(--accent); }
+  .switch input:checked + .switch-track::before { transform: translateX(14px); }
+  .switch input:focus-visible + .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+  table.projects-table { width: 100%; border-collapse: collapse; }
+  .projects-table th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-faint); font-weight: 600; padding: 10px 14px;
+    border-bottom: 1px solid var(--border); background: var(--surface-alt); white-space: nowrap;
+  }
+  .projects-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .projects-table tr:last-child td { border-bottom: none; }
+  .projects-table td.col-check { text-align: center; }
+  .project-name { font-weight: 500; }
+  .project-id { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); }
+  .chk-yes, .chk-no { display: inline-block; width: 20px; font-weight: 600; }
+  .chk-yes { color: var(--accent); }
+  .chk-no { color: var(--text-faint); }
+
   .toast {
     position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(8px);
     background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 8px;
@@ -188,6 +235,31 @@
               </tr>
             </thead>
             <tbody id="usersBody"></tbody>
+          </table>
+        </div>
+
+        <h2 class="section-heading">Projects<span class="sub">Canonical projects and where each one appears</span></h2>
+        <div class="projects-card">
+          <div class="projects-toolbar">
+            <label class="switch-label" for="hideDeliveredToggle">
+              <span class="switch">
+                <input type="checkbox" id="hideDeliveredToggle" />
+                <span class="switch-track"></span>
+              </span>
+              Hide delivered projects
+            </label>
+          </div>
+          <table class="projects-table">
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th>Project ID</th>
+                <th>Intake</th>
+                <th>Roadmap</th>
+                <th>Schedule A</th>
+              </tr>
+            </thead>
+            <tbody id="projectsBody"></tbody>
           </table>
         </div>
       </div>
@@ -377,6 +449,99 @@
     });
   }
 
+  function checkCell(present) {
+    var td = document.createElement("td");
+    td.className = "col-check";
+    var span = document.createElement("span");
+    span.className = present ? "chk-yes" : "chk-no";
+    span.textContent = present ? "✓" : "—";
+    td.appendChild(span);
+    return td;
+  }
+
+  var projectsData = null; // { projects, inIntake, inRoadmap, inScheduleA }
+  var hideDelivered = false;
+
+  function renderProjects() {
+    if (!projectsData) return;
+    var body = document.getElementById("projectsBody");
+    body.innerHTML = "";
+
+    var projects = projectsData.projects;
+    var inIntake = projectsData.inIntake, inRoadmap = projectsData.inRoadmap, inScheduleA = projectsData.inScheduleA;
+    if (hideDelivered) projects = projects.filter(function (p) { return !p.delivered; });
+
+    if (!projects.length) {
+      var tr0 = document.createElement("tr");
+      var td0 = document.createElement("td");
+      td0.colSpan = 5;
+      td0.className = "empty-note";
+      td0.textContent = (hideDelivered && projectsData.projects.length) ? "No projects — all delivered projects are hidden." : "No projects yet.";
+      tr0.appendChild(td0);
+      body.appendChild(tr0);
+      return;
+    }
+
+    projects.forEach(function (project) {
+      var tr = document.createElement("tr");
+
+      var tdName = document.createElement("td");
+      tdName.className = "project-name";
+      tdName.textContent = project.canonical_name;
+      tr.appendChild(tdName);
+
+      var tdId = document.createElement("td");
+      tdId.className = "project-id";
+      tdId.textContent = project.id;
+      tr.appendChild(tdId);
+
+      tr.appendChild(checkCell(inIntake.has(project.id)));
+      tr.appendChild(checkCell(inRoadmap.has(project.id)));
+      tr.appendChild(checkCell(inScheduleA.has(project.id)));
+
+      body.appendChild(tr);
+    });
+  }
+
+  function idSet(rows) {
+    var s = new Set();
+    (rows || []).forEach(function (r) { if (r.project_id) s.add(r.project_id); });
+    return s;
+  }
+
+  function loadProjects() {
+    return Promise.all([
+      sb.from("projects").select("id, canonical_name, delivered").order("canonical_name"),
+      sb.from("roadmap_tasks").select("project_id").not("project_id", "is", null),
+      sb.from("intake_cards").select("project_id").not("project_id", "is", null),
+      sb.from("gantt_state").select("data").eq("id", 1).maybeSingle()
+    ]).then(function (results) {
+      var projectsRes = results[0], roadmapRes = results[1], intakeRes = results[2], ganttRes = results[3];
+
+      if (projectsRes.error) throw projectsRes.error;
+      if (roadmapRes.error) throw roadmapRes.error;
+      if (intakeRes.error) throw intakeRes.error;
+      if (ganttRes.error) throw ganttRes.error;
+
+      var inRoadmap = idSet(roadmapRes.data);
+      var inIntake = idSet(intakeRes.data);
+
+      var inScheduleA = new Set();
+      var resources = (ganttRes.data && ganttRes.data.data && ganttRes.data.data.resources) || [];
+      resources.forEach(function (r) { if (r.projectId) inScheduleA.add(r.projectId); });
+
+      projectsData = { projects: projectsRes.data || [], inIntake: inIntake, inRoadmap: inRoadmap, inScheduleA: inScheduleA };
+      renderProjects();
+    }).catch(function (err) {
+      toast("Couldn't load projects: " + err.message);
+    });
+  }
+
+  document.getElementById("hideDeliveredToggle").addEventListener("change", function (e) {
+    hideDelivered = e.target.checked;
+    renderProjects();
+  });
+
   document.getElementById("addUserForm").addEventListener("submit", function (e) {
     e.preventDefault();
     var input = document.getElementById("newUserEmail");
@@ -424,6 +589,7 @@
       }
       document.getElementById("adminArea").classList.remove("notice-hidden");
       loadUsers();
+      loadProjects();
     });
   }
 

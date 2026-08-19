@@ -96,6 +96,8 @@
   const editPhaseInput = document.getElementById('edit-phase');
   const editHealthInput = document.getElementById('edit-health');
   const editColorPresetsEl = document.getElementById('edit-color-presets');
+  const editProjectNameEl = document.getElementById('edit-project-name');
+  const editProjectBtn = document.getElementById('edit-project-btn');
   const editCancelBtn = document.getElementById('edit-cancel-btn');
   const editDeleteBtn = document.getElementById('edit-delete-btn');
   const zoomInBtn = document.getElementById('zoom-in-btn');
@@ -418,6 +420,8 @@
       team: row.team || '',
       phase: PHASE_OPTIONS.includes(row.phase) ? row.phase : DEFAULT_PHASE,
       health: HEALTH_OPTIONS.includes(row.health) ? row.health : '',
+      projectId: row.project_id || null,
+      projectName: (row.projects && row.projects.canonical_name) || null,
     };
   }
 
@@ -432,6 +436,7 @@
       team: t.team,
       phase: t.phase,
       health: t.health || null,
+      project_id: t.projectId || null,
     };
   }
 
@@ -495,7 +500,7 @@
     setFileStatus('Connecting...', '');
     const { data, error } = await supabaseClient
       .from(TABLE)
-      .select('*')
+      .select('*, projects(canonical_name)')
       .order('sort_order', { ascending: true });
 
     if (error) {
@@ -1164,9 +1169,17 @@
 
   function addTask() {
     if (!canEdit()) return;
+    if (!window.ProjectPicker) return;
+    window.ProjectPicker.open({ originApp: 'roadmap-db', query: '', excludeDelivered: true }).then((project) => {
+      if (!project) return;
+      addTaskForProject(project);
+    });
+  }
+
+  function addTaskForProject(project) {
     const newTask = {
       id: uid(),
-      name: 'New Project',
+      name: project.canonical_name,
       startDate: formatISODate(mondayOf(new Date())),
       durationWeeks: 1,
       order: tasks.length,
@@ -1174,6 +1187,8 @@
       team: '',
       phase: DEFAULT_PHASE,
       health: '',
+      projectId: project.id,
+      projectName: project.canonical_name,
     };
     tasks.push(newTask);
     render();
@@ -1215,11 +1230,24 @@
     editTeamInput.value = task.team || '';
     editPhaseInput.value = task.phase || DEFAULT_PHASE;
     editHealthInput.value = task.health || '';
+    editProjectNameEl.textContent = task.projectName || task.projectId || 'Not linked';
     editDialog.showModal();
     editNameInput.focus();
   }
 
   buildColorPresets();
+
+  editProjectBtn.addEventListener('click', () => {
+    const task = tasks.find((t) => t.id === editingTaskId);
+    if (!task || !window.ProjectPicker) return;
+    window.ProjectPicker.open({ originApp: 'roadmap-db', query: task.name || '', excludeDelivered: true }).then((project) => {
+      if (!project) return;
+      task.projectId = project.id;
+      task.projectName = project.canonical_name;
+      editProjectNameEl.textContent = project.canonical_name;
+      scheduleSave();
+    });
+  });
 
   editCancelBtn.addEventListener('click', () => editDialog.close());
 

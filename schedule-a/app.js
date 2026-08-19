@@ -97,6 +97,37 @@
 
   var resources = [];
   var nextId = 1;
+  // Canonical projects registry (public.projects), used to power the "pick
+  // a project" typeahead in the Add-resource modal. Typing an existing name
+  // links to it; typing something new creates it (see the addForm submit
+  // handler), same as intake/roadmap. Kept as the full set (delivered
+  // included) so exact-match lookup never misses a delivered project and
+  // creates an accidental duplicate — populateProjectDatalist() is what
+  // hides delivered projects from the visible suggestion list.
+  var projectsCatalog = [];
+  function refreshProjectsCatalog() {
+    return supabaseClient.from('projects').select('id, canonical_name, delivered').order('canonical_name').then(function (res) {
+      if (res.error) { console.error(res.error); return; }
+      projectsCatalog = res.data || [];
+      populateProjectDatalist();
+    });
+  }
+  function populateProjectDatalist() {
+    var projectListEl = document.getElementById('projectList');
+    if (!projectListEl) return;
+    projectListEl.innerHTML = projectsCatalog
+      .filter(function (p) { return !p.delivered; })
+      .map(function (p) {
+        return '<option value="' + escapeAttr(p.canonical_name) + '"></option>';
+      }).join('');
+  }
+  function findCatalogProjectByName(name) {
+    var needle = name.trim().toLowerCase();
+    for (var i = 0; i < projectsCatalog.length; i++) {
+      if (projectsCatalog[i].canonical_name.toLowerCase() === needle) return projectsCatalog[i];
+    }
+    return null;
+  }
   var timelineStartDate = mondayOnOrBefore(new Date()); // fixed calendar anchor for week 0; persisted with the file
   var selectedWeeks = []; // array of selected week indices, shown together in the side panel
   var panelViewMode = 'resource'; // 'resource' = list resources filtered by project; 'project' = list projects filtered by resource
@@ -246,11 +277,12 @@
   }
 
   // `start` is anchor-relative (weeks from DATA_EPOCH) — callers convert from view coordinates.
-  function addResourceInternal(name, allocation, start, duration, project) {
+  function addResourceInternal(name, allocation, start, duration, project, projectId) {
     resources.push({
       id: nextId++,
       name: name,
       project: project || 'Untitled Project',
+      projectId: projectId || null,
       allocation: allocation,
       start: Math.round(start),
       duration: Math.max(1, duration)
@@ -529,6 +561,7 @@
         id: Number(r.id),
         name: String(r.name || ''),
         project: String(r.project || 'Untitled Project'),
+        projectId: r.projectId || null,
         allocation: isFinite(Number(r.allocation)) ? Number(r.allocation) : 0,
         start: start + migrateOffsetWeeks,
         duration: duration
@@ -966,12 +999,9 @@
     }
     updateGanttScrollHeight();
 
-    var projectListEl = document.getElementById('projectList');
-    if (projectListEl) {
-      projectListEl.innerHTML = projectGroups().map(function (g) {
-        return '<option value="' + escapeAttr(g.name) + '"></option>';
-      }).join('');
-    }
+    // #projectList (the Add-resource modal's typeahead) is populated from
+    // the canonical projects registry via populateProjectDatalist(), not
+    // from locally-used project names — see refreshProjectsCatalog().
 
     var resourceNameListEl = document.getElementById('resourceNameList');
     if (resourceNameListEl) {
@@ -1023,6 +1053,7 @@
     nameInput.value = prefill.name || '';
     allocInput.value = '100';
     addModalOverlay.style.display = 'flex';
+    refreshProjectsCatalog();
     var focusTarget = (prefill.name && prefill.project) ? allocInput : (prefill.name ? projectInput : nameInput);
     focusTarget.focus();
     if (focusTarget.select) focusTarget.select();
@@ -1165,24 +1196,48 @@
     flashStatus('Removed ' + idSet.length + ' finished ' + (idSet.length === 1 ? 'entry' : 'entries'));
   });
 
-  addForm.addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (!canEdit()) return;
-    var name = nameInput.value.trim();
-    var project = projectInput.value.trim() || 'Untitled Project';
-    var allocation = Number(allocInput.value);
-    if (!name) return;
-    if (!isFinite(allocation) || allocation < 0) allocation = 0;
+  // Finishes adding a resource once we know which project (existing or
+  // freshly created) it links to.
+  function finishAddResource(name, allocation, project, projectId) {
     var addOffset = viewOffsetWeeks();
     var sameProject = resources.filter(function (r) { return r.project === project; });
     var startView = sameProject.length
       ? Math.max.apply(null, sameProject.map(function (r) { return r.start + r.duration; })) - addOffset
       : todayWeekIndex();
     startView = clamp(startView, 0, TOTAL_WEEKS - DEFAULT_DURATION);
-    addResourceInternal(name, allocation, startView + addOffset, DEFAULT_DURATION, project);
+    addResourceInternal(name, allocation, startView + addOffset, DEFAULT_DURATION, project, projectId);
     closeAddModal();
     render();
     scheduleSave();
+  }
+
+  addForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!canEdit()) return;
+    var name = nameInput.value.trim();
+    var typedProject = projectInput.value.trim();
+    var allocation = Number(allocInput.value);
+    if (!name || !typedProject) return;
+    if (!isFinite(allocation) || allocation < 0) allocation = 0;
+
+    var matchedProject = findCatalogProjectByName(typedProject);
+    if (matchedProject) {
+      finishAddResource(name, allocation, matchedProject.canonical_name, matchedProject.id);
+      return;
+    }
+
+    // No exact match — create it, same as intake/roadmap do when a typed
+    // title doesn't match anything in the registry yet.
+    supabaseClient.from('projects').insert({ canonical_name: typedProject, origin_app: 'schedule-a-db-v2' })
+      .select('id, canonical_name').single().then(function (res) {
+        if (res.error) {
+          flashStatus('Could not create project — ' + res.error.message);
+          return;
+        }
+        projectsCatalog.push(res.data);
+        populateProjectDatalist();
+        finishAddResource(name, allocation, res.data.canonical_name, res.data.id);
+      });
   });
 
   // ---- Delegated events on the grid ----
@@ -1978,6 +2033,7 @@
   // ---- Init ----
   function init() {
     loadStateFromSupabase();
+    refreshProjectsCatalog();
   }
 
   window.onAuthReady(init);

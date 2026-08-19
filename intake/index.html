@@ -551,6 +551,31 @@
   }
   .panel-close:hover { background: var(--surface-alt); color: var(--text); }
 
+  .project-link-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: -8px 0 18px;
+    font-size: 12px;
+  }
+  .project-link-label {
+    color: var(--text-muted);
+  }
+  .project-link-name {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .project-link-btn {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--accent);
+    font-size: 12px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .project-link-btn:hover { background: var(--surface-alt); }
+
   .field-group {
     margin-bottom: 14px;
   }
@@ -733,6 +758,7 @@
 <script>window.AUTH_REQUIREMENTS = [{ project: 'intake', role: 'viewer' }];</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-gate.js"></script>
+<script src="/shared/project-picker.js"></script>
 <script>
 (function () {
   "use strict";
@@ -885,11 +911,13 @@
   }
 
   function fetchCards() {
-    return sb.from(TABLE).select("id, data").then(function (res) {
+    return sb.from(TABLE).select("id, data, project_id, projects(canonical_name)").then(function (res) {
       if (res.error) throw res.error;
       var cards = res.data.map(function (row) {
         var card = Object.assign({}, row.data);
         card.id = row.id;
+        card.projectId = row.project_id || null;
+        card.projectName = (row.projects && row.projects.canonical_name) || null;
         return card;
       });
       cards.sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
@@ -934,10 +962,20 @@
     });
   }
 
+  // project_id/canonical name live in real columns (project_id here,
+  // projects.canonical_name via the FK), not in the data JSON blob, so they
+  // don't drift out of sync with each other.
+  function cardDataPayload(card) {
+    var data = Object.assign({}, card);
+    delete data.projectId;
+    delete data.projectName;
+    return data;
+  }
+
   function persistCard(card) {
     if (!canEdit()) return;
     setSyncStatus("saving");
-    sb.from(TABLE).upsert({ id: card.id, data: card }).then(function (res) {
+    sb.from(TABLE).upsert({ id: card.id, data: cardDataPayload(card), project_id: card.projectId || null }).then(function (res) {
       if (res.error) throw res.error;
       setSyncStatus("synced");
       cacheLocally();
@@ -963,7 +1001,7 @@
   function persistAll(cards) {
     if (!canEdit()) return;
     setSyncStatus("saving");
-    var rows = cards.map(function (c) { return { id: c.id, data: c }; });
+    var rows = cards.map(function (c) { return { id: c.id, data: cardDataPayload(c) }; });
     if (rows.length === 0) { setSyncStatus("synced"); cacheLocally(); return; }
     sb.from(TABLE).upsert(rows).then(function (res) {
       if (res.error) throw res.error;
@@ -981,7 +1019,7 @@
     return sb.from(TABLE).delete().neq("id", "").then(function (res) {
       if (res.error) throw res.error;
       if (cards.length === 0) return { error: null };
-      var rows = cards.map(function (c) { return { id: c.id, data: c }; });
+      var rows = cards.map(function (c) { return { id: c.id, data: cardDataPayload(c), project_id: c.projectId || null }; });
       return sb.from(TABLE).insert(rows);
     }).then(function (res) {
       if (res.error) throw res.error;
@@ -1275,11 +1313,17 @@
 
   function commitDomOrder() {
     var order = [];
+    var deliveredChanges = [];
     document.querySelectorAll(".column-body").forEach(function (body) {
       var status = body.dataset.status;
       body.querySelectorAll(".card").forEach(function (cardEl) {
         var card = state.cards.find(function (c) { return c.id === cardEl.dataset.id; });
         if (card) {
+          var wasDelivered = card.status === "delivered";
+          var isDelivered = status === "delivered";
+          if (wasDelivered !== isDelivered) {
+            deliveredChanges.push({ projectId: card.projectId, delivered: isDelivered });
+          }
           card.status = status;
           order.push(card);
         }
@@ -1291,6 +1335,7 @@
     }
     persistAll(state.cards);
     renderBoard();
+    deliveredChanges.forEach(function (c) { setProjectDelivered(c.projectId, c.delivered); });
   }
 
   function renderPanel() {
@@ -1318,6 +1363,7 @@
       render();
     });
     scroll.appendChild(head);
+    scroll.appendChild(buildProjectLinkRow(card));
 
     FIELD_GROUPS.forEach(function (group) {
       if (group.divider) {
@@ -1345,6 +1391,108 @@
     footer.appendChild(stamp);
     footer.appendChild(del);
     panel.appendChild(footer);
+  }
+
+  function refreshProjectLinkRow(card) {
+    var panel = document.getElementById("panel");
+    var old = panel && panel.querySelector(".project-link-row");
+    if (old) old.replaceWith(buildProjectLinkRow(card));
+  }
+
+  function buildProjectLinkRow(card) {
+    var row = document.createElement("div");
+    row.className = "project-link-row";
+
+    if (card.projectId) {
+      var label = document.createElement("span");
+      label.className = "project-link-label";
+      label.textContent = "Linked project:";
+      var name = document.createElement("span");
+      name.className = "project-link-name";
+      name.textContent = card.projectName || card.projectId;
+      var change = document.createElement("button");
+      change.type = "button";
+      change.className = "project-link-btn";
+      change.textContent = "Change";
+      change.disabled = !canEdit();
+      change.addEventListener("click", function () { linkProject(card); });
+      row.appendChild(label);
+      row.appendChild(name);
+      row.appendChild(change);
+    } else {
+      var link = document.createElement("button");
+      link.type = "button";
+      link.className = "project-link-btn";
+      link.textContent = "Link to project…";
+      link.disabled = !canEdit();
+      link.addEventListener("click", function () { linkProject(card); });
+      row.appendChild(link);
+    }
+
+    return row;
+  }
+
+  function linkProject(card) {
+    if (!canEdit() || !window.ProjectPicker) return;
+    window.ProjectPicker.open({ originApp: "intake", query: card.projectTitle || "" }).then(function (project) {
+      if (!project) return;
+      card.projectId = project.id;
+      card.projectName = project.canonical_name;
+      persistCard(card);
+      refreshProjectLinkRow(card);
+    });
+  }
+
+  // Called when the project title field loses focus.
+  // - Not linked yet: silently link to an exact-name match in the projects
+  //   registry, or create one if none exists — the "type a title and it
+  //   just works" path.
+  // - Already linked and the title has changed since: rename the linked
+  //   project in place (this card owns the link, so keeping the registry's
+  //   canonical name in sync with it is safe — same idea as comparison's
+  //   existing cross-app rename).
+  // Deliberately-different-wording matches against a *different* existing
+  // project still go through the explicit picker (linkProject) — we don't
+  // blind-merge two different real projects on a fuzzy guess.
+  function autoLinkProject(card) {
+    if (!canEdit()) return;
+    var title = (card.projectTitle || "").trim();
+    if (!title) return;
+
+    if (card.projectId) {
+      if (title === card.projectName) return;
+      sb.from("projects")
+        .update({ canonical_name: title, updated_at: new Date().toISOString() })
+        .eq("id", card.projectId)
+        .select("id, canonical_name")
+        .single()
+        .then(function (res) {
+          if (res.error) { console.error(res.error); return; }
+          card.projectName = res.data.canonical_name;
+          refreshProjectLinkRow(card);
+        });
+      return;
+    }
+
+    sb.from("projects").select("id, canonical_name").ilike("canonical_name", title).limit(1).then(function (res) {
+      if (res.error) { console.error(res.error); return; }
+      if (card.projectId) return; // a manual link may have landed while this was in flight
+      if (res.data && res.data.length) {
+        card.projectId = res.data[0].id;
+        card.projectName = res.data[0].canonical_name;
+        persistCard(card);
+        refreshProjectLinkRow(card);
+        return;
+      }
+      sb.from("projects").insert({ canonical_name: title, origin_app: "intake" }).select("id, canonical_name").single().then(function (res2) {
+        if (res2.error) { console.error(res2.error); return; }
+        if (card.projectId) return;
+        card.projectId = res2.data.id;
+        card.projectName = res2.data.canonical_name;
+        persistCard(card);
+        refreshProjectLinkRow(card);
+      });
+    });
   }
 
   function buildField(card, f, layout) {
@@ -1432,6 +1580,9 @@
           }
           updateCardField(card.id, f.key, val);
         });
+        if (f.key === "projectTitle") {
+          input.addEventListener("blur", function () { autoLinkProject(card); });
+        }
       }
     }
     wrap.appendChild(input);
@@ -1448,15 +1599,30 @@
     return Math.round(score * 100) / 100;
   }
 
+  // Keeps a linked project's delivered flag in sync with a card's status —
+  // set true when a card reaches "delivered", set back to false if it's
+  // moved off that status. Fires from the status dropdown (updateCardField)
+  // and from dragging a card between columns (commitDomOrder).
+  function setProjectDelivered(projectId, delivered) {
+    if (!projectId) return;
+    sb.from("projects").update({ delivered: delivered, updated_at: new Date().toISOString() }).eq("id", projectId).then(function (res) {
+      if (res.error) console.error(res.error);
+    });
+  }
+
   function updateCardField(id, key, value) {
     var card = state.cards.find(function (c) { return c.id === id; });
     if (!card) return;
+    var wasDelivered = card.status === "delivered";
     card[key] = value;
     if (key === "annualValue") {
       card.commercialScore = computeCommercialScore(value);
       var panel = document.getElementById("panel");
       var scoreInput = panel && panel.querySelector('[data-field="commercialScore"] .field-input');
       if (scoreInput) scoreInput.value = card.commercialScore;
+    }
+    if (key === "status" && wasDelivered !== (value === "delivered")) {
+      setProjectDelivered(card.projectId, value === "delivered");
     }
     card.updatedAt = new Date().toISOString();
     persistCard(card);
@@ -1488,6 +1654,8 @@
       dateReceived: new Date().toISOString().slice(0, 10),
       projectNumber: "",
       projectTitle: "",
+      projectId: null,
+      projectName: null,
       projectType: "Feature",
       intake: "",
       requestorName: "",
