@@ -36,7 +36,7 @@
   const TEAM_OPTIONS = [
     'Cyber', 'Data and BI', 'Delivery', 'Development', 'Digital Tech', 'Ecommerce', 'Enterprise', 'Operations',
   ];
-  const PHASE_OPTIONS = ['Not Started', 'Discovery', 'Build', 'Test', 'Complete'];
+  const PHASE_OPTIONS = ['Not Started', 'Discovery', 'Build', 'Test', 'Blocked', 'Complete'];
   const DEFAULT_PHASE = 'Not Started';
   const HEALTH_OPTIONS = ['Green', 'Amber', 'Red'];
   const HEALTH_COLORS = { Green: '#4FCE65', Amber: '#FFC148', Red: '#FF4853' };
@@ -45,6 +45,7 @@
     'Discovery': 'circle-2.svg',
     'Build': 'circle-4.svg',
     'Test': 'circle-6.svg',
+    'Blocked': 'circle-blocked.svg',
     'Complete': 'circle-8.svg',
   };
   const VIEW_MODES = ['week', 'month', 'quarter'];
