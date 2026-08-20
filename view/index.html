@@ -100,6 +100,8 @@
   .open-projects-table th.sortable.active { color: var(--accent); }
   .sort-arrow { display: inline-block; width: 10px; margin-left: 4px; font-size: 9px; color: var(--accent); }
   .project-title { font-weight: 500; }
+  .project-title-name { font-weight: 500; }
+  .project-people { font-size: 11px; font-weight: 400; color: var(--text-faint); margin-top: 2px; }
   .empty-note { padding: 20px 16px; font-size: 13px; color: var(--text-faint); font-style: italic; }
 
   .health-tag {
@@ -217,6 +219,14 @@
               <div class="filter-row-label">Team</div>
               <div class="filter-chips" id="teamFilterChips"></div>
             </div>
+            <div class="filter-row">
+              <div class="filter-row-label">PM</div>
+              <div class="filter-chips" id="pmFilterChips"></div>
+            </div>
+            <div class="filter-row">
+              <div class="filter-row-label">BA</div>
+              <div class="filter-chips" id="baFilterChips"></div>
+            </div>
           </div>
         </div>
         <table class="open-projects-table">
@@ -245,6 +255,7 @@
 (function () {
   "use strict";
 
+  var TEAM_OPTIONS = ["Cyber", "Data and BI", "Delivery", "Development", "Digital Tech", "Ecommerce", "Enterprise", "Operations"];
   var PHASE_ORDER = ["Not Started", "Discovery", "Build", "Test", "Blocked", "Complete"];
   var DEFAULT_PHASE = "Not Started";
   var PHASE_ICON_FILES = {
@@ -265,6 +276,8 @@
   var sortState = { key: "phase", dir: "asc" };
   var teamFilter = null; // null = all teams; otherwise an array of selected team names ('' = no team)
   var phaseFilter = null; // null = all phases; otherwise an array of selected phase names
+  var pmFilter = null; // null = all PMs; otherwise an array of selected PM names ('' = none)
+  var baFilter = null; // null = all BAs; otherwise an array of selected BA names ('' = none)
   var filtersCollapsed = false;
   try {
     if (localStorage.getItem("projects-listing-filters-collapsed") === "1") filtersCollapsed = true;
@@ -456,6 +469,46 @@
     document.getElementById("phaseFilterChips").innerHTML = html;
   }
 
+  function pmsInUse() {
+    var seen = {};
+    allRows.forEach(function (r) { seen[r.pm || ""] = true; });
+    return Object.keys(seen).sort(function (a, b) { return a.localeCompare(b); });
+  }
+
+  function renderPmFilterChips() {
+    var pms = pmsInUse();
+    var isAll = pmFilter === null;
+    var isNone = !isAll && pmFilter.length === 0;
+    var html = '<button type="button" class="filter-chip' + (isAll ? " active" : "") + '" data-filter-all="1">All PMs</button>';
+    html += '<button type="button" class="filter-chip' + (isNone ? " active" : "") + '" data-filter-none="1">None</button>';
+    html += pms.map(function (p) {
+      var checked = isAll || pmFilter.indexOf(p) !== -1;
+      return '<button type="button" class="filter-chip' + (checked ? " active" : "") + '" data-filter-pm="' +
+        escapeHtml(p) + '">' + escapeHtml(p || "No PM") + "</button>";
+    }).join("");
+    document.getElementById("pmFilterChips").innerHTML = html;
+  }
+
+  function basInUse() {
+    var seen = {};
+    allRows.forEach(function (r) { seen[r.ba || ""] = true; });
+    return Object.keys(seen).sort(function (a, b) { return a.localeCompare(b); });
+  }
+
+  function renderBaFilterChips() {
+    var bas = basInUse();
+    var isAll = baFilter === null;
+    var isNone = !isAll && baFilter.length === 0;
+    var html = '<button type="button" class="filter-chip' + (isAll ? " active" : "") + '" data-filter-all="1">All BAs</button>';
+    html += '<button type="button" class="filter-chip' + (isNone ? " active" : "") + '" data-filter-none="1">None</button>';
+    html += bas.map(function (b) {
+      var checked = isAll || baFilter.indexOf(b) !== -1;
+      return '<button type="button" class="filter-chip' + (checked ? " active" : "") + '" data-filter-ba="' +
+        escapeHtml(b) + '">' + escapeHtml(b || "No BA") + "</button>";
+    }).join("");
+    document.getElementById("baFilterChips").innerHTML = html;
+  }
+
   function updateFiltersCollapseUI() {
     document.getElementById("filtersBlockBody").style.display = filtersCollapsed ? "none" : "";
     var toggle = document.getElementById("filtersCollapseToggle");
@@ -467,6 +520,8 @@
     var rows = allRows.filter(function (r) {
       if (teamFilter !== null && teamFilter.indexOf(r.team || "") === -1) return false;
       if (phaseFilter !== null && phaseFilter.indexOf(r.phase) === -1) return false;
+      if (pmFilter !== null && pmFilter.indexOf(r.pm || "") === -1) return false;
+      if (baFilter !== null && baFilter.indexOf(r.ba || "") === -1) return false;
       return true;
     });
     render(rows);
@@ -481,7 +536,7 @@
       var td0 = document.createElement("td");
       td0.colSpan = 7;
       td0.className = "empty-note";
-      td0.textContent = ((phaseFilter !== null || teamFilter !== null) && allRows.length)
+      td0.textContent = ((phaseFilter !== null || teamFilter !== null || pmFilter !== null || baFilter !== null) && allRows.length)
         ? "No projects match the current filters."
         : "No open projects on the roadmap.";
       tr0.appendChild(td0);
@@ -496,7 +551,20 @@
 
       var tdTitle = document.createElement("td");
       tdTitle.className = "project-title";
-      tdTitle.textContent = row.title;
+
+      var nameEl = document.createElement("div");
+      nameEl.className = "project-title-name";
+      nameEl.textContent = row.title;
+      tdTitle.appendChild(nameEl);
+
+      var people = [row.pm, row.ba, row.sme].filter(Boolean).join(" · ");
+      if (people) {
+        var peopleEl = document.createElement("div");
+        peopleEl.className = "project-people";
+        peopleEl.textContent = people;
+        tdTitle.appendChild(peopleEl);
+      }
+
       tr.appendChild(tdTitle);
 
       var tdTeam = document.createElement("td");
@@ -517,6 +585,19 @@
     });
   }
 
+  function populateNameDatalist(listEl, field) {
+    var seen = {};
+    var names = [];
+    allRows.forEach(function (r) {
+      var v = r[field];
+      if (v && !seen[v]) { seen[v] = true; names.push(v); }
+    });
+    names.sort(function (a, b) { return a.localeCompare(b); });
+    listEl.innerHTML = names.map(function (n) {
+      return '<option value="' + escapeHtml(n) + '"></option>';
+    }).join("");
+  }
+
   function openEditModal(row) {
     var HEALTH_OPTIONS = ["", "Green", "Amber", "Red"];
     var HEALTH_LABELS = { "": "Not set", Green: "Green", Amber: "Amber", Red: "Red" };
@@ -530,7 +611,10 @@
       "<h3>Edit “" + escapeHtml(row.title) + "”</h3>" +
       '<div class="modal-field"><label for="editHealth">Health</label><select id="editHealth"></select></div>' +
       '<div class="modal-field"><label for="editPhase">Phase</label><select id="editPhase"></select></div>' +
-      '<div class="modal-field"><label for="editTeam">Team</label><input type="text" id="editTeam" /></div>' +
+      '<div class="modal-field"><label for="editTeam">Team</label><select id="editTeam"></select></div>' +
+      '<div class="modal-field"><label for="editPm">PM</label><input type="text" id="editPm" list="editPmList" autocomplete="off" /><datalist id="editPmList"></datalist></div>' +
+      '<div class="modal-field"><label for="editBa">BA</label><input type="text" id="editBa" list="editBaList" autocomplete="off" /><datalist id="editBaList"></datalist></div>' +
+      '<div class="modal-field"><label for="editSme">SME</label><input type="text" id="editSme" /></div>' +
       '<div class="modal-error" id="editError"></div>' +
       '<div class="modal-actions"><button type="button" class="btn" id="editCancelBtn">Cancel</button>' +
       '<button type="button" class="btn btn-primary" id="editSaveBtn">Save</button></div>';
@@ -556,8 +640,29 @@
     });
     phaseSelect.value = row.phase;
 
-    var teamInput = dialog.querySelector("#editTeam");
-    teamInput.value = row.team || "";
+    var teamSelect = dialog.querySelector("#editTeam");
+    var blankTeamOption = document.createElement("option");
+    blankTeamOption.value = "";
+    blankTeamOption.textContent = "—";
+    teamSelect.appendChild(blankTeamOption);
+    TEAM_OPTIONS.forEach(function (t) {
+      var o = document.createElement("option");
+      o.value = t;
+      o.textContent = t;
+      teamSelect.appendChild(o);
+    });
+    teamSelect.value = row.team || "";
+
+    var pmInput = dialog.querySelector("#editPm");
+    pmInput.value = row.pm || "";
+    populateNameDatalist(dialog.querySelector("#editPmList"), "pm");
+
+    var baInput = dialog.querySelector("#editBa");
+    baInput.value = row.ba || "";
+    populateNameDatalist(dialog.querySelector("#editBaList"), "ba");
+
+    var smeInput = dialog.querySelector("#editSme");
+    smeInput.value = row.sme || "";
 
     var errorEl = dialog.querySelector("#editError");
     var saveBtn = dialog.querySelector("#editSaveBtn");
@@ -575,29 +680,42 @@
     saveBtn.addEventListener("click", function () {
       var newHealth = healthSelect.value;
       var newPhase = phaseSelect.value;
-      var newTeam = teamInput.value.trim();
+      var newTeam = teamSelect.value;
+      var newPm = pmInput.value.trim();
+      var newBa = baInput.value.trim();
+      var newSme = smeInput.value.trim();
 
       saveBtn.disabled = true;
       errorEl.textContent = "";
 
-      sb.from("roadmap_tasks")
-        .update({ health: newHealth || null, phase: newPhase, team: newTeam || null })
-        .eq("id", row.id)
-        .then(function (res) {
-          if (res.error) {
-            saveBtn.disabled = false;
-            errorEl.textContent = "Couldn't save: " + res.error.message;
-            return;
-          }
-          row.health = newHealth;
-          row.phase = newPhase;
-          row.team = newTeam;
-          sortRows(allRows);
-          renderPhaseFilterChips();
-          renderTeamFilterChips();
-          renderVisible();
-          close();
-        });
+      Promise.all([
+        sb.from("roadmap_tasks")
+          .update({ health: newHealth || null, phase: newPhase, team: newTeam || null })
+          .eq("id", row.id),
+        sb.from("projects")
+          .update({ pm: newPm || null, ba: newBa || null, sme: newSme || null, updated_at: new Date().toISOString() })
+          .eq("id", row.projectId)
+      ]).then(function (results) {
+        var failed = results.find(function (res) { return res.error; });
+        if (failed) {
+          saveBtn.disabled = false;
+          errorEl.textContent = "Couldn't save: " + failed.error.message;
+          return;
+        }
+        row.health = newHealth;
+        row.phase = newPhase;
+        row.team = newTeam;
+        row.pm = newPm;
+        row.ba = newBa;
+        row.sme = newSme;
+        sortRows(allRows);
+        renderPhaseFilterChips();
+        renderTeamFilterChips();
+        renderPmFilterChips();
+        renderBaFilterChips();
+        renderVisible();
+        close();
+      });
     });
 
     setTimeout(function () { healthSelect.focus(); }, 0);
@@ -605,7 +723,7 @@
 
   function load() {
     sb.from("roadmap_tasks")
-      .select("id, name, start_date, duration_weeks, team, phase, health, project_id, projects!inner(canonical_name, status)")
+      .select("id, name, start_date, duration_weeks, team, phase, health, project_id, projects!inner(canonical_name, status, pm, ba, sme)")
       .eq("projects.status", "open")
       .then(function (res) {
         if (res.error) {
@@ -621,12 +739,16 @@
           var end = start ? addDays(start, durationWeeks * 7 - 1) : null;
           return {
             id: r.id,
+            projectId: r.project_id,
             title: (r.projects && r.projects.canonical_name) || r.name || "Untitled",
             team: r.team || "",
             health: r.health || "",
             phase: phase,
             start: start,
-            end: end
+            end: end,
+            pm: (r.projects && r.projects.pm) || "",
+            ba: (r.projects && r.projects.ba) || "",
+            sme: (r.projects && r.projects.sme) || ""
           };
         });
 
@@ -634,6 +756,8 @@
         allRows = rows;
         renderPhaseFilterChips();
         renderTeamFilterChips();
+        renderPmFilterChips();
+        renderBaFilterChips();
         renderVisible();
       });
   }
@@ -673,6 +797,44 @@
       teamFilter = current.length === allTeams.length ? null : current;
     }
     renderTeamFilterChips();
+    renderVisible();
+  });
+
+  document.getElementById("pmFilterChips").addEventListener("click", function (e) {
+    var chip = e.target.closest(".filter-chip");
+    if (!chip) return;
+    var allPms = pmsInUse();
+    if (chip.dataset.filterAll) {
+      pmFilter = null;
+    } else if (chip.dataset.filterNone) {
+      pmFilter = [];
+    } else {
+      var name = chip.dataset.filterPm;
+      var current = pmFilter === null ? allPms.slice() : pmFilter.slice();
+      var idx = current.indexOf(name);
+      if (idx === -1) current.push(name); else current.splice(idx, 1);
+      pmFilter = current.length === allPms.length ? null : current;
+    }
+    renderPmFilterChips();
+    renderVisible();
+  });
+
+  document.getElementById("baFilterChips").addEventListener("click", function (e) {
+    var chip = e.target.closest(".filter-chip");
+    if (!chip) return;
+    var allBas = basInUse();
+    if (chip.dataset.filterAll) {
+      baFilter = null;
+    } else if (chip.dataset.filterNone) {
+      baFilter = [];
+    } else {
+      var name = chip.dataset.filterBa;
+      var current = baFilter === null ? allBas.slice() : baFilter.slice();
+      var idx = current.indexOf(name);
+      if (idx === -1) current.push(name); else current.splice(idx, 1);
+      baFilter = current.length === allBas.length ? null : current;
+    }
+    renderBaFilterChips();
     renderVisible();
   });
 
