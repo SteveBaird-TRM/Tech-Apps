@@ -95,6 +95,10 @@
   .open-projects-table tr:last-child td { border-bottom: none; }
   .open-projects-table td.col-health { width: 1%; }
   .open-projects-table td.col-phase { white-space: nowrap; }
+  .open-projects-table th.sortable { cursor: pointer; user-select: none; }
+  .open-projects-table th.sortable:hover { color: var(--text-muted); }
+  .open-projects-table th.sortable.active { color: var(--accent); }
+  .sort-arrow { display: inline-block; width: 10px; margin-left: 4px; font-size: 9px; color: var(--accent); }
   .project-title { font-weight: 500; }
   .empty-note { padding: 20px 16px; font-size: 13px; color: var(--text-faint); font-style: italic; }
 
@@ -213,12 +217,12 @@
         <table class="open-projects-table">
           <thead>
             <tr>
-              <th>Health</th>
-              <th>Phase</th>
-              <th>Title</th>
-              <th>Team</th>
-              <th>Start</th>
-              <th>End</th>
+              <th class="sortable" data-sort-key="health">Health<span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort-key="phase">Phase<span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort-key="title">Title<span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort-key="team">Team<span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort-key="start">Start<span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort-key="end">End<span class="sort-arrow"></span></th>
               <th></th>
             </tr>
           </thead>
@@ -248,10 +252,14 @@
   };
   var HEALTH_CLASSES = { Green: "health-green", Amber: "health-amber", Red: "health-red" };
 
+  var HEALTH_ORDER = ["", "Green", "Amber", "Red"];
+  var SORT_FALLBACK_CHAIN = ["phase", "start", "title"];
+
   var sb;
   var allRows = [];
   var hideNotStarted = false;
   var hideComplete = false;
+  var sortState = { key: "phase", dir: "asc" };
 
   function normalizedPhase(phase) {
     return PHASE_ORDER.indexOf(phase) !== -1 ? phase : DEFAULT_PHASE;
@@ -284,15 +292,66 @@
     el.classList.toggle("notice-hidden", !msg);
   }
 
+  function dateVal(d) {
+    return d ? d.getTime() : Infinity;
+  }
+
+  function compareRaw(a, b, key) {
+    switch (key) {
+      case "health": return HEALTH_ORDER.indexOf(a.health) - HEALTH_ORDER.indexOf(b.health);
+      case "phase": return PHASE_ORDER.indexOf(a.phase) - PHASE_ORDER.indexOf(b.phase);
+      case "title": return a.title.toLowerCase().localeCompare(b.title.toLowerCase());
+      case "team": return (a.team || "").toLowerCase().localeCompare((b.team || "").toLowerCase());
+      case "start": return dateVal(a.start) - dateVal(b.start);
+      case "end": return dateVal(a.end) - dateVal(b.end);
+      default: return 0;
+    }
+  }
+
   function sortRows(rows) {
+    var chain = [sortState.key];
+    SORT_FALLBACK_CHAIN.forEach(function (k) {
+      if (chain.indexOf(k) === -1) chain.push(k);
+    });
+
     rows.sort(function (a, b) {
-      var phaseDiff = PHASE_ORDER.indexOf(a.phase) - PHASE_ORDER.indexOf(b.phase);
-      if (phaseDiff !== 0) return phaseDiff;
-      var aTime = a.start ? a.start.getTime() : Infinity;
-      var bTime = b.start ? b.start.getTime() : Infinity;
-      return aTime - bTime;
+      for (var i = 0; i < chain.length; i++) {
+        var key = chain[i];
+        var dir = key === sortState.key ? sortState.dir : "asc";
+        var diff = compareRaw(a, b, key);
+        if (dir === "desc") diff = -diff;
+        if (diff !== 0) return diff;
+      }
+      return 0;
     });
     return rows;
+  }
+
+  function updateSortIndicators() {
+    document.querySelectorAll(".open-projects-table thead th.sortable").forEach(function (th) {
+      var key = th.getAttribute("data-sort-key");
+      var arrow = th.querySelector(".sort-arrow");
+      th.classList.toggle("active", key === sortState.key);
+      arrow.textContent = key === sortState.key ? (sortState.dir === "asc" ? "▲" : "▼") : "";
+    });
+  }
+
+  function attachSortHandlers() {
+    document.querySelectorAll(".open-projects-table thead th.sortable").forEach(function (th) {
+      th.addEventListener("click", function () {
+        var key = th.getAttribute("data-sort-key");
+        if (sortState.key === key) {
+          sortState.dir = sortState.dir === "asc" ? "desc" : "asc";
+        } else {
+          sortState.key = key;
+          sortState.dir = "asc";
+        }
+        sortRows(allRows);
+        updateSortIndicators();
+        renderVisible();
+      });
+    });
+    updateSortIndicators();
   }
 
   function canEdit() {
@@ -533,6 +592,8 @@
     hideComplete = e.target.checked;
     renderVisible();
   });
+
+  attachSortHandlers();
 
   function init() {
     sb = window.sbClient;
