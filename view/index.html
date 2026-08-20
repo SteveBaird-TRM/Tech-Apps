@@ -117,28 +117,33 @@
     :root:not([data-theme="light"]) .phase-icon { filter: invert(1) brightness(1.7); }
   }
 
-  .projects-toolbar {
-    display: flex; justify-content: flex-end; align-items: center; gap: 18px;
-    padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface-alt);
+  .filters-block { border-bottom: 1px solid var(--border); background: var(--surface-alt); }
+  .filters-block-header { display: flex; align-items: center; gap: 4px; padding: 10px 14px; }
+  .filters-block-header .filter-block-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-faint); font-weight: 600;
   }
-  .switch-label {
-    display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px;
-    color: var(--text-muted); cursor: pointer; user-select: none;
+  .filters-block-body { padding: 0 14px 12px; }
+  .filter-row { margin-bottom: 10px; }
+  .filter-row:last-child { margin-bottom: 0; }
+  .filter-row-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+  .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .filter-chip {
+    font: inherit; font-size: 11px; padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-muted);
+    cursor: pointer;
   }
-  .switch { position: relative; display: inline-block; width: 34px; height: 20px; flex: none; }
-  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-  .switch-track {
-    position: absolute; inset: 0; background: var(--border); border-radius: 999px;
-    transition: background-color 150ms ease;
+  .filter-chip:hover { background: var(--accent-tint); }
+  .filter-chip.active {
+    background: var(--accent-tint); border-color: var(--accent); color: var(--accent); font-weight: 600;
   }
-  .switch-track::before {
-    content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
-    border-radius: 50%; background: var(--surface); box-shadow: var(--shadow);
-    transition: transform 150ms ease;
+  .collapse-toggle {
+    flex: none; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+    border: none; background: transparent; color: var(--text-muted); font-size: 15px; line-height: 1;
+    cursor: pointer; border-radius: 4px; transition: transform .15s;
   }
-  .switch input:checked + .switch-track { background: var(--accent); }
-  .switch input:checked + .switch-track::before { transform: translateX(14px); }
-  .switch input:focus-visible + .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .collapse-toggle:hover { background: var(--surface); }
+  .collapse-toggle.collapsed { transform: rotate(-90deg); }
 
   .icon-btn {
     display: inline-flex; align-items: center; justify-content: center;
@@ -198,21 +203,21 @@
       <div id="loadError" class="notice notice-error notice-hidden"></div>
 
       <div class="projects-card">
-        <div class="projects-toolbar">
-          <label class="switch-label" for="hideNotStartedToggle">
-            <span class="switch">
-              <input type="checkbox" id="hideNotStartedToggle" />
-              <span class="switch-track"></span>
-            </span>
-            Hide 'Not Started' projects
-          </label>
-          <label class="switch-label" for="hideCompleteToggle">
-            <span class="switch">
-              <input type="checkbox" id="hideCompleteToggle" />
-              <span class="switch-track"></span>
-            </span>
-            Hide 'Complete' projects
-          </label>
+        <div class="filters-block" id="filtersBlock">
+          <div class="filters-block-header">
+            <button type="button" class="collapse-toggle" id="filtersCollapseToggle" title="Collapse filters">▾</button>
+            <div class="filter-block-label">Filters</div>
+          </div>
+          <div class="filters-block-body" id="filtersBlockBody">
+            <div class="filter-row">
+              <div class="filter-row-label">Phase</div>
+              <div class="filter-chips" id="phaseFilterChips"></div>
+            </div>
+            <div class="filter-row">
+              <div class="filter-row-label">Team</div>
+              <div class="filter-chips" id="teamFilterChips"></div>
+            </div>
+          </div>
         </div>
         <table class="open-projects-table">
           <thead>
@@ -257,9 +262,13 @@
 
   var sb;
   var allRows = [];
-  var hideNotStarted = false;
-  var hideComplete = false;
   var sortState = { key: "phase", dir: "asc" };
+  var teamFilter = null; // null = all teams; otherwise an array of selected team names ('' = no team)
+  var phaseFilter = null; // null = all phases; otherwise an array of selected phase names
+  var filtersCollapsed = false;
+  try {
+    if (localStorage.getItem("projects-listing-filters-collapsed") === "1") filtersCollapsed = true;
+  } catch (err) {}
 
   function normalizedPhase(phase) {
     return PHASE_ORDER.indexOf(phase) !== -1 ? phase : DEFAULT_PHASE;
@@ -407,10 +416,57 @@
     return td;
   }
 
+  function teamsInUse() {
+    var seen = {};
+    allRows.forEach(function (r) { seen[r.team || ""] = true; });
+    return Object.keys(seen).sort(function (a, b) { return a.localeCompare(b); });
+  }
+
+  function renderTeamFilterChips() {
+    var teams = teamsInUse();
+    var isAll = teamFilter === null;
+    var isNone = !isAll && teamFilter.length === 0;
+    var html = '<button type="button" class="filter-chip' + (isAll ? " active" : "") + '" data-filter-all="1">All teams</button>';
+    html += '<button type="button" class="filter-chip' + (isNone ? " active" : "") + '" data-filter-none="1">None</button>';
+    html += teams.map(function (t) {
+      var checked = isAll || teamFilter.indexOf(t) !== -1;
+      return '<button type="button" class="filter-chip' + (checked ? " active" : "") + '" data-filter-team="' +
+        escapeHtml(t) + '">' + escapeHtml(t || "No team") + "</button>";
+    }).join("");
+    document.getElementById("teamFilterChips").innerHTML = html;
+  }
+
+  function phasesInUse() {
+    var present = {};
+    allRows.forEach(function (r) { present[r.phase] = true; });
+    return PHASE_ORDER.filter(function (p) { return present[p]; });
+  }
+
+  function renderPhaseFilterChips() {
+    var phases = phasesInUse();
+    var isAll = phaseFilter === null;
+    var isNone = !isAll && phaseFilter.length === 0;
+    var html = '<button type="button" class="filter-chip' + (isAll ? " active" : "") + '" data-filter-all="1">All phases</button>';
+    html += '<button type="button" class="filter-chip' + (isNone ? " active" : "") + '" data-filter-none="1">None</button>';
+    html += phases.map(function (p) {
+      var checked = isAll || phaseFilter.indexOf(p) !== -1;
+      return '<button type="button" class="filter-chip' + (checked ? " active" : "") + '" data-filter-phase="' +
+        escapeHtml(p) + '">' + escapeHtml(p) + "</button>";
+    }).join("");
+    document.getElementById("phaseFilterChips").innerHTML = html;
+  }
+
+  function updateFiltersCollapseUI() {
+    document.getElementById("filtersBlockBody").style.display = filtersCollapsed ? "none" : "";
+    var toggle = document.getElementById("filtersCollapseToggle");
+    toggle.classList.toggle("collapsed", filtersCollapsed);
+    toggle.title = (filtersCollapsed ? "Expand" : "Collapse") + " filters";
+  }
+
   function renderVisible() {
     var rows = allRows.filter(function (r) {
-      if (hideNotStarted && r.phase === "Not Started") return false;
-      if (hideComplete && r.phase === "Complete") return false;
+      if (teamFilter !== null && teamFilter.indexOf(r.team || "") === -1) return false;
+      if (phaseFilter !== null && phaseFilter.indexOf(r.phase) === -1) return false;
       return true;
     });
     render(rows);
@@ -425,14 +481,9 @@
       var td0 = document.createElement("td");
       td0.colSpan = 7;
       td0.className = "empty-note";
-      if ((hideNotStarted || hideComplete) && allRows.length) {
-        var hidden = [];
-        if (hideNotStarted) hidden.push("'Not Started'");
-        if (hideComplete) hidden.push("'Complete'");
-        td0.textContent = "No projects — all " + hidden.join(" and ") + " projects are hidden.";
-      } else {
-        td0.textContent = "No open projects on the roadmap.";
-      }
+      td0.textContent = ((phaseFilter !== null || teamFilter !== null) && allRows.length)
+        ? "No projects match the current filters."
+        : "No open projects on the roadmap.";
       tr0.appendChild(td0);
       body.appendChild(tr0);
       return;
@@ -542,6 +593,8 @@
           row.phase = newPhase;
           row.team = newTeam;
           sortRows(allRows);
+          renderPhaseFilterChips();
+          renderTeamFilterChips();
           renderVisible();
           close();
         });
@@ -579,19 +632,57 @@
 
         sortRows(rows);
         allRows = rows;
+        renderPhaseFilterChips();
+        renderTeamFilterChips();
         renderVisible();
       });
   }
 
-  document.getElementById("hideNotStartedToggle").addEventListener("change", function (e) {
-    hideNotStarted = e.target.checked;
+  document.getElementById("phaseFilterChips").addEventListener("click", function (e) {
+    var chip = e.target.closest(".filter-chip");
+    if (!chip) return;
+    var allPhases = phasesInUse();
+    if (chip.dataset.filterAll) {
+      phaseFilter = null;
+    } else if (chip.dataset.filterNone) {
+      phaseFilter = [];
+    } else {
+      var name = chip.dataset.filterPhase;
+      var current = phaseFilter === null ? allPhases.slice() : phaseFilter.slice();
+      var idx = current.indexOf(name);
+      if (idx === -1) current.push(name); else current.splice(idx, 1);
+      phaseFilter = current.length === allPhases.length ? null : current;
+    }
+    renderPhaseFilterChips();
     renderVisible();
   });
 
-  document.getElementById("hideCompleteToggle").addEventListener("change", function (e) {
-    hideComplete = e.target.checked;
+  document.getElementById("teamFilterChips").addEventListener("click", function (e) {
+    var chip = e.target.closest(".filter-chip");
+    if (!chip) return;
+    var allTeams = teamsInUse();
+    if (chip.dataset.filterAll) {
+      teamFilter = null;
+    } else if (chip.dataset.filterNone) {
+      teamFilter = [];
+    } else {
+      var name = chip.dataset.filterTeam;
+      var current = teamFilter === null ? allTeams.slice() : teamFilter.slice();
+      var idx = current.indexOf(name);
+      if (idx === -1) current.push(name); else current.splice(idx, 1);
+      teamFilter = current.length === allTeams.length ? null : current;
+    }
+    renderTeamFilterChips();
     renderVisible();
   });
+
+  document.getElementById("filtersCollapseToggle").addEventListener("click", function () {
+    filtersCollapsed = !filtersCollapsed;
+    try { localStorage.setItem("projects-listing-filters-collapsed", filtersCollapsed ? "1" : "0"); } catch (err) {}
+    updateFiltersCollapseUI();
+  });
+
+  updateFiltersCollapseUI();
 
   attachSortHandlers();
 
