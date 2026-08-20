@@ -1170,7 +1170,7 @@
   function addTask() {
     if (!canEdit()) return;
     if (!window.ProjectPicker) return;
-    window.ProjectPicker.open({ originApp: 'roadmap-db', query: '', excludeDelivered: true }).then((project) => {
+    window.ProjectPicker.open({ originApp: 'roadmap-db', query: '', excludeFinished: true }).then((project) => {
       if (!project) return;
       addTaskForProject(project);
     });
@@ -1240,7 +1240,7 @@
   editProjectBtn.addEventListener('click', () => {
     const task = tasks.find((t) => t.id === editingTaskId);
     if (!task || !window.ProjectPicker) return;
-    window.ProjectPicker.open({ originApp: 'roadmap-db', query: task.name || '', excludeDelivered: true }).then((project) => {
+    window.ProjectPicker.open({ originApp: 'roadmap-db', query: task.name || '', excludeFinished: true }).then((project) => {
       if (!project) return;
       task.projectId = project.id;
       task.projectName = project.canonical_name;

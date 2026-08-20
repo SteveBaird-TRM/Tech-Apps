@@ -1313,16 +1313,16 @@
 
   function commitDomOrder() {
     var order = [];
-    var deliveredChanges = [];
+    var statusChanges = [];
     document.querySelectorAll(".column-body").forEach(function (body) {
       var status = body.dataset.status;
       body.querySelectorAll(".card").forEach(function (cardEl) {
         var card = state.cards.find(function (c) { return c.id === cardEl.dataset.id; });
         if (card) {
-          var wasDelivered = card.status === "delivered";
-          var isDelivered = status === "delivered";
-          if (wasDelivered !== isDelivered) {
-            deliveredChanges.push({ projectId: card.projectId, delivered: isDelivered });
+          var oldProjectStatus = projectStatusForCardStatus(card.status);
+          var newProjectStatus = projectStatusForCardStatus(status);
+          if (oldProjectStatus !== newProjectStatus) {
+            statusChanges.push({ projectId: card.projectId, status: newProjectStatus });
           }
           card.status = status;
           order.push(card);
@@ -1335,7 +1335,7 @@
     }
     persistAll(state.cards);
     renderBoard();
-    deliveredChanges.forEach(function (c) { setProjectDelivered(c.projectId, c.delivered); });
+    statusChanges.forEach(function (c) { setProjectStatus(c.projectId, c.status); });
   }
 
   function renderPanel() {
@@ -1599,13 +1599,19 @@
     return Math.round(score * 100) / 100;
   }
 
-  // Keeps a linked project's delivered flag in sync with a card's status —
-  // set true when a card reaches "delivered", set back to false if it's
-  // moved off that status. Fires from the status dropdown (updateCardField)
-  // and from dragging a card between columns (commitDomOrder).
-  function setProjectDelivered(projectId, delivered) {
+  // Keeps a linked project's status in sync with a card's status — mapped
+  // to 'delivered' or 'rejected' when the card reaches one of those
+  // columns, back to 'open' if it's moved off either. Fires from the
+  // status dropdown (updateCardField) and from dragging a card between
+  // columns (commitDomOrder).
+  function projectStatusForCardStatus(status) {
+    if (status === "delivered") return "delivered";
+    if (status === "rejected") return "rejected";
+    return "open";
+  }
+  function setProjectStatus(projectId, status) {
     if (!projectId) return;
-    sb.from("projects").update({ delivered: delivered, updated_at: new Date().toISOString() }).eq("id", projectId).then(function (res) {
+    sb.from("projects").update({ status: status, updated_at: new Date().toISOString() }).eq("id", projectId).then(function (res) {
       if (res.error) console.error(res.error);
     });
   }
@@ -1613,7 +1619,7 @@
   function updateCardField(id, key, value) {
     var card = state.cards.find(function (c) { return c.id === id; });
     if (!card) return;
-    var wasDelivered = card.status === "delivered";
+    var oldProjectStatus = projectStatusForCardStatus(card.status);
     card[key] = value;
     if (key === "annualValue") {
       card.commercialScore = computeCommercialScore(value);
@@ -1621,8 +1627,11 @@
       var scoreInput = panel && panel.querySelector('[data-field="commercialScore"] .field-input');
       if (scoreInput) scoreInput.value = card.commercialScore;
     }
-    if (key === "status" && wasDelivered !== (value === "delivered")) {
-      setProjectDelivered(card.projectId, value === "delivered");
+    if (key === "status") {
+      var newProjectStatus = projectStatusForCardStatus(value);
+      if (newProjectStatus !== oldProjectStatus) {
+        setProjectStatus(card.projectId, newProjectStatus);
+      }
     }
     card.updatedAt = new Date().toISOString();
     persistCard(card);

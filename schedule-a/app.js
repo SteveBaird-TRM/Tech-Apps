@@ -100,13 +100,13 @@
   // Canonical projects registry (public.projects), used to power the "pick
   // a project" typeahead in the Add-resource modal. Typing an existing name
   // links to it; typing something new creates it (see the addForm submit
-  // handler), same as intake/roadmap. Kept as the full set (delivered
-  // included) so exact-match lookup never misses a delivered project and
-  // creates an accidental duplicate — populateProjectDatalist() is what
-  // hides delivered projects from the visible suggestion list.
+  // handler), same as intake/roadmap. Kept as the full set (delivered and
+  // rejected included) so exact-match lookup never misses a finished
+  // project and creates an accidental duplicate — populateProjectDatalist()
+  // is what hides delivered/rejected projects from the visible suggestion list.
   var projectsCatalog = [];
   function refreshProjectsCatalog() {
-    return supabaseClient.from('projects').select('id, canonical_name, delivered').order('canonical_name').then(function (res) {
+    return supabaseClient.from('projects').select('id, canonical_name, status').order('canonical_name').then(function (res) {
       if (res.error) { console.error(res.error); return; }
       projectsCatalog = res.data || [];
       populateProjectDatalist();
@@ -116,7 +116,7 @@
     var projectListEl = document.getElementById('projectList');
     if (!projectListEl) return;
     projectListEl.innerHTML = projectsCatalog
-      .filter(function (p) { return !p.delivered; })
+      .filter(function (p) { return p.status !== 'delivered' && p.status !== 'rejected'; })
       .map(function (p) {
         return '<option value="' + escapeAttr(p.canonical_name) + '"></option>';
       }).join('');

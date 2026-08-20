@@ -141,6 +141,7 @@
     margin: 32px 0 10px; letter-spacing: 0.2px;
   }
   .section-heading .sub { font-family: var(--font-body); font-size: 12.5px; color: var(--text-muted); margin-left: 8px; }
+  #adminArea > .section-heading:first-child { margin-top: 0; }
 
   .projects-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
@@ -183,6 +184,34 @@
   .chk-yes { color: var(--accent); }
   .chk-no { color: var(--text-faint); }
 
+  .status-badge {
+    display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.03em; padding: 2px 8px; border-radius: 999px;
+  }
+  .status-open { background: var(--surface-alt); color: var(--text-muted); border: 1px solid var(--border); }
+  .status-delivered { background: var(--accent-tint); color: var(--accent); }
+  .status-rejected { background: var(--danger-tint); color: var(--danger); }
+
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border: 1px solid transparent; background: transparent;
+    color: var(--text-faint); border-radius: 7px; padding: 0;
+  }
+  .icon-btn svg { width: 15px; height: 15px; }
+  .icon-btn:hover { background: var(--danger-tint); color: var(--danger); border-color: var(--danger); }
+  .icon-btn:disabled { opacity: .5; cursor: default; }
+  .icon-btn:disabled:hover { background: transparent; color: var(--text-faint); border-color: transparent; }
+
+  .icon-btn-danger {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border: 1px solid var(--danger); background: transparent;
+    color: var(--danger); border-radius: 7px; padding: 0;
+  }
+  .icon-btn-danger svg { width: 15px; height: 15px; }
+  .icon-btn-danger:hover { background: var(--danger-tint); }
+  .icon-btn-danger:disabled { opacity: .5; cursor: default; }
+  .icon-btn-danger:disabled:hover { background: transparent; }
+
   .toast {
     position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(8px);
     background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 8px;
@@ -213,6 +242,7 @@
       </div>
 
       <div id="adminArea" class="notice-hidden">
+        <h2 class="section-heading">Users<span class="sub">Management of users</span></h2>
         <div class="add-user-card">
           <h2>Add user</h2>
           <form class="add-user-row" id="addUserForm">
@@ -241,12 +271,12 @@
         <h2 class="section-heading">Projects<span class="sub">Canonical projects and where each one appears</span></h2>
         <div class="projects-card">
           <div class="projects-toolbar">
-            <label class="switch-label" for="hideDeliveredToggle">
+            <label class="switch-label" for="hideFinishedToggle">
               <span class="switch">
-                <input type="checkbox" id="hideDeliveredToggle" />
+                <input type="checkbox" id="hideFinishedToggle" />
                 <span class="switch-track"></span>
               </span>
-              Hide delivered projects
+              Hide delivered/rejected projects
             </label>
           </div>
           <table class="projects-table">
@@ -254,9 +284,11 @@
               <tr>
                 <th>Project</th>
                 <th>Project ID</th>
+                <th>Status</th>
                 <th>Intake</th>
                 <th>Roadmap</th>
                 <th>Schedule A</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="projectsBody"></tbody>
@@ -397,7 +429,7 @@
       var resetBtn = document.createElement("button");
       resetBtn.type = "button";
       resetBtn.className = "btn";
-      resetBtn.textContent = "Reset password";
+      resetBtn.textContent = "Reset pwd";
       resetBtn.style.marginRight = "6px";
       resetBtn.addEventListener("click", function () {
         if (!window.confirm("Reset password for " + user.email + "? Their current password will stop working.")) return;
@@ -419,8 +451,14 @@
       if (user.id !== currentUserId) {
         var delBtn = document.createElement("button");
         delBtn.type = "button";
-        delBtn.className = "btn btn-danger";
-        delBtn.textContent = "Delete";
+        delBtn.className = "icon-btn-danger";
+        delBtn.title = "Delete user";
+        delBtn.setAttribute("aria-label", "Delete user");
+        delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+          'stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline>' +
+          '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>' +
+          '<path d="M10 11v6"></path><path d="M14 11v6"></path>' +
+          '<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
         delBtn.addEventListener("click", function () {
           if (!window.confirm("Delete " + user.email + "? This cannot be undone.")) return;
           delBtn.disabled = true;
@@ -460,7 +498,14 @@
   }
 
   var projectsData = null; // { projects, inIntake, inRoadmap, inScheduleA }
-  var hideDelivered = false;
+  var hideFinished = false;
+
+  function statusBadge(status) {
+    var span = document.createElement("span");
+    span.className = "status-badge status-" + status;
+    span.textContent = status;
+    return span;
+  }
 
   function renderProjects() {
     if (!projectsData) return;
@@ -469,14 +514,14 @@
 
     var projects = projectsData.projects;
     var inIntake = projectsData.inIntake, inRoadmap = projectsData.inRoadmap, inScheduleA = projectsData.inScheduleA;
-    if (hideDelivered) projects = projects.filter(function (p) { return !p.delivered; });
+    if (hideFinished) projects = projects.filter(function (p) { return p.status !== "delivered" && p.status !== "rejected"; });
 
     if (!projects.length) {
       var tr0 = document.createElement("tr");
       var td0 = document.createElement("td");
-      td0.colSpan = 5;
+      td0.colSpan = 7;
       td0.className = "empty-note";
-      td0.textContent = (hideDelivered && projectsData.projects.length) ? "No projects — all delivered projects are hidden." : "No projects yet.";
+      td0.textContent = (hideFinished && projectsData.projects.length) ? "No projects — all delivered/rejected projects are hidden." : "No projects yet.";
       tr0.appendChild(td0);
       body.appendChild(tr0);
       return;
@@ -495,9 +540,28 @@
       tdId.textContent = project.id;
       tr.appendChild(tdId);
 
+      var tdStatus = document.createElement("td");
+      tdStatus.appendChild(statusBadge(project.status));
+      tr.appendChild(tdStatus);
+
       tr.appendChild(checkCell(inIntake.has(project.id)));
       tr.appendChild(checkCell(inRoadmap.has(project.id)));
       tr.appendChild(checkCell(inScheduleA.has(project.id)));
+
+      var tdActions = document.createElement("td");
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "icon-btn";
+      delBtn.title = "Delete project";
+      delBtn.setAttribute("aria-label", "Delete project");
+      delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline>' +
+        '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>' +
+        '<path d="M10 11v6"></path><path d="M14 11v6"></path>' +
+        '<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
+      delBtn.addEventListener("click", function () { deleteProject(project, delBtn); });
+      tdActions.appendChild(delBtn);
+      tr.appendChild(tdActions);
 
       body.appendChild(tr);
     });
@@ -511,7 +575,7 @@
 
   function loadProjects() {
     return Promise.all([
-      sb.from("projects").select("id, canonical_name, delivered").order("canonical_name"),
+      sb.from("projects").select("id, canonical_name, status").order("canonical_name"),
       sb.from("roadmap_tasks").select("project_id").not("project_id", "is", null),
       sb.from("intake_cards").select("project_id").not("project_id", "is", null),
       sb.from("gantt_state").select("data").eq("id", 1).maybeSingle()
@@ -537,8 +601,43 @@
     });
   }
 
-  document.getElementById("hideDeliveredToggle").addEventListener("change", function (e) {
-    hideDelivered = e.target.checked;
+  function deleteProject(project, btn) {
+    var msg = 'Delete "' + project.canonical_name + '"?\n\n' +
+      "This permanently removes the project and every matching entry in Intake, Roadmap, and Schedule A. This cannot be undone.";
+    if (!window.confirm(msg)) return;
+
+    btn.disabled = true;
+
+    Promise.all([
+      sb.from("intake_cards").delete().eq("project_id", project.id),
+      sb.from("roadmap_tasks").delete().eq("project_id", project.id)
+    ]).then(function (results) {
+      if (results[0].error) throw results[0].error;
+      if (results[1].error) throw results[1].error;
+      return sb.from("gantt_state").select("data").eq("id", 1).maybeSingle();
+    }).then(function (res) {
+      if (res.error) throw res.error;
+      var data = res.data && res.data.data;
+      if (!data || !Array.isArray(data.resources)) return null;
+      var filtered = data.resources.filter(function (r) { return r.projectId !== project.id; });
+      if (filtered.length === data.resources.length) return null;
+      data.resources = filtered;
+      return sb.from("gantt_state").update({ data: data, updated_at: new Date().toISOString() }).eq("id", 1);
+    }).then(function (res) {
+      if (res && res.error) throw res.error;
+      return sb.from("projects").delete().eq("id", project.id);
+    }).then(function (res) {
+      if (res.error) throw res.error;
+      toast('Deleted project "' + project.canonical_name + '"');
+      loadProjects();
+    }).catch(function (err) {
+      btn.disabled = false;
+      toast("Couldn't delete project: " + err.message);
+    });
+  }
+
+  document.getElementById("hideFinishedToggle").addEventListener("change", function (e) {
+    hideFinished = e.target.checked;
     renderProjects();
   });
 
