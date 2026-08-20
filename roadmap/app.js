@@ -96,6 +96,11 @@
   const editTeamInput = document.getElementById('edit-team');
   const editPhaseInput = document.getElementById('edit-phase');
   const editHealthInput = document.getElementById('edit-health');
+  const editPmInput = document.getElementById('edit-pm');
+  const editPmListEl = document.getElementById('edit-pm-list');
+  const editBaInput = document.getElementById('edit-ba');
+  const editBaListEl = document.getElementById('edit-ba-list');
+  const editSmeInput = document.getElementById('edit-sme');
   const editColorPresetsEl = document.getElementById('edit-color-presets');
   const editProjectNameEl = document.getElementById('edit-project-name');
   const editProjectBtn = document.getElementById('edit-project-btn');
@@ -423,6 +428,9 @@
       health: HEALTH_OPTIONS.includes(row.health) ? row.health : '',
       projectId: row.project_id || null,
       projectName: (row.projects && row.projects.canonical_name) || null,
+      projectPm: (row.projects && row.projects.pm) || '',
+      projectBa: (row.projects && row.projects.ba) || '',
+      projectSme: (row.projects && row.projects.sme) || '',
     };
   }
 
@@ -501,7 +509,7 @@
     setFileStatus('Connecting...', '');
     const { data, error } = await supabaseClient
       .from(TABLE)
-      .select('*, projects(canonical_name)')
+      .select('*, projects(canonical_name, pm, ba, sme)')
       .order('sort_order', { ascending: true });
 
     if (error) {
@@ -1221,6 +1229,28 @@
     });
   }
 
+  function populateNameDatalist(listEl, field) {
+    const seen = new Set();
+    const names = [];
+    tasks.forEach((t) => {
+      const v = t[field];
+      if (v && !seen.has(v)) { seen.add(v); names.push(v); }
+    });
+    names.sort((a, b) => a.localeCompare(b));
+    listEl.innerHTML = '';
+    names.forEach((n) => {
+      const o = document.createElement('option');
+      o.value = n;
+      listEl.appendChild(o);
+    });
+  }
+
+  function setProjectRoleFieldsDisabled(disabled) {
+    editPmInput.disabled = disabled;
+    editBaInput.disabled = disabled;
+    editSmeInput.disabled = disabled;
+  }
+
   function openEditDialog(task) {
     if (!canEdit()) return;
     editingTaskId = task.id;
@@ -1232,6 +1262,12 @@
     editPhaseInput.value = task.phase || DEFAULT_PHASE;
     editHealthInput.value = task.health || '';
     editProjectNameEl.textContent = task.projectName || task.projectId || 'Not linked';
+    editPmInput.value = task.projectPm || '';
+    editBaInput.value = task.projectBa || '';
+    editSmeInput.value = task.projectSme || '';
+    setProjectRoleFieldsDisabled(!task.projectId);
+    populateNameDatalist(editPmListEl, 'projectPm');
+    populateNameDatalist(editBaListEl, 'projectBa');
     editDialog.showModal();
     editNameInput.focus();
   }
@@ -1247,6 +1283,22 @@
       task.projectName = project.canonical_name;
       editProjectNameEl.textContent = project.canonical_name;
       scheduleSave();
+
+      setProjectRoleFieldsDisabled(true);
+      supabaseClient.from('projects').select('pm, ba, sme').eq('id', project.id).single().then((res) => {
+        if (res.error) { console.error(res.error); return; }
+        task.projectPm = (res.data && res.data.pm) || '';
+        task.projectBa = (res.data && res.data.ba) || '';
+        task.projectSme = (res.data && res.data.sme) || '';
+        if (editingTaskId === task.id) {
+          editPmInput.value = task.projectPm;
+          editBaInput.value = task.projectBa;
+          editSmeInput.value = task.projectSme;
+          setProjectRoleFieldsDisabled(false);
+          populateNameDatalist(editPmListEl, 'projectPm');
+          populateNameDatalist(editBaListEl, 'projectBa');
+        }
+      });
     });
   });
 
@@ -1275,6 +1327,19 @@
     task.team = editTeamInput.value || '';
     task.phase = editPhaseInput.value || DEFAULT_PHASE;
     task.health = editHealthInput.value || '';
+
+    if (task.projectId) {
+      const pm = editPmInput.value.trim();
+      const ba = editBaInput.value.trim();
+      const sme = editSmeInput.value.trim();
+      task.projectPm = pm;
+      task.projectBa = ba;
+      task.projectSme = sme;
+      supabaseClient.from('projects')
+        .update({ pm: pm || null, ba: ba || null, sme: sme || null, updated_at: new Date().toISOString() })
+        .eq('id', task.projectId)
+        .then((res) => { if (res.error) console.error(res.error); });
+    }
 
     render();
     scheduleSave();
