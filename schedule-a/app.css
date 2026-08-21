@@ -211,10 +211,6 @@
     background: var(--surface-1); border-left: 1px solid var(--baseline); border-right: 1px solid var(--baseline);
     user-select: none;
   }
-  .ghost-btn.danger:hover { color: var(--series-8); border-color: var(--series-8); }
-  .ghost-btn.warn { color: var(--series-4); border-color: var(--series-4); }
-  .ghost-btn.warn:hover { background: color-mix(in srgb, var(--series-4) 12%, var(--surface-1)); }
-
   .view-toggle {
     display: inline-flex; border: 1px solid var(--baseline); border-radius: 6px; overflow: hidden;
   }

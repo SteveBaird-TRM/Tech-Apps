@@ -329,6 +329,22 @@
     return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
   }
 
+  function setPasswordBannerText(prefix, email, password) {
+    var el = document.getElementById("passwordBannerText");
+    el.textContent = "";
+    el.appendChild(document.createTextNode(prefix));
+    var strong = document.createElement("strong");
+    strong.textContent = email;
+    el.appendChild(strong);
+    el.appendChild(document.createTextNode(
+      ". Share this temporary password with them (shown once — it won't be stored anywhere):"
+    ));
+    el.appendChild(document.createElement("br"));
+    var code = document.createElement("code");
+    code.textContent = password;
+    el.appendChild(code);
+  }
+
   function callAdminFn(payload) {
     return sb.functions.invoke("admin-users", { body: payload }).then(function (res) {
       if (res.error) {
@@ -437,9 +453,7 @@
         callAdminFn({ action: "reset-password", userId: user.id }).then(function (data) {
           resetBtn.disabled = false;
           var banner = document.getElementById("passwordBanner");
-          document.getElementById("passwordBannerText").innerHTML =
-            "Reset password for <strong>" + user.email + "</strong>. Share this temporary password with them " +
-            "(shown once — it won't be stored anywhere):<br><code>" + data.password + "</code>";
+          setPasswordBannerText("Reset password for ", user.email, data.password);
           banner.classList.add("show");
         }).catch(function (err) {
           resetBtn.disabled = false;
@@ -660,9 +674,7 @@
       input.value = "";
       passwordInput.value = "";
       var banner = document.getElementById("passwordBanner");
-      document.getElementById("passwordBannerText").innerHTML =
-        "Created <strong>" + data.user.email + "</strong>. Share this temporary password with them " +
-        "(shown once — it won't be stored anywhere):<br><code>" + data.password + "</code>";
+      setPasswordBannerText("Created ", data.user.email, data.password);
       banner.classList.add("show");
       loadUsers();
     }).catch(function (err) {
