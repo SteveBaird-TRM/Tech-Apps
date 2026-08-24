@@ -101,6 +101,7 @@
   const editBaInput = document.getElementById('edit-ba');
   const editBaListEl = document.getElementById('edit-ba-list');
   const editSmeInput = document.getElementById('edit-sme');
+  const editDescriptionInput = document.getElementById('edit-description');
   const editColorPresetsEl = document.getElementById('edit-color-presets');
   const editProjectNameEl = document.getElementById('edit-project-name');
   const editProjectBtn = document.getElementById('edit-project-btn');
@@ -431,6 +432,7 @@
       projectPm: (row.projects && row.projects.pm) || '',
       projectBa: (row.projects && row.projects.ba) || '',
       projectSme: (row.projects && row.projects.sme) || '',
+      projectDescription: (row.projects && row.projects.description) || '',
     };
   }
 
@@ -509,7 +511,7 @@
     setFileStatus('Connecting...', '');
     const { data, error } = await supabaseClient
       .from(TABLE)
-      .select('*, projects(canonical_name, pm, ba, sme)')
+      .select('*, projects(canonical_name, pm, ba, sme, description)')
       .order('sort_order', { ascending: true });
 
     if (error) {
@@ -1249,6 +1251,7 @@
     editPmInput.disabled = disabled;
     editBaInput.disabled = disabled;
     editSmeInput.disabled = disabled;
+    editDescriptionInput.disabled = disabled;
   }
 
   function openEditDialog(task) {
@@ -1265,6 +1268,7 @@
     editPmInput.value = task.projectPm || '';
     editBaInput.value = task.projectBa || '';
     editSmeInput.value = task.projectSme || '';
+    editDescriptionInput.value = task.projectDescription || '';
     setProjectRoleFieldsDisabled(!task.projectId);
     populateNameDatalist(editPmListEl, 'projectPm');
     populateNameDatalist(editBaListEl, 'projectBa');
@@ -1285,15 +1289,17 @@
       scheduleSave();
 
       setProjectRoleFieldsDisabled(true);
-      supabaseClient.from('projects').select('pm, ba, sme').eq('id', project.id).single().then((res) => {
+      supabaseClient.from('projects').select('pm, ba, sme, description').eq('id', project.id).single().then((res) => {
         if (res.error) { console.error(res.error); return; }
         task.projectPm = (res.data && res.data.pm) || '';
         task.projectBa = (res.data && res.data.ba) || '';
         task.projectSme = (res.data && res.data.sme) || '';
+        task.projectDescription = (res.data && res.data.description) || '';
         if (editingTaskId === task.id) {
           editPmInput.value = task.projectPm;
           editBaInput.value = task.projectBa;
           editSmeInput.value = task.projectSme;
+          editDescriptionInput.value = task.projectDescription;
           setProjectRoleFieldsDisabled(false);
           populateNameDatalist(editPmListEl, 'projectPm');
           populateNameDatalist(editBaListEl, 'projectBa');
@@ -1332,11 +1338,13 @@
       const pm = editPmInput.value.trim();
       const ba = editBaInput.value.trim();
       const sme = editSmeInput.value.trim();
+      const description = editDescriptionInput.value.trim();
       task.projectPm = pm;
       task.projectBa = ba;
       task.projectSme = sme;
+      task.projectDescription = description;
       supabaseClient.from('projects')
-        .update({ pm: pm || null, ba: ba || null, sme: sme || null, updated_at: new Date().toISOString() })
+        .update({ pm: pm || null, ba: ba || null, sme: sme || null, description: description || null, updated_at: new Date().toISOString() })
         .eq('id', task.projectId)
         .then((res) => { if (res.error) console.error(res.error); });
     }

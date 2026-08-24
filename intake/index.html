@@ -911,13 +911,14 @@
   }
 
   function fetchCards() {
-    return sb.from(TABLE).select("id, data, project_id, projects(canonical_name)").then(function (res) {
+    return sb.from(TABLE).select("id, data, project_id, projects(canonical_name, description)").then(function (res) {
       if (res.error) throw res.error;
       var cards = res.data.map(function (row) {
         var card = Object.assign({}, row.data);
         card.id = row.id;
         card.projectId = row.project_id || null;
         card.projectName = (row.projects && row.projects.canonical_name) || null;
+        card.projectDescription = (row.projects && row.projects.description) || null;
         return card;
       });
       cards.sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
@@ -1374,6 +1375,9 @@
       }
       group.fields.forEach(function (f) {
         scroll.appendChild(buildField(card, f, group.layout));
+        if (f.key === "projectTitle") {
+          scroll.appendChild(buildProjectDescriptionField(card));
+        }
       });
     });
 
@@ -1432,14 +1436,56 @@
     return row;
   }
 
+  function refreshProjectDescriptionField(card) {
+    var panel = document.getElementById("panel");
+    var old = panel && panel.querySelector(".project-description-field");
+    if (old) old.replaceWith(buildProjectDescriptionField(card));
+  }
+
+  function buildProjectDescriptionField(card) {
+    var wrap = document.createElement("div");
+    wrap.className = "project-description-field";
+    if (!card.projectId) return wrap;
+    wrap.classList.add("field-group");
+
+    var label = document.createElement("label");
+    label.className = "field-label";
+    label.textContent = "Project description";
+    wrap.appendChild(label);
+
+    var input = document.createElement("textarea");
+    input.className = "field-textarea";
+    input.value = card.projectDescription || "";
+    input.disabled = !canEdit();
+    input.addEventListener("blur", function () {
+      var val = input.value.trim();
+      if (val === (card.projectDescription || "")) return;
+      card.projectDescription = val;
+      sb.from("projects")
+        .update({ description: val || null, updated_at: new Date().toISOString() })
+        .eq("id", card.projectId)
+        .then(function (res) { if (res.error) console.error(res.error); });
+    });
+    wrap.appendChild(input);
+
+    return wrap;
+  }
+
   function linkProject(card) {
     if (!canEdit() || !window.ProjectPicker) return;
     window.ProjectPicker.open({ originApp: "intake", query: card.projectTitle || "" }).then(function (project) {
       if (!project) return;
       card.projectId = project.id;
       card.projectName = project.canonical_name;
+      card.projectDescription = null;
       persistCard(card);
       refreshProjectLinkRow(card);
+      refreshProjectDescriptionField(card);
+      sb.from("projects").select("description").eq("id", project.id).single().then(function (res) {
+        if (res.error || card.projectId !== project.id) return;
+        card.projectDescription = res.data.description || null;
+        refreshProjectDescriptionField(card);
+      });
     });
   }
 
@@ -1474,14 +1520,16 @@
       return;
     }
 
-    sb.from("projects").select("id, canonical_name").ilike("canonical_name", title).limit(1).then(function (res) {
+    sb.from("projects").select("id, canonical_name, description").ilike("canonical_name", title).limit(1).then(function (res) {
       if (res.error) { console.error(res.error); return; }
       if (card.projectId) return; // a manual link may have landed while this was in flight
       if (res.data && res.data.length) {
         card.projectId = res.data[0].id;
         card.projectName = res.data[0].canonical_name;
+        card.projectDescription = res.data[0].description || null;
         persistCard(card);
         refreshProjectLinkRow(card);
+        refreshProjectDescriptionField(card);
         return;
       }
       sb.from("projects").insert({ canonical_name: title, origin_app: "intake" }).select("id, canonical_name").single().then(function (res2) {
@@ -1489,8 +1537,10 @@
         if (card.projectId) return;
         card.projectId = res2.data.id;
         card.projectName = res2.data.canonical_name;
+        card.projectDescription = null;
         persistCard(card);
         refreshProjectLinkRow(card);
+        refreshProjectDescriptionField(card);
       });
     });
   }

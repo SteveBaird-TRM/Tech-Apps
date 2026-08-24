@@ -187,10 +187,11 @@
     display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
     color: var(--text-faint); font-weight: 600; margin-bottom: 5px;
   }
-  .modal-field select, .modal-field input[type="text"] {
+  .modal-field select, .modal-field input[type="text"], .modal-field textarea {
     width: 100%; box-sizing: border-box; border: 1px solid var(--border); background: var(--surface-alt);
     color: var(--text); border-radius: 7px; padding: 8px 10px; font-size: 13px; font-family: inherit;
   }
+  .modal-field textarea { resize: vertical; }
   .modal-error { color: var(--danger); font-size: 12.5px; margin-top: -6px; margin-bottom: 10px; min-height: 16px; }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 </style>
@@ -620,6 +621,7 @@
       '<div class="modal-field"><label for="editPm">PM</label><input type="text" id="editPm" list="editPmList" autocomplete="off" /><datalist id="editPmList"></datalist></div>' +
       '<div class="modal-field"><label for="editBa">BA</label><input type="text" id="editBa" list="editBaList" autocomplete="off" /><datalist id="editBaList"></datalist></div>' +
       '<div class="modal-field"><label for="editSme">SME</label><input type="text" id="editSme" /></div>' +
+      '<div class="modal-field"><label for="editDescription">Description</label><textarea id="editDescription" rows="3"></textarea></div>' +
       '<div class="modal-error" id="editError"></div>' +
       '<div class="modal-actions"><button type="button" class="btn" id="editCancelBtn">Cancel</button>' +
       '<button type="button" class="btn btn-primary" id="editSaveBtn">Save</button></div>';
@@ -669,6 +671,9 @@
     var smeInput = dialog.querySelector("#editSme");
     smeInput.value = row.sme || "";
 
+    var descriptionInput = dialog.querySelector("#editDescription");
+    descriptionInput.value = row.description || "";
+
     var errorEl = dialog.querySelector("#editError");
     var saveBtn = dialog.querySelector("#editSaveBtn");
     var cancelBtn = dialog.querySelector("#editCancelBtn");
@@ -689,6 +694,7 @@
       var newPm = pmInput.value.trim();
       var newBa = baInput.value.trim();
       var newSme = smeInput.value.trim();
+      var newDescription = descriptionInput.value.trim();
 
       saveBtn.disabled = true;
       errorEl.textContent = "";
@@ -698,7 +704,7 @@
           .update({ health: newHealth || null, phase: newPhase, team: newTeam || null })
           .eq("id", row.id),
         sb.from("projects")
-          .update({ pm: newPm || null, ba: newBa || null, sme: newSme || null, updated_at: new Date().toISOString() })
+          .update({ pm: newPm || null, ba: newBa || null, sme: newSme || null, description: newDescription || null, updated_at: new Date().toISOString() })
           .eq("id", row.projectId)
       ]).then(function (results) {
         var failed = results.find(function (res) { return res.error; });
@@ -713,6 +719,7 @@
         row.pm = newPm;
         row.ba = newBa;
         row.sme = newSme;
+        row.description = newDescription;
         sortRows(allRows);
         renderPhaseFilterChips();
         renderTeamFilterChips();
@@ -728,7 +735,7 @@
 
   function load() {
     sb.from("roadmap_tasks")
-      .select("id, name, start_date, duration_weeks, team, phase, health, project_id, projects!inner(canonical_name, status, pm, ba, sme)")
+      .select("id, name, start_date, duration_weeks, team, phase, health, project_id, projects!inner(canonical_name, status, pm, ba, sme, description)")
       .eq("projects.status", "open")
       .then(function (res) {
         if (res.error) {
@@ -753,7 +760,8 @@
             end: end,
             pm: (r.projects && r.projects.pm) || "",
             ba: (r.projects && r.projects.ba) || "",
-            sme: (r.projects && r.projects.sme) || ""
+            sme: (r.projects && r.projects.sme) || "",
+            description: (r.projects && r.projects.description) || ""
           };
         });
 

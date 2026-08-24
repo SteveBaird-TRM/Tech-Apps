@@ -554,7 +554,8 @@ body {
 .edit-dialog input[type="text"],
 .edit-dialog input[type="date"],
 .edit-dialog input[type="number"],
-.edit-dialog select {
+.edit-dialog select,
+.edit-dialog textarea {
   display: block;
   width: 100%;
   margin-top: 4px;
@@ -564,6 +565,12 @@ body {
   background: var(--panel-alt);
   color: var(--text);
   font-size: 13px;
+}
+
+.edit-dialog textarea {
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
 }
 
 .edit-dialog input[type="color"] {
