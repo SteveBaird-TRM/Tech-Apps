@@ -74,6 +74,7 @@
     letter-spacing: 0.2px; margin: 0;
   }
   .topbar .sub { font-size: 12.5px; color: var(--text-muted); margin-left: 10px; }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
   .main { flex: 1; display: flex; justify-content: center; padding: 28px 24px 60px; }
   .panel { width: 100%; max-width: 1200px; }
@@ -170,6 +171,7 @@
   .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
   .btn-primary:hover { filter: brightness(1.06); }
   .btn:disabled { opacity: .55; cursor: default; }
+  a.btn { display: inline-block; text-decoration: none; }
 
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(15, 17, 21, 0.5); z-index: 1000;
@@ -203,7 +205,10 @@
     <div>
       <h1>Projects Listing</h1><span class="sub">Health, phase, and timing pulled live from the roadmap</span>
     </div>
-    <button type="button" class="btn" id="exportCsvBtn">Export CSV</button>
+    <div class="topbar-actions">
+      <a class="btn" id="businessViewBtn" href="view.html" target="_blank" rel="noopener">Business View</a>
+      <button type="button" class="btn" id="exportCsvBtn">Export CSV</button>
+    </div>
   </div>
 
   <div class="main">
