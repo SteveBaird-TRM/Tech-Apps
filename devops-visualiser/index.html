@@ -317,6 +317,15 @@
   ];
   var DEFAULT_COLOR = "#808080";
 
+  // Work item types that always land in the OTHER column but get a distinct
+  // border color instead of the DEFAULT_COLOR grey.
+  var OTHER_COLUMN_COLORS = {
+    "approval": "#339947",
+    "information": "#339947",
+    "risk": "#339947",
+    "issues": "#339947"
+  };
+
   // Inlined as data URIs (rather than referencing the .svg files by relative
   // path) so a card's icon still renders when the diagram is exported as a
   // standalone HTML file and opened somewhere the original files aren't.
@@ -528,7 +537,7 @@
         return { index: i, label: COLUMN_SLOTS[i].label, color: COLUMN_SLOTS[i].types[key] };
       }
     }
-    return { index: -1, label: "OTHER", color: DEFAULT_COLOR };
+    return { index: -1, label: "OTHER", color: OTHER_COLUMN_COLORS[key] || DEFAULT_COLOR };
   }
 
   function resolveIcon(state) {
