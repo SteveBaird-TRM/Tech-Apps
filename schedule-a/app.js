@@ -487,7 +487,7 @@
   }
 
   function allocationRows() {
-    return resources.map(function (r) {
+    return resources.map(function (r, index) {
       return {
         id: r.id,
         resource_name: r.name,
@@ -496,6 +496,7 @@
         start_week: r.start,
         duration_weeks: r.duration,
         allocation_pct: r.allocation,
+        sort_order: index,
         updated_at: new Date().toISOString()
       };
     });
@@ -559,7 +560,7 @@
     render();
     showLoadOverlay('loading');
     Promise.all([
-      supabaseClient.from('resource_allocations').select('*').order('id'),
+      supabaseClient.from('resource_allocations').select('*').order('sort_order'),
       supabaseClient.from('schedule_settings').select('*').eq('id', 1).single()
     ]).then(function (results) {
       var allocRes = results[0], settingsRes = results[1];
