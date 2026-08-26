@@ -592,21 +592,18 @@
       sb.from("projects").select("id, canonical_name, status").order("canonical_name"),
       sb.from("roadmap_tasks").select("project_id").not("project_id", "is", null),
       sb.from("intake_cards").select("project_id").not("project_id", "is", null),
-      sb.from("gantt_state").select("data").eq("id", 1).maybeSingle()
+      sb.from("resource_allocations").select("project_id").not("project_id", "is", null)
     ]).then(function (results) {
-      var projectsRes = results[0], roadmapRes = results[1], intakeRes = results[2], ganttRes = results[3];
+      var projectsRes = results[0], roadmapRes = results[1], intakeRes = results[2], allocRes = results[3];
 
       if (projectsRes.error) throw projectsRes.error;
       if (roadmapRes.error) throw roadmapRes.error;
       if (intakeRes.error) throw intakeRes.error;
-      if (ganttRes.error) throw ganttRes.error;
+      if (allocRes.error) throw allocRes.error;
 
       var inRoadmap = idSet(roadmapRes.data);
       var inIntake = idSet(intakeRes.data);
-
-      var inScheduleA = new Set();
-      var resources = (ganttRes.data && ganttRes.data.data && ganttRes.data.data.resources) || [];
-      resources.forEach(function (r) { if (r.projectId) inScheduleA.add(r.projectId); });
+      var inScheduleA = idSet(allocRes.data);
 
       projectsData = { projects: projectsRes.data || [], inIntake: inIntake, inRoadmap: inRoadmap, inScheduleA: inScheduleA };
       renderProjects();
@@ -624,21 +621,12 @@
 
     Promise.all([
       sb.from("intake_cards").delete().eq("project_id", project.id),
-      sb.from("roadmap_tasks").delete().eq("project_id", project.id)
+      sb.from("roadmap_tasks").delete().eq("project_id", project.id),
+      sb.from("resource_allocations").delete().eq("project_id", project.id)
     ]).then(function (results) {
       if (results[0].error) throw results[0].error;
       if (results[1].error) throw results[1].error;
-      return sb.from("gantt_state").select("data").eq("id", 1).maybeSingle();
-    }).then(function (res) {
-      if (res.error) throw res.error;
-      var data = res.data && res.data.data;
-      if (!data || !Array.isArray(data.resources)) return null;
-      var filtered = data.resources.filter(function (r) { return r.projectId !== project.id; });
-      if (filtered.length === data.resources.length) return null;
-      data.resources = filtered;
-      return sb.from("gantt_state").update({ data: data, updated_at: new Date().toISOString() }).eq("id", 1);
-    }).then(function (res) {
-      if (res && res.error) throw res.error;
+      if (results[2].error) throw results[2].error;
       return sb.from("projects").delete().eq("id", project.id);
     }).then(function (res) {
       if (res.error) throw res.error;

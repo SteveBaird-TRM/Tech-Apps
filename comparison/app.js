@@ -1,6 +1,6 @@
 (() => {
   const ROADMAP_TABLE = 'roadmap_tasks';
-  const SCHEDULE_TABLE = 'gantt_state';
+  const RESOURCE_ALLOCATIONS_TABLE = 'resource_allocations';
 
   const DAY_MS = 24 * 60 * 60 * 1000;
   const LABEL_WIDTH_PX = 240;
@@ -169,32 +169,25 @@
     tableScrollEl.hidden = !show;
   }
 
-  function defaultScheduleData() {
-    return {
-      version: 3,
-      unit: 'week',
-      timelineStart: null,
-      resources: [],
-      nextId: 1,
-      rolesCatalog: [],
-      resourceRoles: {},
-    };
-  }
-
   async function loadAll() {
     setFileStatus('Connecting...', '');
     try {
-      const [rmRes, schRes] = await Promise.all([
+      const [rmRes, allocRes] = await Promise.all([
         supabaseClient.from(ROADMAP_TABLE).select('*'),
-        supabaseClient.from(SCHEDULE_TABLE).select('data').eq('id', 1).single(),
+        supabaseClient.from(RESOURCE_ALLOCATIONS_TABLE).select('id, project_label, start_week, duration_weeks'),
       ]);
       if (rmRes.error) throw rmRes.error;
-      // PGRST116 = no row yet (fresh schedule table) — treat as empty.
-      if (schRes.error && schRes.error.code !== 'PGRST116') throw schRes.error;
+      if (allocRes.error) throw allocRes.error;
 
       roadmapRows = rmRes.data || [];
-      scheduleData = (schRes.data && schRes.data.data) ? schRes.data.data : defaultScheduleData();
-      if (!Array.isArray(scheduleData.resources)) scheduleData.resources = [];
+      scheduleData = {
+        resources: (allocRes.data || []).map((row) => ({
+          id: row.id,
+          project: row.project_label,
+          start: row.start_week,
+          duration: row.duration_weeks,
+        })),
+      };
 
       buildProjects();
       reconcileFilter();
@@ -640,12 +633,18 @@
         ops.push(supabaseClient.from(ROADMAP_TABLE).update({ name: newName }).eq('id', project.roadmap.id));
       }
       if (project.schedule) {
+        const renamedIds = [];
         scheduleData.resources.forEach((r) => {
           const key = String(r.project || 'Untitled Project').trim() || 'Untitled Project';
-          if (key === oldName) r.project = newName;
+          if (key === oldName) {
+            r.project = newName;
+            renamedIds.push(r.id);
+          }
         });
         ops.push(
-          supabaseClient.from(SCHEDULE_TABLE).upsert({ id: 1, data: scheduleData, updated_at: new Date().toISOString() })
+          supabaseClient.from(RESOURCE_ALLOCATIONS_TABLE)
+            .update({ project_label: newName, updated_at: new Date().toISOString() })
+            .in('id', renamedIds)
         );
       }
 

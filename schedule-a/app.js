@@ -486,16 +486,49 @@
     saveTimer = setTimeout(persistState, 400);
   }
 
-  function currentStateData() {
-    // version 3: resource start/duration are stored relative to the fixed DATA_EPOCH, not
-    // relative to timelineStart, so panning the view never rewrites saved dates.
-    return { version: 3, unit: 'week', timelineStart: isoDateString(timelineStartDate), resources: resources, nextId: nextId, rolesCatalog: rolesCatalog, resourceRoles: resourceRoles };
+  function allocationRows() {
+    return resources.map(function (r) {
+      return {
+        id: r.id,
+        resource_name: r.name,
+        project_label: r.project,
+        project_id: r.projectId || null,
+        start_week: r.start,
+        duration_weeks: r.duration,
+        allocation_pct: r.allocation,
+        updated_at: new Date().toISOString()
+      };
+    });
+  }
+
+  function settingsRow() {
+    return {
+      id: 1,
+      timeline_start: isoDateString(timelineStartDate),
+      next_id: nextId,
+      roles_catalog: rolesCatalog,
+      resource_roles: resourceRoles,
+      updated_at: new Date().toISOString()
+    };
   }
 
   function persistState(isRetry) {
     if (!canEdit()) return;
-    supabaseClient.from('gantt_state').upsert({ id: 1, data: currentStateData(), updated_at: new Date().toISOString() }).then(function (res) {
-      if (res.error) throw res.error;
+    var liveIds = resources.map(function (r) { return r.id; });
+    // Upsert current rows first, then delete anything no longer present — so a failure
+    // between the two calls only ever leaves stale rows behind (self-heals on the next
+    // successful save), never drops rows a partial failure could otherwise lose.
+    Promise.all([
+      supabaseClient.from('resource_allocations').upsert(allocationRows()),
+      supabaseClient.from('schedule_settings').upsert(settingsRow())
+    ]).then(function (results) {
+      var err = (results[0].error || results[1].error);
+      if (err) throw err;
+      var delQuery = supabaseClient.from('resource_allocations').delete();
+      return (liveIds.length ? delQuery.not('id', 'in', '(' + liveIds.join(',') + ')') : delQuery.gte('id', 0)).then(function (res) {
+        if (res.error) throw res.error;
+      });
+    }).then(function () {
       flashStatus('Saved · ' + timeNow());
     }).catch(function () {
       if (isRetry) {
@@ -525,10 +558,34 @@
   function loadStateFromSupabase() {
     render();
     showLoadOverlay('loading');
-    supabaseClient.from('gantt_state').select('data').eq('id', 1).single().then(function (res) {
-      // PGRST116 = no row yet (fresh table) — treat like today's empty-state.
-      if (res.error && res.error.code !== 'PGRST116') throw res.error;
-      if (res.data && res.data.data) applyState(res.data.data);
+    Promise.all([
+      supabaseClient.from('resource_allocations').select('*').order('id'),
+      supabaseClient.from('schedule_settings').select('*').eq('id', 1).single()
+    ]).then(function (results) {
+      var allocRes = results[0], settingsRes = results[1];
+      if (allocRes.error) throw allocRes.error;
+      // PGRST116 = no settings row yet (fresh table) — treat like today's empty-state.
+      if (settingsRes.error && settingsRes.error.code !== 'PGRST116') throw settingsRes.error;
+      var settings = settingsRes.data;
+      applyState({
+        version: 3,
+        unit: 'week',
+        timelineStart: settings ? settings.timeline_start : null,
+        nextId: settings ? settings.next_id : undefined,
+        rolesCatalog: settings ? settings.roles_catalog : [],
+        resourceRoles: settings ? settings.resource_roles : {},
+        resources: (allocRes.data || []).map(function (row) {
+          return {
+            id: row.id,
+            name: row.resource_name,
+            project: row.project_label,
+            projectId: row.project_id,
+            allocation: row.allocation_pct,
+            start: row.start_week,
+            duration: row.duration_weeks
+          };
+        })
+      });
       hideLoadOverlay();
       render();
     }).catch(function () {
