@@ -76,6 +76,22 @@
   .notice-error { background: var(--danger-tint); border: 1px solid var(--danger); color: var(--danger); }
   .notice-hidden { display: none; }
 
+  .phase-filter {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+  }
+  .phase-filter-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 12px 6px 10px; font-size: 12.5px; cursor: pointer; user-select: none;
+  }
+  .phase-filter-chip input { margin: 0; accent-color: var(--accent); cursor: pointer; }
+  .phase-filter-chip.is-off { opacity: 0.55; }
+  .phase-filter-chip img { width: 13px; height: 13px; }
+  :root[data-theme="dark"] .phase-filter-chip img { filter: invert(1) brightness(1.7); }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .phase-filter-chip img { filter: invert(1) brightness(1.7); }
+  }
+
   .projects-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
     box-shadow: var(--shadow); overflow: hidden;
@@ -146,6 +162,8 @@
     <div class="panel">
       <div id="loadError" class="notice notice-error notice-hidden"></div>
 
+      <div class="phase-filter" id="phaseFilter"></div>
+
       <div class="projects-card">
         <table class="open-projects-table">
           <thead>
@@ -192,6 +210,8 @@
   var sb;
   var allRows = [];
   var sortState = { key: "phase", dir: "desc" };
+  var phaseFilterState = {};
+  PHASE_ORDER.forEach(function (phase) { phaseFilterState[phase] = true; });
 
   function normalizedPhase(phase) {
     return PHASE_ORDER.indexOf(phase) !== -1 ? phase : DEFAULT_PHASE;
@@ -360,6 +380,43 @@
     });
   }
 
+  function applyPhaseFilter() {
+    allRows.forEach(function (row) {
+      row.hidden = !phaseFilterState[row.phase];
+    });
+    render(allRows);
+  }
+
+  function buildPhaseFilter() {
+    var wrap = document.getElementById("phaseFilter");
+    wrap.innerHTML = "";
+    PHASE_ORDER.forEach(function (phase) {
+      var label = document.createElement("label");
+      label.className = "phase-filter-chip";
+
+      var checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = phaseFilterState[phase];
+      checkbox.addEventListener("change", function () {
+        phaseFilterState[phase] = checkbox.checked;
+        label.classList.toggle("is-off", !checkbox.checked);
+        applyPhaseFilter();
+      });
+      label.appendChild(checkbox);
+
+      var icon = document.createElement("img");
+      icon.src = PHASE_ICON_FILES[phase];
+      icon.alt = "";
+      label.appendChild(icon);
+
+      var text = document.createElement("span");
+      text.textContent = phase;
+      label.appendChild(text);
+
+      wrap.appendChild(label);
+    });
+  }
+
   function load() {
     sb.from("roadmap_tasks")
       .select("id, name, start_date, duration_weeks, phase, health, project_id, projects!inner(canonical_name, status)")
@@ -380,7 +437,7 @@
             health: r.health || "",
             phase: phase,
             start: start,
-            hidden: false
+            hidden: !phaseFilterState[phase]
           };
         });
 
@@ -564,6 +621,7 @@
 
   function init() {
     sb = window.sbClient;
+    buildPhaseFilter();
     load();
   }
 
