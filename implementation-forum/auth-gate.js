@@ -18,6 +18,11 @@
   const SUPABASE_URL = 'https://aczahhxneshsrnqsezzg.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_96Tlee7wEiFYANeoIcD69Q_RT1EOma2';
 
+  // Force re-login this many days after the user's last password sign-in
+  // (Supabase's own session/inactivity timeout setting isn't available on our plan).
+  const MAX_SESSION_AGE_DAYS = 14;
+  const MAX_SESSION_AGE_MS = MAX_SESSION_AGE_DAYS * 24 * 60 * 60 * 1000;
+
   const requirements = window.AUTH_REQUIREMENTS || [];
   const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   window.sbClient = sbClient;
@@ -125,6 +130,15 @@
       hideBar();
       window.currentAccess = {};
       showOverlay();
+      return;
+    }
+
+    const lastSignInAt = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : 0;
+    if (Date.now() - lastSignInAt > MAX_SESSION_AGE_MS) {
+      await sbClient.auth.signOut();
+      hideBar();
+      window.currentAccess = {};
+      showOverlay('Your session has expired. Please sign in again.');
       return;
     }
 
