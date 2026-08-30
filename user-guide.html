@@ -1,0 +1,707 @@
+<title>Technology Web Apps Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #fbfaf7;
+    --surface: #ffffff;
+    --surface-2: #f4f2ec;
+    --ink: #1c1d2e;
+    --sub: #5b5c72;
+    --faint: #8b8ca0;
+    --border: #e2e0d6;
+    --border-strong: #cfcdc0;
+    --accent: #4b3fae;
+    --accent-ink: #ffffff;
+    --accent-soft: #efedfb;
+    --accent-soft-border: #d9d5f5;
+    --good: #1f7a4d;
+    --good-soft: #e6f4ec;
+    --warn: #9a6a12;
+    --warn-soft: #fbf1de;
+    --danger: #a3372e;
+    --danger-soft: #fbeae8;
+    --code-bg: #f0eee5;
+    --shadow: 0 10px 30px rgba(28,29,46,0.07);
+    --radius: 10px;
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --bg: #16151f;
+      --surface: #1d1c29;
+      --surface-2: #24232f;
+      --ink: #eeedf6;
+      --sub: #b3b2c4;
+      --faint: #82818f;
+      --border: #322f42;
+      --border-strong: #423f57;
+      --accent: #a79bff;
+      --accent-ink: #16151f;
+      --accent-soft: #29253f;
+      --accent-soft-border: #423a68;
+      --good: #6fd39e;
+      --good-soft: #1d2f27;
+      --warn: #e0b055;
+      --warn-soft: #332918;
+      --danger: #f0968c;
+      --danger-soft: #33201e;
+      --code-bg: #24222f;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg: #16151f;
+    --surface: #1d1c29;
+    --surface-2: #24232f;
+    --ink: #eeedf6;
+    --sub: #b3b2c4;
+    --faint: #82818f;
+    --border: #322f42;
+    --border-strong: #423f57;
+    --accent: #a79bff;
+    --accent-ink: #16151f;
+    --accent-soft: #29253f;
+    --accent-soft-border: #423a68;
+    --good: #6fd39e;
+    --good-soft: #1d2f27;
+    --warn: #e0b055;
+    --warn-soft: #332918;
+    --danger: #f0968c;
+    --danger-soft: #33201e;
+    --code-bg: #24222f;
+    --shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Source Sans 3", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  h1,h2,h3,h4 { font-family: "Manrope", Arial, sans-serif; text-wrap: balance; color: var(--ink); }
+  code, .kbd, .tag-mono { font-family: "IBM Plex Mono", "Consolas", monospace; }
+  a { color: var(--accent); }
+  ::selection { background: var(--accent-soft); color: var(--ink); }
+
+  .shell{
+    display: grid;
+    grid-template-columns: 250px minmax(0,1fr);
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  @media (max-width: 880px){
+    .shell{ grid-template-columns: 1fr; }
+    .sidenav{ position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  .sidenav{
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 28px 20px 40px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
+  .brand-mark{
+    width: 30px; height: 30px; border-radius: 8px;
+    background: var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    flex: none;
+  }
+  .brand-mark svg{ width:16px; height:16px; stroke: var(--accent-ink); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .brand-text{ font-family:"Manrope", sans-serif; font-weight:800; font-size: 14.5px; line-height:1.25; }
+  .brand-text span{ display:block; font-family:"Source Sans 3",sans-serif; font-weight:600; font-size:11.5px; color: var(--sub); letter-spacing: .04em; text-transform: uppercase; }
+
+  .nav-group{ display:flex; flex-direction:column; gap:2px; }
+  .nav-label{ font-size: 11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color: var(--faint); margin: 10px 0 4px 10px; }
+  .nav-link{
+    display:flex; align-items:center; gap:8px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    color: var(--sub);
+    text-decoration:none;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .nav-link:hover{ background: var(--surface-2); color: var(--ink); }
+  .nav-dot{ width:6px; height:6px; border-radius:50%; background: var(--border-strong); flex:none; }
+
+  main{ padding: 48px clamp(20px,4vw,64px) 100px; min-width:0; }
+
+  .lede{ max-width: 62ch; }
+  .eyebrow{
+    font-size: 11.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 10px;
+  }
+  h1.page-title{ font-size: clamp(28px,3.4vw,38px); font-weight: 800; margin: 0 0 14px; letter-spacing: -0.01em; }
+  .lede p{ color: var(--sub); font-size: 17px; margin: 0 0 12px; }
+
+  .callout{
+    margin-top: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    display:flex; gap: 12px;
+    max-width: 62ch;
+  }
+  .callout svg{ width:18px; height:18px; stroke: var(--accent); fill:none; stroke-width:1.8; flex:none; margin-top:2px; }
+  .callout p{ margin:0; color: var(--sub); font-size: 14.5px; }
+  .callout strong{ color: var(--ink); }
+
+  section{ margin-top: 64px; scroll-margin-top: 24px; }
+  section h2{ font-size: 22px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-sub{ color: var(--sub); font-size: 15px; margin: 0 0 24px; max-width: 68ch; }
+
+  /* connection diagram */
+  .diagram{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px clamp(16px,3vw,36px);
+    box-shadow: var(--shadow);
+    overflow-x: auto;
+  }
+  .diagram svg{ display:block; margin: 0 auto; min-width: 640px; width: 100%; height: auto; }
+  .diagram-note{ margin: 16px 0 0; font-size: 13.5px; color: var(--sub); text-align:center; }
+
+  /* app cards */
+  .app-card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 26px clamp(18px,3vw,32px);
+    margin-bottom: 22px;
+  }
+  .app-head{ display:flex; align-items:flex-start; justify-content:space-between; gap: 16px; flex-wrap:wrap; }
+  .app-name{ display:flex; align-items:center; gap:10px; }
+  .app-icon{ width:32px; height:32px; border-radius:8px; background: var(--accent-soft); border:1px solid var(--accent-soft-border); display:flex; align-items:center; justify-content:center; flex:none; }
+  .app-icon svg{ width:17px; height:17px; stroke: var(--accent); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .app-name h3{ font-size: 19px; font-weight:800; margin:0; }
+  .app-name .subtitle{ font-size:13px; color: var(--sub); margin-top: 1px; }
+
+  .badges{ display:flex; gap:6px; flex-wrap:wrap; }
+  .badge{
+    font-size: 11.5px; font-weight:600; padding: 4px 9px; border-radius: 999px;
+    border:1px solid var(--border-strong); color: var(--sub); white-space:nowrap;
+  }
+  .badge.req{ background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .badge.open{ background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .badge.standalone{ background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+
+  .app-desc{ color: var(--sub); font-size: 15px; margin: 14px 0 18px; max-width: 66ch; }
+
+  .app-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 700px){ .app-grid{ grid-template-columns: 1fr; } }
+
+  .field{ display:flex; flex-direction:column; gap:3px; }
+  .field-label{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color: var(--faint); }
+  .field-value{ font-size: 14px; color: var(--ink); }
+  .field-value a{ text-decoration:none; border-bottom: 1px solid var(--accent-soft-border); }
+  .pagelist{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px; }
+  .pagelist li{ font-size: 14px; }
+  .pagelist code{ background: var(--code-bg); padding: 1.5px 6px; border-radius:5px; font-size: 12.5px; }
+
+  .steps{ margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--border); }
+  .steps-title{ font-size: 12.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color: var(--sub); margin: 0 0 10px; }
+  .steps ol{ margin:0; padding-left: 0; list-style:none; counter-reset: step; display:flex; flex-direction:column; gap: 9px; }
+  .steps li{ counter-increment: step; display:flex; gap: 10px; font-size: 14.5px; }
+  .steps li::before{
+    content: counter(step);
+    flex: none; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    font-family:"IBM Plex Mono",monospace; font-size: 11px; font-weight:600;
+    display:flex; align-items:center; justify-content:center; margin-top: 1px;
+  }
+  .ui { font-family:"IBM Plex Mono",monospace; font-size: 12.5px; background: var(--code-bg); padding: 1.5px 6px; border-radius: 5px; color: var(--ink); white-space: nowrap; }
+
+  /* task index table */
+  .task-table{ width:100%; border-collapse: collapse; background: var(--surface); border:1px solid var(--border); border-radius: 14px; overflow:hidden; box-shadow: var(--shadow); }
+  .task-table-wrap{ overflow-x:auto; border-radius:14px; }
+  .task-table th{ text-align:left; font-size: 11.5px; letter-spacing:.06em; text-transform:uppercase; color: var(--faint); font-weight:700; padding: 12px 18px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+  .task-table td{ padding: 13px 18px; border-bottom: 1px solid var(--border); font-size: 14.5px; vertical-align: top; }
+  .task-table tr:last-child td{ border-bottom:none; }
+  .task-table td.task{ color: var(--ink); font-weight:600; width: 26%; }
+  .task-table td.app{ width: 20%; }
+  .task-table td.how{ color: var(--sub); }
+  .app-pill{ display:inline-flex; align-items:center; gap:6px; font-size: 13px; font-weight:600; color: var(--accent); }
+  .app-pill .dot{ width:6px; height:6px; border-radius:50%; background: var(--accent); }
+
+  .perm-grid{ display:grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-top: 18px; }
+  @media (max-width: 780px){ .perm-grid{ grid-template-columns: 1fr; } }
+  .perm-card{ background: var(--surface); border:1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .perm-card h4{ margin:0 0 6px; font-size:14.5px; }
+  .perm-card p{ margin:0; font-size:13.5px; color: var(--sub); }
+
+  footer{ margin-top: 70px; padding-top: 22px; border-top: 1px solid var(--border); color: var(--faint); font-size: 13px; }
+</style>
+
+<div class="shell">
+  <nav class="sidenav">
+    <div class="brand">
+      <span class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M3 16l9 5 9-5"/><path d="M3 12l9 5 9-5"/></svg></span>
+      <div class="brand-text">Web Apps<span>User Guide</span></div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Start here</div>
+      <a class="nav-link" href="#big-picture"><span class="nav-dot"></span>The big picture</a>
+      <a class="nav-link" href="#access"><span class="nav-dot"></span>Getting in</a>
+      <a class="nav-link" href="#connections"><span class="nav-dot"></span>How it fits together</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">The apps</div>
+      <a class="nav-link" href="#intake"><span class="nav-dot"></span>Intake</a>
+      <a class="nav-link" href="#roadmap"><span class="nav-dot"></span>Roadmap</a>
+      <a class="nav-link" href="#schedule-a"><span class="nav-dot"></span>Schedule A</a>
+      <a class="nav-link" href="#project-list"><span class="nav-dot"></span>Project List</a>
+      <a class="nav-link" href="#comparison"><span class="nav-dot"></span>Comparison</a>
+      <a class="nav-link" href="#devops"><span class="nav-dot"></span>DevOps Visualiser</a>
+      <a class="nav-link" href="#admin"><span class="nav-dot"></span>Admin</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Reference</div>
+      <a class="nav-link" href="#tasks"><span class="nav-dot"></span>"I want to…" index</a>
+    </div>
+  </nav>
+
+  <main>
+    <p class="eyebrow">Orientation for new users</p>
+    <h1 class="page-title">Finding your way around the Web Apps</h1>
+    <div class="lede">
+      <p>This isn't one application — it's a family of independent tools that all read and write the same project data. Once you know which tool owns which job, moving between them is quick.</p>
+    </div>
+
+<!--   <div class="callout">
+      <svg viewBox="0 0 24 24"><path d="M12 8v5"/><circle cx="12" cy="16.3" r=".4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9"/></svg>
+      <p><strong>Start at the gateway.</strong> <code>index.html</code> in the project root is a landing page with a card for every app. Bookmark that instead of individual app URLs — it's the one page that links out to everything.</p>
+    </div>
+-->
+
+    <section id="big-picture">
+      <h2>The big picture</h2>
+      <p class="section-sub">Every app below is a plain, self-contained website — no login wall in common, no shared menu bar. What ties them together is one shared database of projects sitting behind the scenes.</p>
+      <ul style="max-width:66ch;color:var(--sub);font-size:15px;line-height:1.7;padding-left:20px;margin:0;">
+        <li><strong style="color:var(--ink)">Intake</strong> is where a new project idea first gets logged and triaged.</li>
+        <li><strong style="color:var(--ink)">Roadmap</strong> is the master timeline — the source of truth most other apps read from.</li>
+        <li><strong style="color:var(--ink)">Schedule A</strong> plans who is allocated to what, week by week.</li>
+        <li><strong style="color:var(--ink)">Project List</strong> and <strong style="color:var(--ink)">Comparison</strong> are read-oriented views built on top of Roadmap and Schedule A.</li>
+        <li><strong style="color:var(--ink)">DevOps Visualiser</strong> stands alone — a CSV-in, diagram-out tool with no login and no shared data.</li>
+<!--        <li><strong style="color:var(--ink)">Admin</strong> is where access to everything else is granted - you don't need to worry about that!</li>
+-->
+      </ul>
+    </section>
+
+    <section id="access">
+      <h2>Getting in</h2>
+      <p class="section-sub">Every app except DevOps Visualiser checks who you are before showing anything. Access is granted per app, at two levels.</p>
+      <div class="perm-grid">
+        <div class="perm-card">
+          <h4 style="color:var(--sub)">No access</h4>
+          <p>You can reach the page but see a sign-in / access-denied screen. Ask whoever manages Admin to grant you a role.</p>
+        </div>
+        <div class="perm-card">
+          <h4 style="color:var(--good)">Viewer</h4>
+          <p>You can open the app and see all its data — boards, timelines, dashboards — but can't change anything.</p>
+        </div>
+        <div class="perm-card">
+          <h4 style="color:var(--accent)">Editor</h4>
+          <p>Full read/write for that app: create, drag, edit, delete. Comparison needs editor on two apps to matter, since it's read-only itself.</p>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:20px;">
+        <svg viewBox="0 0 24 24"><path d="M12 15v-4"/><circle cx="12" cy="9" r=".4" fill="currentColor" stroke="none"/><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        <p>Access is granted separately for <strong>Intake</strong>, <strong>Roadmap</strong>, and <strong>Schedule A</strong> — being a viewer of one doesn't carry over to the others. Project List piggybacks on Roadmap access, and Comparison needs both Roadmap and Schedule A.</p>
+      </div>
+    </section>
+
+    <section id="connections">
+      <h2>How it fits together</h2>
+      <p class="section-sub">Everything hangs off one shared registry of projects. A project can be born in Intake, tracked on the Roadmap, and staffed in Schedule A — and the read-only apps stitch those views back together.</p>
+      <div class="diagram">
+        <svg viewBox="0 0 920 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of how the apps connect through the shared projects registry">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="var(--border-strong)"/>
+            </marker>
+          </defs>
+          <style>
+            .node-box{ fill: var(--surface); stroke: var(--border-strong); stroke-width:1.3; }
+            .node-box.hub{ fill: var(--accent-soft); stroke: var(--accent); }
+            .node-label{ font-family:"Manrope",sans-serif; font-weight:700; font-size:14px; fill: var(--ink); }
+            .node-sub{ font-family:"Source Sans 3",sans-serif; font-size:11px; fill: var(--sub); }
+            .edge{ stroke: var(--border-strong); stroke-width:1.4; fill:none; marker-end:url(#arrow); }
+            .standalone-label{ font-family:"Source Sans 3",sans-serif; font-size:12px; fill: var(--faint); font-style: italic; }
+          </style>
+
+          <!-- hub -->
+          <rect class="node-box hub" x="370" y="20" width="180" height="52" rx="10"/>
+          <text class="node-label" x="460" y="42" text-anchor="middle">projects</text>
+          <text class="node-sub" x="460" y="59" text-anchor="middle">canonical registry</text>
+
+          <!-- row 2: intake / roadmap / schedule-a -->
+          <rect class="node-box" x="90" y="130" width="150" height="52" rx="10"/>
+          <text class="node-label" x="165" y="152" text-anchor="middle">Intake</text>
+          <text class="node-sub" x="165" y="169" text-anchor="middle">requests</text>
+
+          <rect class="node-box" x="385" y="130" width="150" height="52" rx="10"/>
+          <text class="node-label" x="460" y="152" text-anchor="middle">Roadmap</text>
+          <text class="node-sub" x="460" y="169" text-anchor="middle">timeline</text>
+
+          <rect class="node-box" x="680" y="130" width="150" height="52" rx="10"/>
+          <text class="node-label" x="755" y="152" text-anchor="middle">Schedule A</text>
+          <text class="node-sub" x="755" y="169" text-anchor="middle">capacity</text>
+
+          <!-- row 3: project-list / comparison -->
+          <rect class="node-box" x="385" y="245" width="150" height="52" rx="10"/>
+          <text class="node-label" x="460" y="267" text-anchor="middle">Project List</text>
+          <text class="node-sub" x="460" y="284" text-anchor="middle">read-only view</text>
+
+          <rect class="node-box" x="617" y="245" width="150" height="52" rx="10"/>
+          <text class="node-label" x="692" y="267" text-anchor="middle">Comparison</text>
+          <text class="node-sub" x="692" y="284" text-anchor="middle">roadmap vs capacity</text>
+
+          <!-- edges hub -> row2 -->
+          <path class="edge" d="M420 72 C380 95, 250 105, 175 128"/>
+          <path class="edge" d="M460 72 L460 128"/>
+          <path class="edge" d="M500 72 C540 95, 680 105, 745 128"/>
+
+          <!-- roadmap -> project-list -->
+          <path class="edge" d="M460 182 L460 243"/>
+          <!-- roadmap -> comparison -->
+          <path class="edge" d="M505 175 C560 205, 620 225, 660 243"/>
+          <!-- schedule-a -> comparison -->
+          <path class="edge" d="M735 182 C725 205, 710 225, 700 243"/>
+
+          <!-- intake -> releases note -->
+          <text class="standalone-label" x="165" y="215" text-anchor="middle">releases.html in Roadmap</text>
+          <text class="standalone-label" x="165" y="230" text-anchor="middle">also reads Intake for requestor names</text>
+
+          <!-- devops visualiser + admin, off to the side -->
+          <rect class="node-box" x="20" y="245" width="150" height="52" rx="10" stroke-dasharray="4 3"/>
+          <text class="node-label" x="95" y="267" text-anchor="middle">DevOps Visualiser</text>
+          <text class="node-sub" x="95" y="284" text-anchor="middle">stands alone · no login</text>
+
+<!--          <rect class="node-box" x="20" y="20" width="150" height="52" rx="10" stroke-dasharray="4 3"/>
+          <text class="node-label" x="95" y="42" text-anchor="middle">Admin</text>
+          <text class="node-sub" x="95" y="59" text-anchor="middle">grants access to all of these</text>
+-->
+        </svg>
+      </div>
+      <p class="diagram-note">Solid boxes read from or write to the shared registry. Dashed boxes sit outside that system entirely.</p>
+    </section>
+
+    <!-- ===================== INTAKE ===================== -->
+    <section id="intake">
+      <h2>The apps, one by one</h2>
+      <p class="section-sub">Each entry below covers what the app is for, what access you need, and the steps for the task you'll reach for most.</p>
+
+      <div class="app-card">
+        <div class="app-head">
+          <div class="app-name">
+            <span class="app-icon"><svg viewBox="0 0 24 24"><path d="M4 12h4l2 3h4l2-3h4"/><path d="M4 12l1.5-7h13L20 12"/><path d="M4 12v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6"/></svg></span>
+            <div>
+              <h3>Intake</h3>
+              <div class="subtitle">Intake Tracker — where new project requests come in</div>
+            </div>
+          </div>
+          <div class="badges"><span class="badge req">Requires: Intake viewer</span></div>
+        </div>
+        <p class="app-desc">A kanban board that carries a request from first ask through triage to prioritisation, plus dashboards for KPIs and priority scoring (Strategic / Operational / Customer / Commercial).</p>
+        <div class="app-grid">
+          <div class="field">
+            <span class="field-label">Pages</span>
+            <ul class="pagelist">
+              <li><code>index.html</code> — the board</li>
+<!--              <li><code>admin.html</code> — manage columns <em style="color:var(--faint)">(editor only)</em></li>
+-->
+              <li><code>kpis.html</code> / <code>intake-full-kpis.html</code> — dashboards</li>
+              <li><code>priority.html</code> — scoring view</li>
+            </ul>
+          </div>
+          <div class="field">
+            <span class="field-label">Links out to</span>
+            <span class="field-value">The shared <code>projects</code> registry, via the "find or create project" picker</span>
+          </div>
+        </div>
+        <div class="steps">
+          <p class="steps-title">Log a new request</p>
+          <ol>
+            <li>On the board, click <span class="ui">+ New request</span> in the top toolbar (editor access only — it's hidden for viewers).</li>
+            <li>Fill in the request details, then link it to a project via the picker, or create a new one.</li>
+            <li>The card lands in the first column; drag it across columns as it moves through triage.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ROADMAP ===================== -->
+    <section id="roadmap">
+      <div class="app-card">
+        <div class="app-head">
+          <div class="app-name">
+            <span class="app-icon"><svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg></span>
+            <div>
+              <h3>Roadmap</h3>
+              <div class="subtitle">Technology Roadmap — the master planning timeline</div>
+            </div>
+          </div>
+          <div class="badges"><span class="badge req">Requires: roadmap-db viewer</span></div>
+        </div>
+        <p class="app-desc">The Gantt-style planner most other apps ultimately read from. Drag and resize project bars across a timeline, tag phase / health / team, and switch between week, month, and quarter views.</p>
+        <div class="app-grid">
+          <div class="field">
+            <span class="field-label">Pages</span>
+            <ul class="pagelist">
+              <li><code>index.html</code> — main planner</li>
+              <li><code>releases.html</code> — feature-release timeline</li>
+              <li><code>roadmap-view.html</code> — static exported snapshot, no login</li>
+            </ul>
+          </div>
+          <div class="field">
+            <span class="field-label">Links out to</span>
+            <span class="field-value">The shared <code>projects</code> registry, via the same picker Intake uses</span>
+          </div>
+        </div>
+        <div class="steps">
+          <p class="steps-title">Add a project to the timeline</p>
+          <ol>
+            <li>Click <span class="ui">+ Project</span> top-right (editor access — this and Auto Sort, Export, and Data Clean Up are disabled for viewers).</li>
+            <li>Link it to a project in the registry, or create one, then set its start/end dates.</li>
+            <li>Drag the bar to move it, or drag its edges to resize; click a bar to open <span class="ui">Edit Project</span> for phase, health, and team.</li>
+            <li>Use <span class="ui">Display</span> to change label style, row density, or switch between light and dark, and the <span class="ui">Week / Month / Quarter</span> toggle to change zoom level.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SCHEDULE A ===================== -->
+    <section id="schedule-a">
+      <div class="app-card">
+        <div class="app-head">
+          <div class="app-name">
+            <span class="app-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></svg></span>
+            <div>
+              <h3>Schedule A</h3>
+              <div class="subtitle">Resource Planner — who's allocated to what, week by week</div>
+            </div>
+          </div>
+          <div class="badges"><span class="badge req">Requires: schedule-a-db-v2 viewer</span></div>
+        </div>
+        <p class="app-desc">A capacity-planning Gantt chart over a rolling 26-week window, showing which people or roles are committed to which projects.</p>
+        <div class="app-grid">
+          <div class="field">
+            <span class="field-label">Pages</span>
+            <ul class="pagelist"><li><code>index.html</code> — single page</li></ul>
+          </div>
+          <div class="field">
+            <span class="field-label">Links out to</span>
+            <span class="field-value">The <code>projects</code> registry, via its own search box (not the shared picker)</span>
+          </div>
+        </div>
+        <div class="steps">
+          <p class="steps-title">Allocate someone to a project</p>
+          <ol>
+            <li>Switch to <span class="ui">Projects</span> or <span class="ui">Resources</span> view depending on how you want to browse.</li>
+            <li>Open the row for the project or person, then <span class="ui">Add resource</span> to place a new allocation bar — it defaults to a one-week span.</li>
+            <li>Drag the bar's edges to stretch the allocation; use <span class="ui">Assign Role</span> first if the role you need isn't listed yet.</li>
+            <li><span class="ui">Sort A-Z</span> / <span class="ui">Sort Date</span> and the zoom controls help when the sheet gets busy; <span class="ui">Back Up Data</span> exports everything.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PROJECT LIST ===================== -->
+    <section id="project-list">
+      <div class="app-card">
+        <div class="app-head">
+          <div class="app-name">
+            <span class="app-icon"><svg viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></span>
+            <div>
+              <h3>Project List</h3>
+              <div class="subtitle">Open Projects List — a live, sortable table</div>
+            </div>
+          </div>
+          <div class="badges"><span class="badge req">Requires: roadmap-db viewer</span></div>
+        </div>
+        <p class="app-desc">The fastest way to see every open project at a glance — health, phase, title, planned start date — sourced live from Roadmap's own data. It has no data of its own.</p>
+        <div class="app-grid">
+          <div class="field">
+            <span class="field-label">Pages</span>
+            <ul class="pagelist">
+              <li><code>index.html</code> — editable list</li>
+              <li><code>view.html</code> — read-only, shareable variant</li>
+            </ul>
+          </div>
+          <div class="field">
+            <span class="field-label">Depends on</span>
+            <span class="field-value">Roadmap's tables directly — no separate access key of its own</span>
+          </div>
+        </div>
+        <div class="steps">
+          <p class="steps-title">Share the list with someone outside the team</p>
+          <ol>
+            <li>Sort or filter the table on <code>index.html</code> until it shows what you want.</li>
+            <li>Use the CSV export for a static snapshot, or send the <code>view.html</code> link for a live read-only page.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== COMPARISON ===================== -->
+    <section id="comparison">
+      <div class="app-card">
+        <div class="app-head">
+          <div class="app-name">
+            <span class="app-icon"><svg viewBox="0 0 24 24"><path d="M8 3 4 7l4 4"/><path d="M4 7h13a3 3 0 0 1 3 3v1"/><path d="m16 21 4-4-4-4"/><path d="M20 17H7a3 3 0 0 1-3-3v-1"/></svg></span>
+            <div>
+              <h3>Comparison</h3>
+              <div class="subtitle">Roadmap vs Schedule Comparison — spot the conflicts</div>
+            </div>
+          </div>
+          <div class="badges"><span class="badge req">Requires: roadmap-db AND schedule-a-db-v2 viewer</span></div>
+        </div>
+        <p class="app-desc">Overlays the Roadmap timeline and Schedule A's resourcing bars on one shared axis, so you can see at a glance where committed dates and available capacity don't line up. The only app needing two separate permissions.</p>
+        <div class="app-grid">
+          <div class="field">
+            <span class="field-label">Pages</span>
+            <ul class="pagelist"><li><code>index.html</code> — single page</li></ul>
+          </div>
+          <div class="field">
+            <span class="field-label">Depends on</span>
+            <span class="field-value">Both Roadmap's and Schedule A's data — nothing of its own</span>
+          </div>
+        </div>
+        <div class="steps">
+          <p class="steps-title">Check a project for resourcing conflicts</p>
+          <ol>
+            <li>Open the app — if you're missing either underlying permission, you'll see an access notice instead of data.</li>
+            <li>Find the project on the shared timeline; its Roadmap bar and Schedule A bars sit stacked on the same weeks.</li>
+            <li>A gap between committed dates and staffed weeks is your conflict signal — flag it back to whoever owns Schedule A.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== DEVOPS ===================== -->
+    <section id="devops">
+      <div class="app-card">
+        <div class="app-head">
+          <div class="app-name">
+            <span class="app-icon"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><path d="M12 9v3"/><path d="M6 15v-2a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2"/></svg></span>
+            <div>
+              <h3>DevOps Visualiser</h3>
+              <div class="subtitle">Azure DevOps Work-Item Visualiser</div>
+            </div>
+          </div>
+          <div class="badges"><span class="badge standalone">No login needed</span></div>
+        </div>
+        <p class="app-desc">A standalone tool with no database connection at all. Drop in a CSV export from Azure DevOps and it draws a hierarchical Epic → Feature → Element → Task diagram, with filters and an export-to-standalone-HTML option.</p>
+        <div class="steps" style="border-top:none;padding-top:0;margin-top:14px;">
+          <p class="steps-title">Visualise a DevOps export</p>
+          <ol>
+            <li>Export your work items from Azure DevOps as CSV.</li>
+            <li>Open the app and load that CSV — everything happens locally in your browser.</li>
+            <li>Use the filters to narrow the hierarchy, then export to a standalone HTML file if you want to share the diagram without sharing the tool.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ADMIN =====================
+    <section id="admin">
+      <div class="app-card">
+        <div class="app-head">
+          <div class="app-name">
+            <span class="app-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span>
+            <div>
+              <h3>Admin</h3>
+              <div class="subtitle">User Access Admin — reached directly, not from the gateway</div>
+            </div>
+          </div>
+          <div class="badges"><span class="badge req">Sign-in only to view · one hardcoded account for actions</span></div>
+        </div>
+        <p class="app-desc">Creates and deletes user accounts, resets passwords, and grants viewer/editor roles for Intake, Roadmap, Schedule A, and the implementation forum. Also holds a "danger zone" for deleting a project and everything linked to it across every app — that action is restricted to a single admin account, checked both in the app and independently on the server.</p>
+        <div class="callout" style="margin-top:16px;">
+          <svg viewBox="0 0 24 24"><path d="M12 9v4"/><circle cx="12" cy="16.3" r=".4" fill="currentColor" stroke="none"/><path d="M10.3 3.9 2.7 17.4a1.6 1.6 0 0 0 1.4 2.4h15.8a1.6 1.6 0 0 0 1.4-2.4L13.7 3.9a1.6 1.6 0 0 0-2.8 0Z"/></svg>
+          <p>If you don't see a way in from the gateway page, that's expected — Admin isn't linked there. Ask your administrator for the direct URL, and for your access to be granted before you try the other apps.</p>
+        </div>
+      </div>
+    </section>
+	-->
+
+    <section id="tasks">
+      <h2>"I want to…" index</h2>
+      <p class="section-sub">The fastest lookup when you know the goal but not which app owns it.</p>
+      <div class="task-table-wrap">
+      <table class="task-table">
+        <thead><tr><th>You want to</th><th>Go to</th><th>How</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="task">Request a new project</td>
+            <td class="app"><span class="app-pill"><span class="dot"></span>Intake</span></td>
+            <td class="how"><span class="ui">+ New request</span> on the board, then link or create the project.</td>
+          </tr>
+          <tr>
+            <td class="task">See or change the overall timeline</td>
+            <td class="app"><span class="app-pill"><span class="dot"></span>Roadmap</span></td>
+            <td class="how">Main planner — drag bars, or <span class="ui">+ Project</span> to add a new one.</td>
+          </tr>
+          <tr>
+            <td class="task">See what's shipping this month</td>
+            <td class="app"><span class="app-pill"><span class="dot"></span>Roadmap</span></td>
+            <td class="how"><code>releases.html</code> — the feature-release timeline.</td>
+          </tr>
+          <tr>
+            <td class="task">See who's staffed on a project</td>
+            <td class="app"><span class="app-pill"><span class="dot"></span>Schedule A</span></td>
+            <td class="how">Switch to <span class="ui">Projects</span> view and open the row.</td>
+          </tr>
+          <tr>
+            <td class="task">Get a quick list of open projects</td>
+            <td class="app"><span class="app-pill"><span class="dot"></span>Project List</span></td>
+            <td class="how">Sort the table, or export CSV; use <code>view.html</code> to share.</td>
+          </tr>
+          <tr>
+            <td class="task">Check for date vs. capacity conflicts</td>
+            <td class="app"><span class="app-pill"><span class="dot"></span>Comparison</span></td>
+            <td class="how">Needs both Roadmap and Schedule A access — look for gaps on the overlay.</td>
+          </tr>
+          <tr>
+            <td class="task">Diagram an Azure DevOps export</td>
+            <td class="app"><span class="app-pill"><span class="dot"></span>DevOps Visualiser</span></td>
+            <td class="how">No login — just load the CSV.</td>
+          </tr>
+<!--          <tr>
+            <td class="task">Get someone access, or reset a password</td>
+            <td class="app"><span class="app-pill"><span class="dot"></span>Admin</span></td>
+            <td class="how">Reached by direct link only, not from the gateway.</td>
+          </tr>
+-->
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <footer>
+      Every app here except DevOps Visualiser is gated by a sign-in that required re-authentication every 14 days.<br>Apps are served to user using the ixiapps.co.uk domain.
+    </footer>
+  </main>
+</div>
