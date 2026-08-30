@@ -104,6 +104,23 @@
         margin: 0;
         line-height: 1.4;
     }
+    .info-row {
+        margin-top: 30px;
+    }
+    .card-info {
+        background: var(--accent-soft);
+        border-color: var(--accent-soft);
+    }
+    .card-info:hover {
+        border-color: var(--accent);
+        box-shadow: 0 8px 24px rgba(75, 63, 174, 0.15);
+    }
+    .card-info .icon {
+        background: #fff;
+    }
+    .card-info .icon svg {
+        stroke: var(--accent);
+    }
     footer {
         max-width: 1040px;
         margin: 20px auto 50px;
@@ -187,6 +204,14 @@
             <p>Shows hierarchy of DevOps tickets</p>
         </a>
 
+    </div>
+
+    <div class="info-row">
+        <a class="card card-info" href="/user-guide.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+            <h2>User Overview</h2>
+            <p>Basic user guide to the Tech web apps</p>
+        </a>
     </div>
 </main>
 
