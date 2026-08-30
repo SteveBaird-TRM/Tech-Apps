@@ -255,7 +255,7 @@
   <nav class="sidenav">
     <div class="brand">
       <span class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M3 16l9 5 9-5"/><path d="M3 12l9 5 9-5"/></svg></span>
-      <div class="brand-text">Web Apps<span>User Guide</span></div>
+      <div class="brand-text">Tech Web Apps<span>User Guide</span></div>
     </div>
 
     <div class="nav-group">
@@ -336,7 +336,7 @@
       <h2>How it fits together</h2>
       <p class="section-sub">Everything hangs off one shared registry of projects. A project can be born in Intake, tracked on the Roadmap, and staffed in Schedule A — and the read-only apps stitch those views back together.</p>
       <div class="diagram">
-        <svg viewBox="0 0 920 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of how the apps connect through the shared projects registry">
+        <svg viewBox="0 0 920 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of how the apps connect through the shared projects registry">
           <defs>
             <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M0 0 L10 5 L0 10 z" fill="var(--border-strong)"/>
@@ -369,7 +369,11 @@
           <text class="node-label" x="755" y="152" text-anchor="middle">Schedule A</text>
           <text class="node-sub" x="755" y="169" text-anchor="middle">capacity</text>
 
-          <!-- row 3: project-list / comparison -->
+          <!-- row 3: releases / project-list / comparison -->
+          <rect class="node-box" x="210" y="245" width="150" height="52" rx="10"/>
+          <text class="node-label" x="285" y="267" text-anchor="middle">Releases</text>
+          <text class="node-sub" x="285" y="284" text-anchor="middle">release timetable</text>
+
           <rect class="node-box" x="385" y="245" width="150" height="52" rx="10"/>
           <text class="node-label" x="460" y="267" text-anchor="middle">Project List</text>
           <text class="node-sub" x="460" y="284" text-anchor="middle">read-only view</text>
@@ -383,26 +387,23 @@
           <path class="edge" d="M460 72 L460 128"/>
           <path class="edge" d="M500 72 C540 95, 680 105, 745 128"/>
 
+          <!-- roadmap -> releases -->
+          <path class="edge" d="M415 175 C370 205, 320 225, 300 243"/>
           <!-- roadmap -> project-list -->
           <path class="edge" d="M460 182 L460 243"/>
           <!-- roadmap -> comparison -->
           <path class="edge" d="M505 175 C560 205, 620 225, 660 243"/>
           <!-- schedule-a -> comparison -->
           <path class="edge" d="M735 182 C725 205, 710 225, 700 243"/>
+          <!-- intake -> releases, dashed: reads requestor names -->
+          <path class="edge" d="M175 182 C190 210, 220 228, 250 243" stroke-dasharray="4 3"/>
+          <text class="standalone-label" x="120" y="222" text-anchor="middle">reads requestor</text>
+          <text class="standalone-label" x="120" y="235" text-anchor="middle">names from Intake</text>
 
-          <!-- intake -> releases note -->
-          <text class="standalone-label" x="165" y="215" text-anchor="middle">releases.html in Roadmap</text>
-          <text class="standalone-label" x="165" y="230" text-anchor="middle">also reads Intake for requestor names</text>
-
-          <!-- devops visualiser + admin, off to the side -->
-          <rect class="node-box" x="20" y="245" width="150" height="52" rx="10" stroke-dasharray="4 3"/>
-          <text class="node-label" x="95" y="267" text-anchor="middle">DevOps Visualiser</text>
-          <text class="node-sub" x="95" y="284" text-anchor="middle">stands alone · no login</text>
-
-<!--          <rect class="node-box" x="20" y="20" width="150" height="52" rx="10" stroke-dasharray="4 3"/>
-          <text class="node-label" x="95" y="42" text-anchor="middle">Admin</text>
-          <text class="node-sub" x="95" y="59" text-anchor="middle">grants access to all of these</text>
--->
+          <!-- devops visualiser, moved to its own row for clarity -->
+          <rect class="node-box" x="385" y="355" width="150" height="52" rx="10" stroke-dasharray="4 3"/>
+          <text class="node-label" x="460" y="377" text-anchor="middle">DevOps Visualiser</text>
+          <text class="node-sub" x="460" y="394" text-anchor="middle">stands alone · no login</text>
         </svg>
       </div>
       <p class="diagram-note">Solid boxes read from or write to the shared registry. Dashed boxes sit outside that system entirely.</p>
