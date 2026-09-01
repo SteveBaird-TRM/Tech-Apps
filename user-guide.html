@@ -273,7 +273,8 @@
       <a class="nav-link" href="#project-list"><span class="nav-dot"></span>Project List</a>
       <a class="nav-link" href="#comparison"><span class="nav-dot"></span>Comparison</a>
       <a class="nav-link" href="#devops"><span class="nav-dot"></span>DevOps Visualiser</a>
-<!--      <a class="nav-link" href="#admin"><span class="nav-dot"></span>Admin</a>
+	  <a class="nav-link" href="#gantt"><span class="nav-dot"></span>Gantt Charts</a>
+<!--  <a class="nav-link" href="#admin"><span class="nav-dot"></span>Admin</a>
 -->
     </div>
 
@@ -305,7 +306,8 @@
         <li><strong style="color:var(--ink)">Schedule A</strong> plans who is allocated to what, week by week.</li>
         <li><strong style="color:var(--ink)">Project List</strong> and <strong style="color:var(--ink)">Comparison</strong> are read-oriented views built on top of Roadmap and Schedule A.</li>
         <li><strong style="color:var(--ink)">DevOps Visualiser</strong> stands alone — a CSV-in, diagram-out tool with no login and no shared data.</li>
-<!--        <li><strong style="color:var(--ink)">Admin</strong> is where access to everything else is granted - you don't need to worry about that!</li>
+
+<!--    <li><strong style="color:var(--ink)">Admin</strong> is where access to everything else is granted - you don't need to worry about that!</li>
 -->
       </ul>
     </section>
@@ -627,6 +629,41 @@
       </div>
     </section>
 
+    <!-- ===================== GANTT ===================== -->
+    <section id="gantt">
+      <div class="app-card">
+        <div class="app-head">
+          <div class="app-name">
+            <span class="app-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M7 13h6"/><path d="M7 17h10"/></svg></span>
+            <div>
+              <h3>Gantt Charts</h3>
+              <div class="subtitle">Simple gantt chart maker</div>
+            </div>
+          </div>
+          <div class="badges"><span class="badge req">Standalone and shared (team) version</span></div>
+        </div>
+        <p class="app-desc">Depite a project timeline and activities with a simple gantt chart.  Options for milestones and headline (summary} task, colour, and tags.  Charts can be exported to use in other application.</p>
+        <div class="app-grid">
+          <div class="field">
+            <span class="field-label">Shared</span>
+            <ul class="pagelist"><li>Projects stored in a database</li></ul>
+          </div>
+          <div class="field">
+            <span class="field-label">Standalone</span>
+            <span class="field-value">Create and save projects locally (only in Edge or Chrome)</span>
+          </div>
+        </div>
+        <div class="steps">
+          <p class="steps-title">Open or create a new project</p>
+          <ol>
+            <li>Add new tasks and move the bar around to the date needed, stretch or shorten for the desired duration.</li>
+            <li>Click the status symbol (initially an empty circle) to change bar settings; date, time, tag, status and colour.</li>
+            <li>Day|Week|Month, Zoom, and Display button can change how the page looks.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
     <!-- ===================== ADMIN =====================
     <section id="admin">
       <div class="app-card">
@@ -690,6 +727,11 @@
             <td class="task">Diagram an Azure DevOps export</td>
             <td class="app"><span class="app-pill"><span class="dot"></span>DevOps Visualiser</span></td>
             <td class="how">No login — just load the CSV.</td>
+          </tr>
+          <tr>
+            <td class="task">Plan a project timeline</td>
+            <td class="app"><span class="app-pill"><span class="dot"></span>Gantt Charts</span></td>
+            <td class="how">No login — just load the play!</td>
           </tr>
 <!--          <tr>
             <td class="task">Get someone access, or reset a password</td>
