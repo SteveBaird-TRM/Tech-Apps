@@ -121,6 +121,8 @@
   const filterTeamRowEl = document.getElementById('filter-team-row');
   const filterPhaseRowEl = document.getElementById('filter-phase-row');
   const filterColorRowEl = document.getElementById('filter-color-row');
+  const filterSearchInput = document.getElementById('filter-search-input');
+  const filterSearchResultsEl = document.getElementById('filter-search-results');
   const cleanupBtn = document.getElementById('cleanup-btn');
   const cleanupDialog = document.getElementById('cleanup-dialog');
   const cleanupHintEl = document.getElementById('cleanup-hint');
@@ -143,6 +145,8 @@
   let filterTeams = new Set();
   let filterPhases = new Set();
   let filterColors = new Set();
+  let filterSearchQuery = '';
+  let filterSearchTaskId = null;
 
   let filterCollapsed = false;
   try {
@@ -706,9 +710,65 @@
   }
 
   function syncFilterBadge() {
-    const activeCount = filterTeams.size + filterPhases.size + filterColors.size;
+    const activeCount = filterTeams.size + filterPhases.size + filterColors.size
+      + (filterSearchTaskId || filterSearchQuery ? 1 : 0);
     filterActiveBadge.hidden = activeCount === 0;
     filterActiveBadge.textContent = String(activeCount);
+  }
+
+  // ---------- Title search ----------
+  function hideSearchResults() {
+    filterSearchResultsEl.hidden = true;
+    filterSearchResultsEl.innerHTML = '';
+  }
+
+  function matchingSearchTasks() {
+    if (!filterSearchQuery) return [];
+    return sortedTasks().filter((t) => (t.name || '').toLowerCase().includes(filterSearchQuery));
+  }
+
+  function selectSearchResult(task) {
+    filterSearchTaskId = task.id;
+    filterSearchQuery = '';
+    filterSearchInput.value = task.name || '';
+    hideSearchResults();
+    render();
+  }
+
+  function renderSearchResults() {
+    filterSearchResultsEl.innerHTML = '';
+    if (!filterSearchQuery) {
+      hideSearchResults();
+      return;
+    }
+    const matches = matchingSearchTasks().slice(0, 8);
+    if (!matches.length) {
+      const li = document.createElement('li');
+      li.className = 'filter-search-empty';
+      li.textContent = 'No matching projects';
+      filterSearchResultsEl.appendChild(li);
+      filterSearchResultsEl.hidden = false;
+      return;
+    }
+    matches.forEach((t) => {
+      const li = document.createElement('li');
+      li.className = 'filter-search-result';
+      li.textContent = t.name || '(untitled)';
+      // mousedown fires before the input's blur, so the click registers before the dropdown closes.
+      li.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        selectSearchResult(t);
+      });
+      filterSearchResultsEl.appendChild(li);
+    });
+    filterSearchResultsEl.hidden = false;
+  }
+
+  function clearSearch() {
+    filterSearchQuery = '';
+    filterSearchTaskId = null;
+    filterSearchInput.value = '';
+    hideSearchResults();
   }
 
   // Builds one row of pills for a filter category: an "All" pill that clears
@@ -794,6 +854,7 @@
     filterTeams.clear();
     filterPhases.clear();
     filterColors.clear();
+    clearSearch();
     render();
   }
 
@@ -827,6 +888,8 @@
     if (filterTeams.size && !filterTeams.has(t.team || '')) return false;
     if (filterPhases.size && !filterPhases.has(PHASE_OPTIONS.includes(t.phase) ? t.phase : DEFAULT_PHASE)) return false;
     if (filterColors.size && !filterColors.has((t.color || '').toLowerCase())) return false;
+    if (filterSearchTaskId) return t.id === filterSearchTaskId;
+    if (filterSearchQuery && !(t.name || '').toLowerCase().includes(filterSearchQuery)) return false;
     return true;
   }
 
@@ -1636,6 +1699,29 @@
   filterToggleBtn.addEventListener('click', () => setFilterCollapsed(!filterCollapsed));
   filterClearBtn.addEventListener('click', clearFilters);
   applyFilterCollapsed();
+
+  filterSearchInput.addEventListener('input', () => {
+    filterSearchTaskId = null;
+    filterSearchQuery = filterSearchInput.value.trim().toLowerCase();
+    renderSearchResults();
+    render();
+  });
+  filterSearchInput.addEventListener('focus', () => {
+    if (filterSearchQuery && !filterSearchTaskId) renderSearchResults();
+  });
+  filterSearchInput.addEventListener('blur', () => {
+    setTimeout(hideSearchResults, 100);
+  });
+  filterSearchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      clearSearch();
+      render();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const matches = matchingSearchTasks();
+      if (matches.length) selectSearchResult(matches[0]);
+    }
+  });
 
   cleanupBtn.addEventListener('click', openCleanupDialog);
   cleanupCancelBtn.addEventListener('click', () => cleanupDialog.close());
