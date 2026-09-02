@@ -56,7 +56,13 @@
         <span class="filter-row-label">Colour</span>
         <div id="filter-color-row" class="filter-pill-list"></div>
       </div>
-      <button type="button" id="filter-clear-btn" class="btn filter-clear-btn">Clear filters</button>
+      <div class="filter-row filter-search-row">
+        <div class="filter-search-wrap">
+          <input type="text" id="filter-search-input" class="filter-search-input" placeholder="Search projects by title…" autocomplete="off" aria-label="Search projects by title" />
+          <ul id="filter-search-results" class="filter-search-results" hidden></ul>
+        </div>
+        <button type="button" id="filter-clear-btn" class="btn filter-clear-btn">Clear filters</button>
+      </div>
     </div>
   </div>
 
