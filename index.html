@@ -1,253 +1,223 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en-GB">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Technology Roadmap</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Technology Web Apps Gateway</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="style.css" />
+<style>
+    :root {
+        --ink: #1c1d2e;
+        --sub: #55576e;
+        --border: #d9dae8;
+        --accent: #4b3fae;
+        --accent-soft: #efedfb;
+    }
+    * { box-sizing: border-box; }
+    body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        margin: 0;
+        color: var(--ink);
+        background: #fff;
+    }
+    .banner {
+        position: relative;
+        width: 100%;
+        height: 300px;
+        overflow: hidden;
+    }
+    .banner img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .banner .title {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        color: #fff;
+        margin: 0;
+        font-size: 34px;
+        font-weight: 600;
+        text-align: center;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.45);
+    }
+    main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 40px 32px 20px;
+    }
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+    @media (max-width: 780px) {
+        .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px) {
+        .grid { grid-template-columns: 1fr; }
+        .banner .title { font-size: 24px; }
+    }
+    .card {
+        display: block;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        text-decoration: none;
+        color: inherit;
+        transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+    .card:hover {
+        box-shadow: 0 8px 24px rgba(28, 29, 46, 0.10);
+        border-color: var(--accent);
+        transform: translateY(-2px);
+    }
+    .icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: var(--accent-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+    }
+    .icon svg {
+        width: 20px;
+        height: 20px;
+        stroke: var(--accent);
+        fill: none;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .card h2 {
+        font-size: 16px;
+        margin: 0 0 6px;
+    }
+    .card p {
+        font-size: 14px;
+        color: var(--sub);
+        margin: 0;
+        line-height: 1.4;
+    }
+    .info-row {
+        margin-top: 30px;
+    }
+    .card-info {
+        background: var(--accent-soft);
+        border-color: var(--accent-soft);
+    }
+    .card-info:hover {
+        border-color: var(--accent);
+        box-shadow: 0 8px 24px rgba(75, 63, 174, 0.15);
+    }
+    .card-info .icon {
+        background: #fff;
+    }
+    .card-info .icon svg {
+        stroke: var(--accent);
+    }
+    footer {
+        max-width: 1040px;
+        margin: 20px auto 50px;
+        padding: 0 32px;
+        text-align: center;
+    }
+    footer p {
+        color: #236fa1;
+        font-style: italic;
+        font-size: 14px;
+    }
+</style>
 </head>
 <body>
-  <header class="topbar">
-    <h1 id="page-title">Technology Roadmap</h1>
-    <div class="topbar-actions">
-      <span id="file-status" class="file-status">Connecting...</span>
-      <span id="save-status" class="save-status"></span>
-      <div class="timeline-start-group" role="group" aria-label="Timeline start date">
-        <label for="timeline-start-input">Start</label>
-        <input type="date" id="timeline-start-input" class="timeline-start-input" title="Projects starting before this date are clipped to show only their remaining duration; projects that end before this date are hidden" />
-      </div>
-      <div class="view-toggle" role="group" aria-label="Timeline view">
-        <button type="button" class="view-btn" data-view="week">Week</button>
-        <button type="button" class="view-btn" data-view="month">Month</button>
-        <button type="button" class="view-btn" data-view="quarter">Quarter</button>
-      </div>
-      <div class="zoom-toggle" role="group" aria-label="Timeline zoom">
-        <button type="button" id="zoom-out-btn" class="zoom-btn" title="Zoom out">−</button>
-        <span id="zoom-level" class="zoom-level">100%</span>
-        <button type="button" id="zoom-in-btn" class="zoom-btn" title="Zoom in">+</button>
-      </div>
-      <button id="autosort-btn" class="btn" disabled>Auto Sort</button>
-      <button id="display-btn" class="btn" title="Change label, density, and theme display options">Display</button>
-      <button id="cleanup-btn" class="btn" disabled title="Find projects that have already finished and remove them">Data Clean Up</button>
-      <button id="export-btn" class="btn" disabled title="Export the roadmap as JSON, CSV, PNG, or PDF">Export</button>
-      <button id="add-task-btn" class="btn btn-primary" disabled>+ Project</button>
-    </div>
-  </header>
 
-  <div id="unsupported-banner" class="banner" hidden></div>
+<div class="banner">
+    <img src="4x1-banner.jpg" alt="">
+    <h1 class="title">Technology Web Apps Gateway</h1>
+</div>
 
-  <div id="filter-panel" class="filter-panel">
-    <button type="button" id="filter-toggle-btn" class="filter-toggle-btn" aria-expanded="true" aria-controls="filter-panel-body">
-      <span class="filter-toggle-caret" aria-hidden="true">▾</span>
-      <span>Filter</span>
-      <span id="filter-active-badge" class="filter-active-badge" hidden></span>
-    </button>
-    <div id="filter-panel-body" class="filter-panel-body">
-      <div class="filter-row">
-        <span class="filter-row-label">Team</span>
-        <div id="filter-team-row" class="filter-pill-list"></div>
-      </div>
-      <div class="filter-row">
-        <span class="filter-row-label">Phase</span>
-        <div id="filter-phase-row" class="filter-pill-list"></div>
-      </div>
-      <div class="filter-row">
-        <span class="filter-row-label">Colour</span>
-        <div id="filter-color-row" class="filter-pill-list"></div>
-      </div>
-      <div class="filter-row filter-search-row">
-        <div class="filter-search-wrap">
-          <input type="text" id="filter-search-input" class="filter-search-input" placeholder="Search projects by title…" autocomplete="off" aria-label="Search projects by title" />
-          <ul id="filter-search-results" class="filter-search-results" hidden></ul>
-        </div>
-        <button type="button" id="filter-clear-btn" class="btn filter-clear-btn">Clear filters</button>
-      </div>
-    </div>
-  </div>
+<main>
+    <div class="grid">
 
-  <main class="gantt-wrap">
-    <div id="empty-state" class="empty-state">
-      <p>Loading roadmap...</p>
-    </div>
-    <div id="gantt" class="gantt" hidden>
-      <div class="gantt-header-row">
-        <div class="label-col label-col-header">
-          Project
-          <div id="label-col-resize-handle" class="col-resize-handle" title="Drag to resize the Project column"></div>
-        </div>
-        <div id="sprint-header" class="timeline-track timeline-header"></div>
-      </div>
-      <div id="task-rows" class="task-rows"></div>
-      <div id="today-line" class="today-line" hidden></div>
-    </div>
-  </main>
+        <a class="card" href="/intake/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M4 12h4l2 3h4l2-3h4"/><path d="M4 12l1.5-7h13L20 12"/><path d="M4 12v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6"/></svg></span>
+            <h2>Intake</h2>
+            <p>Technology project intake pathway</p>
+        </a>
 
-  <dialog id="edit-dialog" class="edit-dialog">
-    <form id="edit-form">
-      <h2>Edit Project</h2>
-      <label>Name
-        <input type="text" id="edit-name" />
-      </label>
-      <div class="edit-project-link">
-        <span class="edit-project-link-label">Linked project:</span>
-        <span class="edit-project-link-name" id="edit-project-name">—</span>
-        <button type="button" id="edit-project-btn" class="btn">Change</button>
-      </div>
-      <label>Start date (snaps to the start of the week)
-        <input type="date" id="edit-start" />
-      </label>
-      <label>Duration (weeks)
-        <input type="number" id="edit-duration" min="1" step="1" />
-      </label>
-      <label>Team
-        <select id="edit-team">
-          <option value="">—</option>
-          <option value="Cyber">Cyber</option>
-          <option value="Data and BI">Data and BI</option>
-          <option value="Delivery">Delivery</option>
-          <option value="Development">Development</option>
-          <option value="Digital Tech">Digital Tech</option>
-          <option value="Ecommerce">Ecommerce</option>
-          <option value="Enterprise">Enterprise</option>
-          <option value="Operations">Operations</option>
-        </select>
-      </label>
-      <label>Phase
-        <select id="edit-phase">
-          <option value="Not Started">Not Started</option>
-          <option value="Discovery">Discovery</option>
-          <option value="Build">Build</option>
-          <option value="Test">Test</option>
-          <option value="Blocked">Blocked</option>
-          <option value="Complete">Complete</option>
-        </select>
-      </label>
-      <label>Health
-        <select id="edit-health">
-          <option value="">—</option>
-          <option value="Green">Green</option>
-          <option value="Amber">Amber</option>
-          <option value="Red">Red</option>
-        </select>
-      </label>
-      <label>PM
-        <input type="text" id="edit-pm" list="edit-pm-list" autocomplete="off" />
-        <datalist id="edit-pm-list"></datalist>
-      </label>
-      <label>BA
-        <input type="text" id="edit-ba" list="edit-ba-list" autocomplete="off" />
-        <datalist id="edit-ba-list"></datalist>
-      </label>
-      <label>SME
-        <input type="text" id="edit-sme" />
-      </label>
-      <label>Description
-        <textarea id="edit-description" rows="3"></textarea>
-      </label>
-      <label>Bar color
-        <input type="color" id="edit-color" />
-      </label>
-      <div id="edit-color-presets" class="color-presets"></div>
-      <div class="edit-dialog-actions">
-        <button type="button" id="edit-delete-btn" class="btn btn-danger">Delete</button>
-        <span class="edit-dialog-actions-spacer"></span>
-        <button type="button" id="edit-cancel-btn" class="btn">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
-      </div>
-    </form>
-  </dialog>
+        <a class="card" href="/roadmap/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg></span>
+            <h2>Technology Roadmap</h2>
+            <p>The Technology roadmap and planner</p>
+        </a>
 
-  <dialog id="display-dialog" class="edit-dialog display-dialog">
-    <h2>Display</h2>
-    <div class="display-group">
-      <span class="display-group-label">Label</span>
-      <div class="view-toggle" role="group" aria-label="Project bar label">
-        <button type="button" class="view-btn" data-group="label" data-value="off">Off</button>
-        <button type="button" class="view-btn" data-group="label" data-value="weeks">Weeks</button>
-        <button type="button" class="view-btn" data-group="label" data-value="dates">Dates</button>
-      </div>
-    </div>
-    <div class="display-group">
-      <span class="display-group-label">Density</span>
-      <div class="view-toggle" role="group" aria-label="Row density">
-        <button type="button" class="view-btn" data-group="density" data-value="narrow">Narrow</button>
-        <button type="button" class="view-btn" data-group="density" data-value="normal">Normal</button>
-        <button type="button" class="view-btn" data-group="density" data-value="wide">Wide</button>
-      </div>
-    </div>
-    <div class="display-group">
-      <span class="display-group-label">Theme</span>
-      <div class="view-toggle" role="group" aria-label="Color theme">
-        <button type="button" class="view-btn" data-group="theme" data-value="dark">Dark</button>
-        <button type="button" class="view-btn" data-group="theme" data-value="light">Light</button>
-      </div>
-    </div>
-    <div class="edit-dialog-actions">
-      <button type="button" id="display-close-btn" class="btn">Close</button>
-    </div>
-  </dialog>
+        <a class="card" href="/project-list/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></span>
+            <h2>Projects Listing</h2>
+            <p>Sortable table of open projects</p>
+        </a>
 
-  <dialog id="cleanup-dialog" class="edit-dialog cleanup-dialog">
-    <h2>Data Clean Up</h2>
-    <p class="cleanup-warning"><strong>Don't forget to take a back up!</strong></p>
-    <p id="cleanup-hint" class="filter-hint">These projects have already finished. Remove them?</p>
-    <ul id="cleanup-task-list" class="cleanup-task-list"></ul>
-    <div class="edit-dialog-actions">
-      <button type="button" id="cleanup-cancel-btn" class="btn">Cancel</button>
-      <button type="button" id="cleanup-ok-btn" class="btn btn-primary">OK</button>
-    </div>
-  </dialog>
+        <a class="card" href="/roadmap/releases.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="m8 14 2.5 2.5L15 12"/></svg></span>
+            <h2>Release Plan</h2>
+            <p>Feature releases by month</p>
+        </a>
 
-  <dialog id="export-dialog" class="edit-dialog export-dialog">
-    <h2>Export</h2>
-    <div class="export-grid">
-      <button type="button" id="export-json-btn" class="export-option">
-        <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="9 6 4 12 9 18"></polyline>
-          <polyline points="15 6 20 12 15 18"></polyline>
-          <line x1="13" y1="4" x2="11" y2="20"></line>
-        </svg>
-        <span>JSON</span>
-      </button>
-      <button type="button" id="export-csv-btn" class="export-option">
-        <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-          <line x1="3" y1="10" x2="21" y2="10"></line>
-          <line x1="3" y1="15" x2="21" y2="15"></line>
-          <line x1="9" y1="4" x2="9" y2="20"></line>
-          <line x1="15" y1="4" x2="15" y2="20"></line>
-        </svg>
-        <span>CSV</span>
-      </button>
-      <button type="button" id="export-png-btn" class="export-option">
-        <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-          <circle cx="9" cy="10" r="1.75"></circle>
-          <path d="M3 17l5.5-5.5a1.5 1.5 0 0 1 2.1 0L15 16l1.9-1.9a1.5 1.5 0 0 1 2.1 0L21 16.2"></path>
-        </svg>
-        <span>PNG</span>
-      </button>
-      <button type="button" id="export-pdf-btn" class="export-option">
-        <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M7 3h7l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path>
-          <polyline points="14 3 14 8 19 8"></polyline>
-          <line x1="8" y1="13" x2="16" y2="13"></line>
-          <line x1="8" y1="16.5" x2="16" y2="16.5"></line>
-          <line x1="8" y1="20" x2="12.5" y2="20"></line>
-        </svg>
-        <span>PDF</span>
-      </button>
-    </div>
-    <div class="edit-dialog-actions">
-      <button type="button" id="export-close-btn" class="btn">Close</button>
-    </div>
-  </dialog>
+        <a class="card" href="/schedule-a/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></svg></span>
+            <h2>Schedule A</h2>
+            <p>Resource and capacity planner</p>
+        </a>
 
-  <script>window.AUTH_REQUIREMENTS = [{ project: 'roadmap-db', role: 'viewer' }];</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="auth-gate.js"></script>
-  <script src="/shared/project-picker.js"></script>
-  <script src="app.js"></script>
+        <a class="card" href="/comparison/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M8 3 4 7l4 4"/><path d="M4 7h13a3 3 0 0 1 3 3v1"/><path d="m16 21 4-4-4-4"/><path d="M20 17H7a3 3 0 0 1-3-3v-1"/></svg></span>
+            <h2>Compare</h2>
+            <p>Compares the roadmap to Schedule A</p>
+        </a>
+
+        <a class="card" href="/implementation-forum/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h16"/><path d="m17 9 3 3-3 3"/></svg></span>
+            <h2>Next / Plus 1</h2>
+            <p>Next and next+1 sprint overview</p>
+        </a>
+
+        <a class="card" href="/intake/intake-full-kpis.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M4 15a8 8 0 0 1 16 0"/><path d="M12 15 16 9"/><circle cx="12" cy="15" r="1"/><path d="M4 15h1"/><path d="M19 15h1"/></svg></span>
+            <h2>KPIs</h2>
+            <p>Delivery tram KPIs</p>
+        </a>
+
+        <a class="card" href="/gantt-chart/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M7 13h6"/><path d="M7 17h10"/></svg></span>
+            <h2>Gantt Chart Maker</h2>
+            <p>Gantt chart visualisation. Save your project locally.</p>
+        </a>
+
+        <a class="card" href="/devops-visualiser/index.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><path d="M12 9v3"/><path d="M6 15v-2a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2"/></svg></span>
+            <h2>DevOps Visualiser</h2>
+            <p>Shows hierarchy of DevOps tickets</p>
+        </a>
+
+    </div>
+
+    <div class="info-row">
+        <a class="card card-info" href="/user-guide.html" target="_blank" rel="noopener">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+            <h2>User Overview</h2>
+            <p>Basic user guide to the Tech web apps</p>
+        </a>
+    </div>
+</main>
+
+<footer>
+    <p>Most apps require a password</p>
+</footer>
+
 </body>
 </html>
