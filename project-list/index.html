@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Projects Listing</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script>
+  // ?embed=1 is used when this page is loaded inside dashboard/dashboard.html's
+  // iframe: it hides the page chrome (heading, buttons, filters) so only the
+  // live table shows. Set on <html> (not <body>) so it's available before body parses.
+  if (new URLSearchParams(location.search).get("embed") === "1") {
+    document.documentElement.classList.add("embed-mode");
+  }
+</script>
 <style>
   :root {
     --bg: #EAEDF1;
@@ -196,6 +204,14 @@
   .modal-field textarea { resize: vertical; }
   .modal-error { color: var(--danger); font-size: 12.5px; margin-top: -6px; margin-bottom: 10px; min-height: 16px; }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
+  html.embed-mode .app { padding-top: 0; }
+  html.embed-mode .topbar,
+  html.embed-mode .filters-block,
+  html.embed-mode #auth-gate-bar,
+  html.embed-mode .open-projects-table th:last-child,
+  html.embed-mode .open-projects-table td:last-child { display: none; }
+  html.embed-mode .main { padding: 4px; }
 </style>
 </head>
 <body>
@@ -282,11 +298,14 @@
   var HEALTH_ORDER = ["", "Green", "Amber", "Red"];
   var SORT_FALLBACK_CHAIN = ["phase", "start", "title"];
 
+  var EMBED = document.documentElement.classList.contains("embed-mode");
+
   var sb;
   var allRows = [];
   var sortState = { key: "phase", dir: "asc" };
   var teamFilter = null; // null = all teams; otherwise an array of selected team names ('' = no team)
-  var phaseFilter = null; // null = all phases; otherwise an array of selected phase names
+  // Embedded in the dashboard: pre-apply Discovery/Build/Test/Blocked (hide Not Started/Complete).
+  var phaseFilter = EMBED ? ["Discovery", "Build", "Test", "Blocked"] : null; // null = all phases; otherwise an array of selected phase names
   var pmFilter = null; // null = all PMs; otherwise an array of selected PM names ('' = none)
   var baFilter = null; // null = all BAs; otherwise an array of selected BA names ('' = none)
   var filtersCollapsed = false;
