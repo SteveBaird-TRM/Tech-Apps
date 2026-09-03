@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<style>
+  :root {
+    --bg: #EAEDF1;
+    --surface: #FFFFFF;
+    --surface-alt: #F2F4F7;
+    --border: #DBE0E7;
+    --text: #191D23;
+    --text-muted: #5E6572;
+    --text-faint: #9BA1AC;
+    --accent: #0E7A6C;
+    --accent-contrast: #FFFFFF;
+    --accent-tint: #0E7A6C1A;
+    --danger: #C0362C;
+    --danger-tint: #C0362C1A;
+    --shadow: 0 1px 2px rgba(20, 24, 30, 0.06), 0 1px 1px rgba(20, 24, 30, 0.04);
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171C; --surface: #1C2027; --surface-alt: #20242C; --border: #2C313B;
+      --text: #E8EAED; --text-muted: #99A0AC; --text-faint: #6B717C;
+      --accent: #3FC7B3; --accent-contrast: #0A1512; --accent-tint: #3FC7B326;
+      --danger: #F0685F; --danger-tint: #F0685F26;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171C; --surface: #1C2027; --surface-alt: #20242C; --border: #2C313B;
+    --text: #E8EAED; --text-muted: #99A0AC; --text-faint: #6B717C;
+    --accent: #3FC7B3; --accent-contrast: #0A1512; --accent-tint: #3FC7B326;
+    --danger: #F0685F; --danger-tint: #F0685F26;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+  :root[data-theme="light"] {
+    --bg: #EAEDF1; --surface: #FFFFFF; --surface-alt: #F2F4F7; --border: #DBE0E7;
+    --text: #191D23; --text-muted: #5E6572; --text-faint: #9BA1AC;
+    --accent: #0E7A6C; --accent-contrast: #FFFFFF; --accent-tint: #0E7A6C1A;
+    --danger: #C0362C; --danger-tint: #C0362C1A;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); -webkit-font-smoothing: antialiased;
+  }
+
+  .dash-app {
+    height: 100vh; padding-top: 34px; display: flex; flex-direction: column;
+  }
+
+  .tabbar {
+    display: flex; align-items: flex-end; gap: 4px;
+    padding: 10px 14px 0; flex: none;
+  }
+  .tab {
+    font: inherit; font-size: 13.5px; font-weight: 500; line-height: 1;
+    padding: 11px 20px; border: 1px solid var(--border); border-bottom: none;
+    border-radius: 10px 10px 0 0; background: var(--surface-alt); color: var(--text-muted);
+    cursor: pointer; position: relative; top: 1px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    background: var(--surface); color: var(--text); font-weight: 600;
+    box-shadow: 0 -1px 3px rgba(20, 24, 30, 0.04);
+  }
+
+  .tab-content {
+    flex: 1; min-height: 0; background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .tab-panel { display: none; width: 100%; height: 100%; border: 0; }
+  .tab-panel.active { display: block; }
+
+  .load-note {
+    display: flex; align-items: center; justify-content: center; height: 100%;
+    font-size: 13px; color: var(--text-faint);
+  }
+</style>
+</head>
+<body>
+
+<div class="dash-app">
+  <div class="tabbar" id="tabbar" role="tablist">
+    <button type="button" class="tab active" role="tab" data-tab="projects">Projects</button>
+    <button type="button" class="tab" role="tab" data-tab="releases">Releases</button>
+    <button type="button" class="tab" role="tab" data-tab="kpis">KPIs</button>
+  </div>
+  <div class="tab-content">
+    <iframe class="tab-panel active" data-tab="projects" data-src="../project-list/index.html?embed=1" title="Projects"></iframe>
+    <iframe class="tab-panel" data-tab="releases" data-src="../roadmap/releases.html?embed=1" title="Releases"></iframe>
+    <iframe class="tab-panel" data-tab="kpis" data-src="../intake/kpis.html?embed=1" title="KPIs"></iframe>
+  </div>
+</div>
+
+<script>window.AUTH_REQUIREMENTS = [
+  { project: 'roadmap-db', role: 'viewer' },
+  { project: 'intake', role: 'viewer' }
+];</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-gate.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  function activateTab(name) {
+    document.querySelectorAll(".tab").forEach(function (btn) {
+      btn.classList.toggle("active", btn.dataset.tab === name);
+    });
+    document.querySelectorAll(".tab-panel").forEach(function (panel) {
+      var isActive = panel.dataset.tab === name;
+      panel.classList.toggle("active", isActive);
+      if (isActive && !panel.getAttribute("src")) {
+        panel.setAttribute("src", panel.dataset.src);
+      }
+    });
+  }
+
+  document.getElementById("tabbar").addEventListener("click", function (e) {
+    var btn = e.target.closest(".tab");
+    if (!btn) return;
+    activateTab(btn.dataset.tab);
+  });
+
+  function init() {
+    // Loads the first (Projects) iframe now that sign-in is confirmed; the
+    // other two load lazily the first time their tab is clicked.
+    activateTab("projects");
+  }
+
+  window.onAuthReady(init);
+})();
+</script>
+</body>
+</html>
