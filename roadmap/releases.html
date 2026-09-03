@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Feature Releases Roadmap</title>
 <link rel="icon" type="image/svg+xml" href="releases-favicon.svg">
+<script>
+  // ?embed=1 is used when this page is loaded inside dashboard/dashboard.html's
+  // iframe: it hides the page chrome (heading, buttons, filter bar) so only the
+  // board shows. Set on <html> (not <body>) so it's available before body parses.
+  if (new URLSearchParams(location.search).get("embed") === "1") {
+    document.documentElement.classList.add("embed-mode");
+  }
+</script>
 <style>
   :root {
     color-scheme: light dark;
@@ -285,6 +293,12 @@
     font-size: 12px;
     color: var(--text-muted);
   }
+
+  html.embed-mode body { padding-top: 0; }
+  html.embed-mode header,
+  html.embed-mode #filter-bar,
+  html.embed-mode #auth-gate-bar { display: none !important; }
+  html.embed-mode .column { max-height: calc(100vh - 20px); }
 
   #empty-state {
     display: none;
