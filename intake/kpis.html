@@ -3,6 +3,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>How well are we doing?</title>
 <link rel="icon" type="image/svg+xml" href="kpi-favicon.svg">
+<script>
+  // ?embed=1 is used when this page is loaded inside dashboard/dashboard.html's
+  // iframe: it hides the page chrome (heading, buttons) so only the tiles show.
+  // Set on <html> (not <body>) so it's available before body parses.
+  if (new URLSearchParams(location.search).get("embed") === "1") {
+    document.documentElement.classList.add("embed-mode");
+  }
+</script>
 <style>
   :root {
     --bg: #EAEDF1;
@@ -249,6 +257,11 @@
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     }
   }
+
+  html.embed-mode body { padding-top: 0; }
+  html.embed-mode .app { height: auto; }
+  html.embed-mode .topbar,
+  html.embed-mode #auth-gate-bar { display: none !important; }
 </style>
 </head><body>
 
