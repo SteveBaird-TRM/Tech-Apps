@@ -94,7 +94,7 @@
     <button type="button" class="tab" role="tab" data-tab="kpis">KPIs</button>
   </div>
   <div class="tab-content">
-    <iframe class="tab-panel active" data-tab="projects" data-src="../project-list/index.html?embed=1" title="Projects"></iframe>
+    <iframe class="tab-panel active" data-tab="projects" src="../project-list/index.html?embed=1" title="Projects"></iframe>
     <iframe class="tab-panel" data-tab="releases" data-src="../roadmap/releases.html?embed=1" title="Releases"></iframe>
     <iframe class="tab-panel" data-tab="kpis" data-src="../intake/kpis.html?embed=1" title="KPIs"></iframe>
   </div>
@@ -110,32 +110,25 @@
 (function () {
   "use strict";
 
-  function activateTab(name) {
-    document.querySelectorAll(".tab").forEach(function (btn) {
-      btn.classList.toggle("active", btn.dataset.tab === name);
+  // The Projects iframe has its src set directly in the markup (loads with
+  // the rest of the page, same as any normal iframe). Releases/KPIs load
+  // lazily here, the first time their tab is clicked, via data-src.
+  document.getElementById("tabbar").addEventListener("click", function (e) {
+    var btn = e.target.closest(".tab");
+    if (!btn) return;
+    var name = btn.dataset.tab;
+
+    document.querySelectorAll(".tab").forEach(function (b) {
+      b.classList.toggle("active", b === btn);
     });
     document.querySelectorAll(".tab-panel").forEach(function (panel) {
       var isActive = panel.dataset.tab === name;
       panel.classList.toggle("active", isActive);
-      if (isActive && !panel.getAttribute("src")) {
+      if (isActive && !panel.getAttribute("src") && panel.dataset.src) {
         panel.setAttribute("src", panel.dataset.src);
       }
     });
-  }
-
-  document.getElementById("tabbar").addEventListener("click", function (e) {
-    var btn = e.target.closest(".tab");
-    if (!btn) return;
-    activateTab(btn.dataset.tab);
   });
-
-  function init() {
-    // Loads the first (Projects) iframe now that sign-in is confirmed; the
-    // other two load lazily the first time their tab is clicked.
-    activateTab("projects");
-  }
-
-  window.onAuthReady(init);
 })();
 </script>
 </body>
