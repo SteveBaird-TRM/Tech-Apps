@@ -34,8 +34,7 @@
     { value: '', label: 'No category' },
     { value: 'general', label: 'General' },
     { value: 'decision', label: 'Decision' },
-    { value: 'blocker', label: 'Blocker' },
-    { value: 'status-update', label: 'Status update' }
+    { value: 'status-update', label: 'Status' }
   ];
 
   var CATEGORY_LABELS = CATEGORIES.reduce(function (map, c) {
