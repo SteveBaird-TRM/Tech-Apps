@@ -852,13 +852,6 @@
     },
     { divider: true },
     {
-      layout: "stacked",
-      fields: [
-        { key: "comments", label: "Comments", type: "textarea" }
-      ]
-    },
-    { divider: true },
-    {
       layout: "inline",
       fields: [
         { key: "strategicScore", label: "Strategic Score", type: "number", min: 0, max: 100, placeholder: "0-100" },
@@ -1764,7 +1757,6 @@
       definedBusinessBenefit: false,
       bigThinking: false,
       bigThinkingNotes: "",
-      comments: "",
       strategicScore: "",
       operationalScore: "",
       commercialScore: "",
@@ -1926,7 +1918,6 @@
     { key: "bigThinkingNotes", label: "Big Thinking Notes" },
     { key: "businessBenefit", label: "Business Benefit" },
     { key: "definedBusinessBenefit", label: "Business Benefit Defined", format: function (v) { return v ? "Yes" : "No"; } },
-    { key: "comments", label: "Comments" },
     { key: "strategicScore", label: "Strategic Score" },
     { key: "operationalScore", label: "Operational Score" },
     { key: "customerScore", label: "Customer Score" },
