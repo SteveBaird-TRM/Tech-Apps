@@ -107,6 +107,7 @@
   const editProjectBtn = document.getElementById('edit-project-btn');
   const editCommentsMount = document.getElementById('edit-comments-mount');
   const editCancelBtn = document.getElementById('edit-cancel-btn');
+  const editCloseBtn = document.getElementById('edit-close-btn');
   const editDeleteBtn = document.getElementById('edit-delete-btn');
   const zoomInBtn = document.getElementById('zoom-in-btn');
   const zoomOutBtn = document.getElementById('zoom-out-btn');
@@ -1354,8 +1355,23 @@
     populateNameDatalist(editPmListEl, 'projectPm');
     populateNameDatalist(editBaListEl, 'projectBa');
     renderEditComments(task);
-    editDialog.showModal();
+    showEditDialog();
     editNameInput.focus();
+  }
+
+  function showEditDialog() {
+    editDialog.hidden = false;
+    document.addEventListener('keydown', onEditDialogKeydown);
+  }
+
+  function hideEditDialog() {
+    editDialog.hidden = true;
+    editingTaskId = null;
+    document.removeEventListener('keydown', onEditDialogKeydown);
+  }
+
+  function onEditDialogKeydown(e) {
+    if (e.key === 'Escape') hideEditDialog();
   }
 
   buildColorPresets();
@@ -1391,21 +1407,22 @@
     });
   });
 
-  editCancelBtn.addEventListener('click', () => editDialog.close());
+  editCancelBtn.addEventListener('click', () => hideEditDialog());
+  editCloseBtn.addEventListener('click', () => hideEditDialog());
 
   editDeleteBtn.addEventListener('click', () => {
     const task = tasks.find((t) => t.id === editingTaskId);
     if (!task) return;
     const confirmed = window.confirm(`Delete "${task.name || 'Untitled'}"? This cannot be undone.`);
     if (!confirmed) return;
-    editDialog.close();
+    hideEditDialog();
     deleteTask(task.id);
   });
 
   editForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const task = tasks.find((t) => t.id === editingTaskId);
-    editDialog.close();
+    hideEditDialog();
     if (!task) return;
 
     task.name = editNameInput.value.trim() || 'Untitled';

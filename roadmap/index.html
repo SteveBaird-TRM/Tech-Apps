@@ -66,101 +66,108 @@
     </div>
   </div>
 
-  <main class="gantt-wrap">
-    <div id="empty-state" class="empty-state">
-      <p>Loading roadmap...</p>
-    </div>
-    <div id="gantt" class="gantt" hidden>
-      <div class="gantt-header-row">
-        <div class="label-col label-col-header">
-          Project
-          <div id="label-col-resize-handle" class="col-resize-handle" title="Drag to resize the Project column"></div>
+  <div class="content-row">
+    <main class="gantt-wrap">
+      <div id="empty-state" class="empty-state">
+        <p>Loading roadmap...</p>
+      </div>
+      <div id="gantt" class="gantt" hidden>
+        <div class="gantt-header-row">
+          <div class="label-col label-col-header">
+            Project
+            <div id="label-col-resize-handle" class="col-resize-handle" title="Drag to resize the Project column"></div>
+          </div>
+          <div id="sprint-header" class="timeline-track timeline-header"></div>
         </div>
-        <div id="sprint-header" class="timeline-track timeline-header"></div>
+        <div id="task-rows" class="task-rows"></div>
+        <div id="today-line" class="today-line" hidden></div>
       </div>
-      <div id="task-rows" class="task-rows"></div>
-      <div id="today-line" class="today-line" hidden></div>
-    </div>
-  </main>
+    </main>
 
-  <dialog id="edit-dialog" class="edit-dialog">
-    <form id="edit-form">
-      <h2>Edit Project</h2>
-      <label>Name
-        <input type="text" id="edit-name" />
-      </label>
-      <div class="edit-project-link">
-        <span class="edit-project-link-label">Linked project:</span>
-        <span class="edit-project-link-name" id="edit-project-name">—</span>
-        <button type="button" id="edit-project-btn" class="btn">Change</button>
-      </div>
-      <label>Start date (snaps to the start of the week)
-        <input type="date" id="edit-start" />
-      </label>
-      <label>Duration (weeks)
-        <input type="number" id="edit-duration" min="1" step="1" />
-      </label>
-      <label>Team
-        <select id="edit-team">
-          <option value="">—</option>
-          <option value="Cyber">Cyber</option>
-          <option value="Data and BI">Data and BI</option>
-          <option value="Delivery">Delivery</option>
-          <option value="Development">Development</option>
-          <option value="Digital Tech">Digital Tech</option>
-          <option value="Ecommerce">Ecommerce</option>
-          <option value="Enterprise">Enterprise</option>
-          <option value="Operations">Operations</option>
-        </select>
-      </label>
-      <label>Phase
-        <select id="edit-phase">
-          <option value="Not Started">Not Started</option>
-          <option value="Discovery">Discovery</option>
-          <option value="Build">Build</option>
-          <option value="Test">Test</option>
-          <option value="Blocked">Blocked</option>
-          <option value="Complete">Complete</option>
-        </select>
-      </label>
-      <label>Health
-        <select id="edit-health">
-          <option value="">—</option>
-          <option value="Green">Green</option>
-          <option value="Amber">Amber</option>
-          <option value="Red">Red</option>
-        </select>
-      </label>
-      <label>PM
-        <input type="text" id="edit-pm" list="edit-pm-list" autocomplete="off" />
-        <datalist id="edit-pm-list"></datalist>
-      </label>
-      <label>BA
-        <input type="text" id="edit-ba" list="edit-ba-list" autocomplete="off" />
-        <datalist id="edit-ba-list"></datalist>
-      </label>
-      <label>SME
-        <input type="text" id="edit-sme" />
-      </label>
-      <label>Description
-        <textarea id="edit-description" rows="3"></textarea>
-      </label>
-      <label>Bar color
-        <input type="color" id="edit-color" />
-      </label>
-      <div id="edit-color-presets" class="color-presets"></div>
-      <div class="edit-comments-section">
-        <div class="edit-project-link-label">Comments</div>
-        <div id="edit-comments-mount"></div>
-      </div>
-      <div class="edit-dialog-actions">
-        <button type="button" id="edit-delete-btn" class="btn btn-danger">Delete</button>
-        <span class="edit-dialog-actions-spacer"></span>
-        <button type="button" id="edit-cancel-btn" class="btn">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
-      </div>
-    </form>
-  </dialog>
+    <div id="edit-dialog" class="edit-dialog" hidden>
+      <form id="edit-form">
+        <div class="edit-dialog-scroll">
+          <div class="edit-dialog-head">
+            <h2>Edit Project</h2>
+            <button type="button" id="edit-close-btn" class="panel-close" title="Close">×</button>
+          </div>
+          <label>Name
+            <input type="text" id="edit-name" />
+          </label>
+          <div class="edit-project-link">
+            <span class="edit-project-link-label">Linked project:</span>
+            <span class="edit-project-link-name" id="edit-project-name">—</span>
+            <button type="button" id="edit-project-btn" class="btn">Change</button>
+          </div>
+          <label>Start date (snaps to the start of the week)
+            <input type="date" id="edit-start" />
+          </label>
+          <label>Duration (weeks)
+            <input type="number" id="edit-duration" min="1" step="1" />
+          </label>
+          <label>Team
+            <select id="edit-team">
+              <option value="">—</option>
+              <option value="Cyber">Cyber</option>
+              <option value="Data and BI">Data and BI</option>
+              <option value="Delivery">Delivery</option>
+              <option value="Development">Development</option>
+              <option value="Digital Tech">Digital Tech</option>
+              <option value="Ecommerce">Ecommerce</option>
+              <option value="Enterprise">Enterprise</option>
+              <option value="Operations">Operations</option>
+            </select>
+          </label>
+          <label>Phase
+            <select id="edit-phase">
+              <option value="Not Started">Not Started</option>
+              <option value="Discovery">Discovery</option>
+              <option value="Build">Build</option>
+              <option value="Test">Test</option>
+              <option value="Blocked">Blocked</option>
+              <option value="Complete">Complete</option>
+            </select>
+          </label>
+          <label>Health
+            <select id="edit-health">
+              <option value="">—</option>
+              <option value="Green">Green</option>
+              <option value="Amber">Amber</option>
+              <option value="Red">Red</option>
+            </select>
+          </label>
+          <label>PM
+            <input type="text" id="edit-pm" list="edit-pm-list" autocomplete="off" />
+            <datalist id="edit-pm-list"></datalist>
+          </label>
+          <label>BA
+            <input type="text" id="edit-ba" list="edit-ba-list" autocomplete="off" />
+            <datalist id="edit-ba-list"></datalist>
+          </label>
+          <label>SME
+            <input type="text" id="edit-sme" />
+          </label>
+          <label>Description
+            <textarea id="edit-description" rows="3"></textarea>
+          </label>
+          <label>Bar color
+            <input type="color" id="edit-color" />
+          </label>
+          <div id="edit-color-presets" class="color-presets"></div>
+          <div class="edit-comments-section">
+            <div class="edit-project-link-label">Comments</div>
+            <div id="edit-comments-mount"></div>
+          </div>
+        </div>
+        <div class="edit-dialog-actions">
+          <button type="button" id="edit-delete-btn" class="btn btn-danger">Delete</button>
+          <span class="edit-dialog-actions-spacer"></span>
+          <button type="button" id="edit-cancel-btn" class="btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <dialog id="display-dialog" class="edit-dialog display-dialog">
     <h2>Display</h2>

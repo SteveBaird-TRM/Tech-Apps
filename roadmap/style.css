@@ -254,11 +254,18 @@ body {
   font-size: 13px;
 }
 
+.content-row {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .gantt-wrap {
   padding: 0 24px 24px;
   overflow-x: auto;
   overflow-y: auto;
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -516,6 +523,60 @@ body {
 .edit-dialog h2 {
   margin: 0 0 14px;
   font-size: 16px;
+}
+
+/* #edit-dialog is rendered as an in-page side panel (not a native <dialog>
+   popup) so it sits beside the gantt chart instead of covering it. It keeps
+   the shared .edit-dialog field/label/button styling above and only
+   overrides the container itself. */
+#edit-dialog {
+  flex: 0 0 380px;
+  width: 380px;
+  max-width: 380px;
+  border: none;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+#edit-dialog[hidden] { display: none; }
+#edit-dialog #edit-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+#edit-dialog .edit-dialog-scroll {
+  overflow-y: auto;
+  flex: 1;
+  padding: 20px 22px;
+}
+#edit-dialog .edit-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+#edit-dialog .edit-dialog-head h2 { margin: 0; }
+#edit-dialog .panel-close {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 6px;
+  flex: none;
+}
+#edit-dialog .panel-close:hover { background: var(--panel-alt); color: var(--text); }
+#edit-dialog .edit-dialog-actions {
+  margin: 0;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  flex: none;
 }
 
 .edit-dialog label {
