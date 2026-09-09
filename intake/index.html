@@ -759,6 +759,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-gate.js"></script>
 <script src="/shared/project-picker.js"></script>
+<script src="/shared/project-comments.js"></script>
 <script>
 (function () {
   "use strict";
@@ -1381,6 +1382,8 @@
       });
     });
 
+    scroll.appendChild(buildProjectCommentsRow(card));
+
     panel.appendChild(scroll);
 
     var footer = document.createElement("div");
@@ -1471,6 +1474,41 @@
     return wrap;
   }
 
+  function refreshProjectCommentsRow(card) {
+    var panel = document.getElementById("panel");
+    var old = panel && panel.querySelector(".project-comments-row");
+    if (old) old.replaceWith(buildProjectCommentsRow(card));
+  }
+
+  function buildProjectCommentsRow(card) {
+    var wrap = document.createElement("div");
+    wrap.className = "project-comments-row";
+    if (!card.projectId) return wrap;
+    wrap.classList.add("field-group");
+
+    var divider = document.createElement("hr");
+    divider.className = "field-divider";
+    wrap.appendChild(divider);
+
+    var label = document.createElement("label");
+    label.className = "field-label";
+    label.textContent = "Comments";
+    wrap.appendChild(label);
+
+    var mountEl = document.createElement("div");
+    wrap.appendChild(mountEl);
+
+    if (window.ProjectComments) {
+      window.ProjectComments.mount(mountEl, {
+        projectId: card.projectId,
+        sourceApp: "intake",
+        canPost: canEdit()
+      });
+    }
+
+    return wrap;
+  }
+
   function linkProject(card) {
     if (!canEdit() || !window.ProjectPicker) return;
     window.ProjectPicker.open({ originApp: "intake", query: card.projectTitle || "" }).then(function (project) {
@@ -1481,6 +1519,7 @@
       persistCard(card);
       refreshProjectLinkRow(card);
       refreshProjectDescriptionField(card);
+      refreshProjectCommentsRow(card);
       sb.from("projects").select("description").eq("id", project.id).single().then(function (res) {
         if (res.error || card.projectId !== project.id) return;
         card.projectDescription = res.data.description || null;

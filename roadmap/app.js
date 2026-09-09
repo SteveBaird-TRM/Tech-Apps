@@ -105,6 +105,7 @@
   const editColorPresetsEl = document.getElementById('edit-color-presets');
   const editProjectNameEl = document.getElementById('edit-project-name');
   const editProjectBtn = document.getElementById('edit-project-btn');
+  const editCommentsMount = document.getElementById('edit-comments-mount');
   const editCancelBtn = document.getElementById('edit-cancel-btn');
   const editDeleteBtn = document.getElementById('edit-delete-btn');
   const zoomInBtn = document.getElementById('zoom-in-btn');
@@ -1317,6 +1318,23 @@
     editDescriptionInput.disabled = disabled;
   }
 
+  function renderEditComments(task) {
+    editCommentsMount.innerHTML = '';
+    if (!task.projectId) {
+      const hint = document.createElement('p');
+      hint.className = 'edit-comments-hint';
+      hint.textContent = 'Link this project to add comments.';
+      editCommentsMount.appendChild(hint);
+      return;
+    }
+    if (!window.ProjectComments) return;
+    window.ProjectComments.mount(editCommentsMount, {
+      projectId: task.projectId,
+      sourceApp: 'roadmap-db',
+      canPost: canEdit()
+    });
+  }
+
   function openEditDialog(task) {
     if (!canEdit()) return;
     editingTaskId = task.id;
@@ -1335,6 +1353,7 @@
     setProjectRoleFieldsDisabled(!task.projectId);
     populateNameDatalist(editPmListEl, 'projectPm');
     populateNameDatalist(editBaListEl, 'projectBa');
+    renderEditComments(task);
     editDialog.showModal();
     editNameInput.focus();
   }
@@ -1352,6 +1371,7 @@
       scheduleSave();
 
       setProjectRoleFieldsDisabled(true);
+      renderEditComments(task);
       supabaseClient.from('projects').select('pm, ba, sme, description').eq('id', project.id).single().then((res) => {
         if (res.error) { console.error(res.error); return; }
         task.projectPm = (res.data && res.data.pm) || '';

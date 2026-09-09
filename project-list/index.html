@@ -188,6 +188,7 @@
   .modal-dialog {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
     box-shadow: var(--shadow); width: 360px; max-width: 100%; padding: 20px;
+    max-height: 90vh; overflow-y: auto;
   }
   .modal-dialog h3 {
     font-family: var(--font-display); font-weight: 400; font-size: 17px; margin: 0 0 16px;
@@ -278,6 +279,7 @@
 <script>window.AUTH_REQUIREMENTS = [{ project: 'roadmap-db', role: 'viewer' }];</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-gate.js"></script>
+<script src="/shared/project-comments.js"></script>
 <script>
 (function () {
   "use strict";
@@ -646,6 +648,7 @@
       '<div class="modal-field"><label for="editBa">BA</label><input type="text" id="editBa" list="editBaList" autocomplete="off" /><datalist id="editBaList"></datalist></div>' +
       '<div class="modal-field"><label for="editSme">SME</label><input type="text" id="editSme" /></div>' +
       '<div class="modal-field"><label for="editDescription">Description</label><textarea id="editDescription" rows="3"></textarea></div>' +
+      '<div class="modal-field"><label>Comments</label><div id="editComments"></div></div>' +
       '<div class="modal-error" id="editError"></div>' +
       '<div class="modal-actions"><button type="button" class="btn" id="editCancelBtn">Cancel</button>' +
       '<button type="button" class="btn btn-primary" id="editSaveBtn">Save</button></div>';
@@ -697,6 +700,14 @@
 
     var descriptionInput = dialog.querySelector("#editDescription");
     descriptionInput.value = row.description || "";
+
+    if (window.ProjectComments) {
+      window.ProjectComments.mount(dialog.querySelector("#editComments"), {
+        projectId: row.projectId,
+        sourceApp: "roadmap-db",
+        canPost: canEdit()
+      });
+    }
 
     var errorEl = dialog.querySelector("#editError");
     var saveBtn = dialog.querySelector("#editSaveBtn");

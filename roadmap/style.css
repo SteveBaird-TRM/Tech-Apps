@@ -551,6 +551,16 @@ body {
   font-size: 12px;
 }
 
+.edit-comments-section {
+  margin: -4px 0 14px;
+}
+
+.edit-comments-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
 .edit-dialog input[type="text"],
 .edit-dialog input[type="date"],
 .edit-dialog input[type="number"],
