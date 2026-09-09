@@ -21,10 +21,9 @@
  * Pass canPost: false to render a read-only feed (e.g. from project-list,
  * which has viewer-only access via roadmap-db).
  *
- * There's no public.profiles/auth.users read access from the browser in
- * this schema (see technical.md §4), so comments render "You" for the
- * signed-in user's own rows and a generic "Team member" otherwise — swap
- * in a real display name here if a profiles table gets added later.
+ * Each comment renders only its category and date — no author or source
+ * app, by design (requested directly; keep it that way rather than
+ * re-adding attribution later without checking first).
  */
 (function () {
   'use strict';
@@ -60,7 +59,6 @@
       'background:#efedfb;color:#4b3fae;font-size:11px;font-weight:600;}' +
       '.pc-tag-blocker{background:#fdecec;color:#b3261e;}' +
       '.pc-tag-decision{background:#e8f5ec;color:#1e7a3d;}' +
-      '.pc-source{color:#8a8ca3;}' +
       '.pc-body{white-space:pre-wrap;word-break:break-word;}' +
       '.pc-form{display:flex;flex-direction:column;gap:6px;}' +
       '.pc-textarea{width:100%;box-sizing:border-box;padding:8px 10px;' +
@@ -84,13 +82,12 @@
       : '';
   }
 
-  function formatWhen(iso) {
+  function formatDate(iso) {
     var d = new Date(iso);
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) +
-      ' ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
-  function renderList(listEl, comments, currentUserId) {
+  function renderList(listEl, comments) {
     listEl.innerHTML = '';
     if (!comments.length) {
       var empty = document.createElement('div');
@@ -113,18 +110,9 @@
         head.appendChild(tag);
       }
 
-      var who = document.createElement('span');
-      who.textContent = c.created_by && c.created_by === currentUserId ? 'You' : 'Team member';
-      head.appendChild(who);
-
       var when = document.createElement('span');
-      when.textContent = '· ' + formatWhen(c.created_at);
+      when.textContent = formatDate(c.created_at);
       head.appendChild(when);
-
-      var source = document.createElement('span');
-      source.className = 'pc-source';
-      source.textContent = '· via ' + c.source_app;
-      head.appendChild(source);
 
       var body = document.createElement('div');
       body.className = 'pc-body';
@@ -256,7 +244,7 @@
             listEl.appendChild(err);
             return;
           }
-          renderList(listEl, res.data || [], currentUserId);
+          renderList(listEl, res.data || []);
         });
     }
 
