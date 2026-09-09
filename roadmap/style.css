@@ -616,6 +616,12 @@ body {
   margin: -4px 0 14px;
 }
 
+.edit-comments-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
 .edit-comments-hint {
   font-size: 12px;
   color: var(--muted);
