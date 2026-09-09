@@ -954,6 +954,7 @@
         healthTag.style.background = HEALTH_COLORS[task.health];
         healthTag.title = `Health: ${task.health}`;
       }
+      healthTag.addEventListener('click', () => openEditDialog(task));
       label.appendChild(healthTag);
 
       const phaseIcon = document.createElement('img');
@@ -965,18 +966,12 @@
       phaseIcon.addEventListener('click', () => openEditDialog(task));
       label.appendChild(phaseIcon);
 
-      const nameInput = document.createElement('input');
-      nameInput.className = 'task-name';
-      nameInput.value = task.name;
-      nameInput.addEventListener('input', () => {
-        task.name = nameInput.value;
-        scheduleSave();
-      });
-      nameInput.addEventListener('dblclick', (e) => {
-        e.preventDefault();
-        openEditDialog(task);
-      });
-      label.appendChild(nameInput);
+      const nameEl = document.createElement('div');
+      nameEl.className = 'task-name';
+      nameEl.textContent = task.name;
+      nameEl.title = task.name;
+      nameEl.addEventListener('click', () => openEditDialog(task));
+      label.appendChild(nameEl);
 
       const editBtn = document.createElement('button');
       editBtn.type = 'button';
@@ -1269,14 +1264,7 @@
     tasks.push(newTask);
     render();
     scheduleSave();
-    const refs = rowRefs.get(newTask.id);
-    if (refs) {
-      const input = refs.rowEl.querySelector('.task-name');
-      if (input) {
-        input.focus();
-        input.select();
-      }
-    }
+    openEditDialog(newTask);
   }
 
   // ---------- Edit dialog ----------

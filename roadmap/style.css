@@ -406,6 +406,7 @@ body {
   height: 18px;
   border-radius: 3px;
   background: transparent;
+  cursor: pointer;
 }
 
 .phase-icon {
@@ -430,17 +431,20 @@ body {
   padding: 5px 6px;
   border-radius: 4px;
   min-width: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.task-name:hover, .task-name:focus {
+.task-name:hover {
   border-color: var(--border);
   background: var(--panel);
-  outline: none;
 }
 
 .edit-btn {
-  /* Hidden for now (functionality kept via double-click on the name and
-     clicking the phase icon) — remove this to bring the icon back. */
+  /* Hidden for now (functionality kept via clicking the name, health tag,
+     or phase icon) — remove this to bring the icon back. */
   display: none;
   background: transparent;
   border: none;
@@ -1047,4 +1051,6 @@ body {
 .view-only .bar { cursor: default; }
 .view-only .edit-btn { display: none; }
 .view-only .phase-icon { cursor: default; }
+.view-only .task-name { cursor: default; }
+.view-only .health-tag { cursor: default; }
 
