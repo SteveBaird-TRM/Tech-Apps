@@ -58,6 +58,7 @@
       'background:#efedfb;color:#4b3fae;font-size:11px;font-weight:600;}' +
       '.pc-tag-blocker{background:#fdecec;color:#b3261e;}' +
       '.pc-tag-decision{background:#e8f5ec;color:#1e7a3d;}' +
+      '.pc-tag-status{background:#fbf1d9;color:#8a6116;}' +
       '.pc-body{white-space:pre-wrap;word-break:break-word;}' +
       '.pc-form{display:flex;flex-direction:column;gap:6px;}' +
       '.pc-textarea{width:100%;box-sizing:border-box;padding:8px 10px;' +
@@ -78,6 +79,7 @@
   function tagClass(category) {
     return category === 'blocker' ? ' pc-tag-' + category
       : category === 'decision' ? ' pc-tag-decision'
+      : category === 'status' ? ' pc-tag-status'
       : '';
   }
 
