@@ -34,7 +34,6 @@
   var CATEGORIES = [
     { value: '', label: 'No category' },
     { value: 'general', label: 'General' },
-    { value: 'risk', label: 'Risk' },
     { value: 'decision', label: 'Decision' },
     { value: 'blocker', label: 'Blocker' },
     { value: 'status-update', label: 'Status update' }
@@ -59,7 +58,6 @@
       'font-size:12px;color:#55576e;}' +
       '.pc-tag{display:inline-block;padding:1px 7px;border-radius:10px;' +
       'background:#efedfb;color:#4b3fae;font-size:11px;font-weight:600;}' +
-      '.pc-tag-risk{background:#fdecec;color:#b3261e;}' +
       '.pc-tag-blocker{background:#fdecec;color:#b3261e;}' +
       '.pc-tag-decision{background:#e8f5ec;color:#1e7a3d;}' +
       '.pc-source{color:#8a8ca3;}' +
@@ -81,7 +79,7 @@
   }
 
   function tagClass(category) {
-    return category === 'risk' || category === 'blocker' ? ' pc-tag-' + category
+    return category === 'blocker' ? ' pc-tag-' + category
       : category === 'decision' ? ' pc-tag-decision'
       : '';
   }
