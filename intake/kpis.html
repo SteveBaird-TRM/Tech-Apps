@@ -184,7 +184,7 @@
   }
   .tiles {
     display: grid;
-    grid-template-columns: repeat(5, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 16px;
   }
   .tile {
@@ -284,7 +284,10 @@
 
 <div class="toast" id="toast"></div>
 
-<script>window.AUTH_REQUIREMENTS = [{ project: 'intake', role: 'viewer' }];</script>
+<script>window.AUTH_REQUIREMENTS = [
+  { project: 'intake', role: 'viewer' },
+  { project: 'roadmap-db', role: 'viewer' }
+];</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-gate.js"></script>
 <script>
@@ -489,6 +492,58 @@
         if (result.pct >= this.thresholds.warning) return "warning";
         return "critical";
       }
+    },
+    {
+      id: "project-status",
+      label: "Live Projects",
+      ACTIVE_PHASES: ["Discovery", "Build", "Test"],
+      NOT_STARTED_PHASES: ["Not Started", "Blocked"],
+      compute: function (cards, window, roadmapTasks) {
+        if (!roadmapTasks) return null;
+        var activePhases = this.ACTIVE_PHASES;
+        var notStartedPhases = this.NOT_STARTED_PHASES;
+        var active = 0;
+        var notStarted = 0;
+        roadmapTasks.forEach(function (t) {
+          if (activePhases.indexOf(t.phase) !== -1) active++;
+          else if (notStartedPhases.indexOf(t.phase) !== -1) notStarted++;
+        });
+        return { active: active, notStarted: notStarted, total: roadmapTasks.length };
+      },
+      render: function (result) {
+        return {
+          value: result ? result.active + "/" + result.total : "—",
+          unit: "",
+          caption: "Active/Total projects on the roadmap"
+        };
+      }
+    },
+    {
+      id: "weeks-remaining",
+      label: "Planned Work",
+      compute: function (cards, window, roadmapTasks) {
+        if (!roadmapTasks) return null;
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        var totalRemaining = 0;
+        roadmapTasks.forEach(function (t) {
+          if (t.phase === "Complete") return;
+          var start = new Date(t.start_date + "T00:00:00");
+          if (isNaN(start.getTime())) return;
+          var duration = Math.max(0, parseInt(t.duration_weeks, 10) || 0);
+          var weeksElapsed = (today - start) / (7 * 86400000);
+          var weeksDone = Math.min(duration, Math.max(0, weeksElapsed));
+          totalRemaining += duration - weeksDone;
+        });
+        return { weeks: totalRemaining };
+      },
+      render: function (result) {
+        return {
+          value: result ? Math.round(result.weeks).toLocaleString() : "—",
+          unit: result ? "weeks" : "",
+          caption: "Estimated effort across projects to be delivered"
+        };
+      }
     }
   ];
 
@@ -536,6 +591,33 @@
     } catch (e) { /* ignore quota errors */ }
   }
 
+  var ROADMAP_TABLE = "roadmap_tasks";
+  var ROADMAP_STORAGE_KEY = "intake-kpis-roadmap-cache-v1"; // local cache only, used if Supabase is unreachable
+
+  function fetchRoadmapTasksFromSupabase() {
+    return sb.from(ROADMAP_TABLE).select("phase, start_date, duration_weeks").then(function (res) {
+      if (res.error) throw res.error;
+      return res.data || [];
+    });
+  }
+
+  function loadRoadmapTasksFromLocalStorage() {
+    try {
+      var raw = localStorage.getItem(ROADMAP_STORAGE_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function cacheRoadmapTasksLocally(roadmapTasks) {
+    try {
+      localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(roadmapTasks));
+    } catch (e) { /* ignore quota errors */ }
+  }
+
   function buildMeterHtml(value, thresholds, opts) {
     opts = opts || {};
     var max = opts.max || 100;
@@ -563,11 +645,11 @@
     "</div>";
   }
 
-  function renderTiles(cards) {
+  function renderTiles(cards, roadmapTasks) {
     var container = document.getElementById("tiles");
     container.innerHTML = "";
     KPIS.forEach(function (kpi) {
-      var result = kpi.compute(cards);
+      var result = kpi.compute(cards, undefined, roadmapTasks);
       var view = kpi.render(result);
       var status = kpi.status ? kpi.status(result) : null;
       var tile = document.createElement("div");
@@ -675,13 +757,16 @@
 
   function loadFromBestSource() {
     updateStatusLabel("loading");
-    fetchCardsFromSupabase().then(function (cards) {
-      renderTiles(cards);
+    Promise.all([fetchCardsFromSupabase(), fetchRoadmapTasksFromSupabase()]).then(function (results) {
+      var cards = results[0];
+      var roadmapTasks = results[1];
+      renderTiles(cards, roadmapTasks);
       cacheCardsLocally(cards);
+      cacheRoadmapTasksLocally(roadmapTasks);
       updateStatusLabel("synced");
     }).catch(function (err) {
       toast("Couldn't load from Supabase: " + err.message);
-      renderTiles(loadCardsFromLocalStorage());
+      renderTiles(loadCardsFromLocalStorage(), loadRoadmapTasksFromLocalStorage());
       updateStatusLabel("offline");
     });
   }
