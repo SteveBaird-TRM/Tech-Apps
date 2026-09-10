@@ -28,6 +28,7 @@
     --status-good: #33CC66;
     --status-warning: #FF9900;
     --status-critical: #FF3300;
+    --status-info: #5B8CFF;
 
     --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
     --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
@@ -512,10 +513,13 @@
       },
       render: function (result) {
         return {
-          value: result ? result.active + "/" + result.total : "—",
+          value: result ? result.active + " of " + result.total : "—",
           unit: "",
           caption: "Active/Total projects on the roadmap"
         };
+      },
+      status: function (result) {
+        return result ? "info" : null;
       }
     },
     {
@@ -543,6 +547,9 @@
           unit: result ? "weeks" : "",
           caption: "Estimated effort across projects to be delivered"
         };
+      },
+      status: function (result) {
+        return result ? "info" : null;
       }
     }
   ];
