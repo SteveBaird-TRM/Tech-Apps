@@ -513,10 +513,7 @@
       },
       render: function (result) {
         return {
-          value: result ? result.active + "of " + result.total : "—",
-          valueHtml: result
-            ? escapeHtml(String(result.active)) + ' <span class="unit">of</span> ' + escapeHtml(String(result.total))
-            : null,
+          value: result ? result.active + " of " + result.total : "—",
           unit: "",
           caption: "Active/Total projects on the roadmap"
         };
@@ -667,7 +664,7 @@
       if (status) tile.style.setProperty("--tile-status-color", "var(--status-" + status + ")");
       tile.innerHTML =
         '<div class="tile-label">' + escapeHtml(kpi.label) + "</div>" +
-        '<div class="tile-value">' + (view.valueHtml || escapeHtml(view.value)) +
+        '<div class="tile-value">' + escapeHtml(view.value) +
           (view.unit ? ' <span class="unit">' + escapeHtml(view.unit) + "</span>" : "") +
         "</div>" +
         (kpi.showMeter && result ? buildMeterHtml(kpi.meterValue ? kpi.meterValue(result) : result.pct, kpi.thresholds, kpi.meterOptions) : "") +
