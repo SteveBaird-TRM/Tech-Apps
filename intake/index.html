@@ -802,7 +802,19 @@
       layout: "stacked",
       fields: [
         { key: "projectNumber", label: "Project number", type: "text", mono: true, placeholder: "e.g. PRJ-1042" },
-        { key: "projectTitle", label: "Project title", type: "text", placeholder: "Short descriptive title" },
+        { key: "projectTitle", label: "Project title", type: "text", placeholder: "Short descriptive title" }
+      ]
+    },
+    {
+      layout: "inline",
+      fields: [
+        { key: "projectType", label: "Project type", type: "select", options: TYPES.map(function (t) { return { value: t.id, label: t.id }; }) }
+      ]
+    },
+    { divider: true },
+    {
+      layout: "stacked",
+      fields: [
         { key: "requestorName", label: "Requestor name", type: "text" },
         { key: "department", label: "Department", type: "text" }
       ]
@@ -824,16 +836,12 @@
     {
       layout: "inline",
       fields: [
-        { key: "projectType", label: "Project type", type: "select", options: TYPES.map(function (t) { return { value: t.id, label: t.id }; }) }
-      ]
-    },
-    {
-      layout: "inline",
-      fields: [
         { key: "status", label: "Status", type: "select", options: COLUMNS.map(function (c) { return { value: c.id, label: c.label }; }) },
         { key: "dateReceived", label: "Date received", type: "date" },
         { key: "dateIpaSent", label: "Date IPA sent", type: "date" },
-        { key: "dateBusinessCaseReceived", label: "Date business case", type: "date" }
+        { key: "dateBusinessCaseReceived", label: "Date business case", type: "date" },
+        { key: "promiseDate", label: "Promise Date", type: "date" },
+        { key: "releaseDate", label: "Delivered Date", type: "date" }
       ]
     },
     { divider: true },
@@ -859,14 +867,6 @@
         { key: "customerScore", label: "Customer Score", type: "number", min: 0, max: 100, placeholder: "0-100" },
         { key: "annualValue", label: "Annual Value (x£1K)", type: "number", min: 0, placeholder: "£" },
         { key: "commercialScore", label: "Commercial Score", type: "number", readonly: true, computedFrom: "annualValue" }
-      ]
-    },
-    { divider: true },
-    {
-      layout: "inline",
-      fields: [
-        { key: "promiseDate", label: "Promise Date", type: "date" },
-        { key: "releaseDate", label: "Release Date", type: "date" }
       ]
     }
   ];
@@ -1924,7 +1924,7 @@
     { key: "annualValue", label: "Annual Value" },
     { key: "commercialScore", label: "Commercial Score" },
     { key: "promiseDate", label: "Promise Date" },
-    { key: "releaseDate", label: "Release Date" },
+    { key: "releaseDate", label: "Delivered Date" },
     { key: "createdAt", label: "Created At" },
     { key: "updatedAt", label: "Updated At" }
   ];
