@@ -99,7 +99,13 @@
     if (document.getElementById('auth-gate-bar')) return;
     const bar = document.createElement('div');
     bar.id = 'auth-gate-bar';
-    bar.innerHTML = `<span>${email}</span><button id="auth-gate-signout">Sign out</button>`;
+    const emailSpan = document.createElement('span');
+    emailSpan.textContent = email;
+    const signOutBtn = document.createElement('button');
+    signOutBtn.id = 'auth-gate-signout';
+    signOutBtn.textContent = 'Sign out';
+    bar.appendChild(emailSpan);
+    bar.appendChild(signOutBtn);
     document.body.appendChild(bar);
     bar.querySelector('#auth-gate-signout').addEventListener('click', () => sbClient.auth.signOut());
   }

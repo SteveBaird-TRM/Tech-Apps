@@ -34,7 +34,7 @@
     { value: '', label: 'No category' },
     { value: 'general', label: 'General' },
     { value: 'decision', label: 'Decision' },
-    { value: 'status', label: 'Status' }
+    { value: 'status-update', label: 'Status' }
   ];
 
   var CATEGORY_LABELS = CATEGORIES.reduce(function (map, c) {
@@ -79,7 +79,7 @@
   function tagClass(category) {
     return category === 'blocker' ? ' pc-tag-' + category
       : category === 'decision' ? ' pc-tag-decision'
-      : category === 'status' ? ' pc-tag-status'
+      : category === 'status-update' ? ' pc-tag-status'
       : '';
   }
 

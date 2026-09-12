@@ -97,6 +97,15 @@
 
   var resources = [];
   var nextId = 1;
+  // Ids for rows added locally and not yet saved. Negative, so they can never collide with a
+  // real database id (resource_allocations.id is a generated identity column — see persistState,
+  // which inserts these rows without an id and lets Postgres assign the real one).
+  var localIdSeq = 0;
+  // Ids explicitly removed by the user (cleanup / delete button) since the last successful save.
+  // persistState deletes exactly these rows rather than inferring deletions from "not present in
+  // the current in-memory list" — the latter used to delete another editor's concurrent addition
+  // out from under them if their browser's snapshot hadn't picked it up yet.
+  var pendingDeleteIds = [];
   // Canonical projects registry (public.projects), used to power the "pick
   // a project" typeahead in the Add-resource modal. Typing an existing name
   // links to it; typing something new creates it (see the addForm submit
@@ -279,7 +288,7 @@
   // `start` is anchor-relative (weeks from DATA_EPOCH) — callers convert from view coordinates.
   function addResourceInternal(name, allocation, start, duration, project, projectId) {
     resources.push({
-      id: nextId++,
+      id: --localIdSeq,
       name: name,
       project: project || 'Untitled Project',
       projectId: projectId || null,
@@ -486,10 +495,15 @@
     saveTimer = setTimeout(persistState, 400);
   }
 
-  function allocationRows() {
-    return resources.map(function (r, index) {
-      return {
-        id: r.id,
+  // Splits the live resource list into rows already saved (real, positive database id — sent to
+  // an upsert) and rows added locally since the last save (negative placeholder id — sent to an
+  // insert with no id, so the database's identity column assigns the real one). Keeping the two
+  // separate is what lets new rows get a collision-proof id instead of a client-guessed one.
+  function allocationRowPlan() {
+    var existing = [];
+    var fresh = [];
+    resources.forEach(function (r, index) {
+      var payload = {
         resource_name: r.name,
         project_label: r.project,
         project_id: r.projectId || null,
@@ -499,7 +513,14 @@
         sort_order: index,
         updated_at: new Date().toISOString()
       };
+      if (r.id > 0) {
+        payload.id = r.id;
+        existing.push(payload);
+      } else {
+        fresh.push({ ref: r, payload: payload });
+      }
     });
+    return { existing: existing, fresh: fresh };
   }
 
   function settingsRow() {
@@ -513,21 +534,57 @@
     };
   }
 
+  // Patches the dataset ids of the DOM nodes for one row instead of calling render() again — a
+  // full re-render after every autosave could wipe out an in-progress edit (project rename,
+  // allocation-% field, drag) elsewhere on the grid.
+  function reconcileDomId(oldId, newId) {
+    grid.querySelectorAll('[data-id="' + oldId + '"]').forEach(function (el) {
+      el.setAttribute('data-id', newId);
+    });
+    grid.querySelectorAll('[data-ids]').forEach(function (el) {
+      var ids = el.getAttribute('data-ids').split(',');
+      var changed = false;
+      for (var i = 0; i < ids.length; i++) {
+        if (Number(ids[i]) === oldId) { ids[i] = String(newId); changed = true; }
+      }
+      if (changed) el.setAttribute('data-ids', ids.join(','));
+    });
+  }
+
   function persistState(isRetry) {
     if (!canEdit()) return;
-    var liveIds = resources.map(function (r) { return r.id; });
-    // Upsert current rows first, then delete anything no longer present — so a failure
-    // between the two calls only ever leaves stale rows behind (self-heals on the next
-    // successful save), never drops rows a partial failure could otherwise lose.
+    var plan = allocationRowPlan();
+    var deletingIds = pendingDeleteIds.slice();
+    // Upsert existing rows and insert new ones (letting the DB assign their real id) before
+    // deleting anything — a failure partway through only ever leaves stale/undeleted rows
+    // behind (self-heals on the next successful save), never drops rows a partial failure
+    // could otherwise lose. Deletes are limited to ids the user explicitly removed, never
+    // inferred from "not present in this browser's current snapshot" — that used to delete
+    // another editor's concurrent addition out from under them if their tab hadn't picked it
+    // up yet before saving.
     Promise.all([
-      supabaseClient.from('resource_allocations').upsert(allocationRows()),
+      plan.existing.length ? supabaseClient.from('resource_allocations').upsert(plan.existing) : Promise.resolve({ error: null }),
+      plan.fresh.length
+        ? supabaseClient.from('resource_allocations').insert(plan.fresh.map(function (f) { return f.payload; })).select('id')
+        : Promise.resolve({ data: [], error: null }),
       supabaseClient.from('schedule_settings').upsert(settingsRow())
     ]).then(function (results) {
-      var err = (results[0].error || results[1].error);
+      var upsertRes = results[0], insertRes = results[1], settingsRes = results[2];
+      var err = upsertRes.error || insertRes.error || settingsRes.error;
       if (err) throw err;
-      var delQuery = supabaseClient.from('resource_allocations').delete();
-      return (liveIds.length ? delQuery.not('id', 'in', '(' + liveIds.join(',') + ')') : delQuery.gte('id', 0)).then(function (res) {
+      (insertRes.data || []).forEach(function (row, i) {
+        var f = plan.fresh[i];
+        if (!f) return;
+        var oldId = f.ref.id;
+        f.ref.id = row.id;
+        reconcileDomId(oldId, row.id);
+      });
+      if (!deletingIds.length) return;
+      return supabaseClient.from('resource_allocations').delete().in('id', deletingIds).then(function (res) {
         if (res.error) throw res.error;
+        // Only drop the ids this save actually deleted — another delete could have queued
+        // more into pendingDeleteIds while this save was still in flight.
+        pendingDeleteIds = pendingDeleteIds.filter(function (id) { return deletingIds.indexOf(id) === -1; });
       });
     }).then(function () {
       flashStatus('Saved · ' + timeNow());
@@ -1247,6 +1304,7 @@
     if (!canEdit()) return;
     if (!pendingCleanupIds.length) return;
     var idSet = pendingCleanupIds;
+    idSet.forEach(function (id) { if (id > 0) pendingDeleteIds.push(id); });
     resources = resources.filter(function (r) { return idSet.indexOf(r.id) === -1; });
     closeCleanupModal();
     render();
@@ -1324,6 +1382,7 @@
     if (barDel) {
       if (!canEdit()) return;
       var id = Number(barDel.dataset.id);
+      if (id > 0) pendingDeleteIds.push(id);
       resources = resources.filter(function (r) { return r.id !== id; });
       render();
       scheduleSave();
