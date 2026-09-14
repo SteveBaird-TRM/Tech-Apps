@@ -13,8 +13,9 @@
   --muted-text:     #52514e;
   --faint-text:     #898781;
   --baseline:       #c3c2b7;
-  --accent:         #5b8cff;   /* series-1: Roadmap-DB */
+  --accent:         #5b8cff;
   --accent-2:       #4fce65;   /* series-2: Schedule-A-DB v2 */
+  --roadmap-color:  #5a5952;   /* series-1: Roadmap-DB (dark grey bar) */
   --danger:         #d03b3b;
   --success:        #006300;
   --hover-bg:        #eceae2;
@@ -37,6 +38,7 @@
     --baseline:       #383835;
     --accent:         #3987e5;
     --accent-2:       #37b24d;
+    --roadmap-color:  #9a9990;
     --danger:         #e66767;
     --success:        #0ca30c;
     --hover-bg:       #242423;
@@ -55,6 +57,7 @@
   --baseline:       #383835;
   --accent:         #3987e5;
   --accent-2:       #37b24d;
+  --roadmap-color:  #9a9990;
   --danger:         #e66767;
   --success:        #0ca30c;
   --hover-bg:       #242423;
@@ -135,27 +138,9 @@ body {
 }
 
 .legend-swatch-line {
-  position: relative;
-  height: 2px;
-  margin: 4px 0;
-  background: var(--accent);
+  background: var(--roadmap-color);
+  border-radius: 3px;
 }
-
-.legend-swatch-line::before,
-.legend-swatch-line::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 2px var(--surface);
-  transform: translate(-50%, -50%);
-}
-
-.legend-swatch-line::before { left: 0; }
-.legend-swatch-line::after { left: 100%; }
 
 .btn {
   border: 1px solid var(--border);
@@ -419,29 +404,14 @@ th.label-col-header {
 
 .rm-line {
   position: absolute;
-  top: 50%;
+  top: 8px;
   left: 0;
   right: 0;
-  height: 2px;
-  margin-top: -1px;
-  background: var(--accent);
-}
-
-.rm-line::before,
-.rm-line::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--accent);
+  height: 18px;
+  border-radius: 4px;
+  background: var(--roadmap-color);
   box-shadow: 0 0 0 2px var(--surface);
-  transform: translate(-50%, -50%);
 }
-
-.rm-line::before { left: 0; }
-.rm-line::after { left: 100%; }
 
 .rm-handle {
   position: absolute;
