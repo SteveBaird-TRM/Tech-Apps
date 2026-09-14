@@ -14,8 +14,8 @@
   --faint-text:     #898781;
   --baseline:       #c3c2b7;
   --accent:         #5b8cff;
-  --accent-2:       #4fce65;   /* series-2: Schedule-A-DB v2 */
-  --roadmap-color:  #5a5952;   /* series-1: Roadmap-DB (dark grey bar) */
+  --accent-2:       #4fce65;   /* series-2: Schedule-A-DB v2 (green bar)*/
+  --roadmap-color:  #2a78d6;   /* series-1: Roadmap-DB (blue bar) */
   --danger:         #d03b3b;
   --success:        #006300;
   --hover-bg:        #eceae2;
