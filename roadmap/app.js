@@ -79,7 +79,8 @@
   const exportCsvBtn = document.getElementById('export-csv-btn');
   const exportPngBtn = document.getElementById('export-png-btn');
   const exportPdfBtn = document.getElementById('export-pdf-btn');
-  const autosortBtn = document.getElementById('autosort-btn');
+  const sortDateBtn = document.getElementById('sort-date-btn');
+  const sortNameBtn = document.getElementById('sort-name-btn');
   const saveStatusEl = document.getElementById('save-status');
   const fileStatusEl = document.getElementById('file-status');
   const emptyState = document.getElementById('empty-state');
@@ -141,6 +142,11 @@
   let saveTimer = null;
   let rowRefs = new Map(); // id -> { rowEl, barEl }
   let deletedTaskIds = new Set();
+  // id -> JSON.stringify(taskToRow(t)) as of the last successful save (or load). saveTasks()
+  // only re-uploads a task whose row no longer matches this, instead of the whole list every
+  // time — the previous "upsert everything" approach meant any save could overwrite a task
+  // someone else had changed in the meantime with this tab's stale copy of it.
+  let lastSavedRows = new Map();
   let editingTaskId = null;
 
   // '' represents tasks with no team / no color set.
@@ -509,7 +515,8 @@
     addTaskBtn.disabled = !show || !canEdit();
     cleanupBtn.disabled = !show || !canEdit();
     exportBtn.disabled = !show;
-    autosortBtn.disabled = !show || !canEdit();
+    sortDateBtn.disabled = !show || !canEdit();
+    sortNameBtn.disabled = !show || !canEdit();
     taskRowsEl.classList.toggle('view-only', !canEdit());
   }
 
@@ -537,6 +544,7 @@
     }
 
     tasks = data.map(rowToTask).sort((a, b) => a.order - b.order);
+    lastSavedRows = new Map(tasks.map((t) => [t.id, JSON.stringify(taskToRow(t))]));
     setFileStatus('Connected to Supabase', 'connected');
     showGantt(true);
     render();
@@ -1222,7 +1230,7 @@
     scheduleSave();
   }
 
-  function autoSortTasks() {
+  function sortTasksByDate() {
     if (!canEdit()) return;
     tasks
       .slice()
@@ -1233,6 +1241,16 @@
         if (durCmp !== 0) return durCmp;
         return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
       })
+      .forEach((t, idx) => (t.order = idx));
+    render();
+    scheduleSave();
+  }
+
+  function sortTasksByName() {
+    if (!canEdit()) return;
+    tasks
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
       .forEach((t, idx) => (t.order = idx));
     render();
     scheduleSave();
@@ -1671,15 +1689,26 @@
   async function saveTasks() {
     if (!canEdit()) return;
     try {
-      if (tasks.length) {
-        const rows = tasks.map(taskToRow);
-        const { error } = await supabaseClient.from(TABLE).upsert(rows, { onConflict: 'id' });
+      // Only upload tasks whose row actually differs from what we last saved (or loaded) —
+      // uploading every task on every save meant an edit to one task could overwrite a
+      // different task with this tab's stale copy of it, if someone else had changed that
+      // other task in the meantime.
+      const dirty = [];
+      tasks.forEach((t) => {
+        const row = taskToRow(t);
+        const key = JSON.stringify(row);
+        if (lastSavedRows.get(t.id) !== key) dirty.push({ id: t.id, row, key });
+      });
+      if (dirty.length) {
+        const { error } = await supabaseClient.from(TABLE).upsert(dirty.map((d) => d.row), { onConflict: 'id' });
         if (error) throw error;
+        dirty.forEach((d) => lastSavedRows.set(d.id, d.key));
       }
       if (deletedTaskIds.size) {
         const ids = [...deletedTaskIds];
         const { error } = await supabaseClient.from(TABLE).delete().in('id', ids);
         if (error) throw error;
+        ids.forEach((id) => lastSavedRows.delete(id));
         deletedTaskIds.clear();
       }
       saveStatusEl.textContent = 'Saved';
@@ -1693,7 +1722,8 @@
 
   // ---------- Init ----------
   addTaskBtn.addEventListener('click', addTask);
-  autosortBtn.addEventListener('click', autoSortTasks);
+  sortDateBtn.addEventListener('click', sortTasksByDate);
+  sortNameBtn.addEventListener('click', sortTasksByName);
   exportBtn.addEventListener('click', () => exportDialog.showModal());
   exportCloseBtn.addEventListener('click', () => exportDialog.close());
   exportJsonBtn.addEventListener('click', () => { exportDialog.close(); backupData(); });

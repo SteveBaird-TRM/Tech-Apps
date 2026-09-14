@@ -27,7 +27,10 @@
         <span id="zoom-level" class="zoom-level">100%</span>
         <button type="button" id="zoom-in-btn" class="zoom-btn" title="Zoom in">+</button>
       </div>
-      <button id="autosort-btn" class="btn" disabled>Auto Sort</button>
+      <div class="view-toggle sort-toggle" role="group" aria-label="Sort projects">
+        <button type="button" id="sort-date-btn" class="view-btn" disabled title="Sort projects by start date">By Date</button>
+        <button type="button" id="sort-name-btn" class="view-btn" disabled title="Sort projects alphabetically by name">By Project</button>
+      </div>
       <button id="display-btn" class="btn" title="Change label, density, and theme display options">Display</button>
       <button id="cleanup-btn" class="btn" disabled title="Find projects that have already finished and remove them">Data Clean Up</button>
       <button id="export-btn" class="btn" disabled title="Export the roadmap as JSON, CSV, PNG, or PDF">Export</button>
