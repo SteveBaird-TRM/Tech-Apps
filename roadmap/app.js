@@ -21,15 +21,15 @@
     { name: 'Dev:Happy Green', hex: '#4FCE65' },
     { name: 'BAU:Happy Blue', hex: '#5B8CFF' },
     { name: 'UX:Happy Purple', hex: '#DC60C3' },
-    { name: 'Light Grey', hex: '#E0E0E0' },
-    { name: '60% Grey', hex: '#666666' },
+    { name: 'Holder:Light Grey', hex: '#E0E0E0' },
+    { name: 'Note:40% Grey', hex: '#999999' },
     { name: 'Shadow Red', hex: '#B3323A' },
     { name: 'Shadow Orange', hex: '#B3612B' },
     { name: 'Shadow Yellow', hex: '#B39504' },
     { name: 'Shadow Green', hex: '#379047' },
     { name: 'Shadow Blue', hex: '#4062B3' },
     { name: 'Shadow Purple', hex: '#9A4389' },
-    { name: '40% Grey', hex: '#999999' },
+    { name: '60% Grey', hex: '#666666' },
     { name: 'Dark Grey', hex: '#1C1C1C' },
   ];
   const PRESET_COLOR_NAMES = new Map(PRESET_COLORS.map((c) => [c.hex.toLowerCase(), c.name]));
