@@ -163,6 +163,42 @@
   }
   .chip-action:hover { text-decoration: underline; }
 
+  #view-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 8px 20px 0;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .view-tab {
+    appearance: none;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    background: var(--bg);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    position: relative;
+    top: 1px;
+  }
+  .view-tab:hover { color: var(--text); }
+  .view-tab.active {
+    background: var(--panel);
+    color: var(--text);
+    border-color: var(--border);
+    border-bottom: 1px solid var(--panel);
+  }
+
+  html.embed-mode #view-tabs { display: none !important; }
+  @media print {
+    #view-tabs { display: none !important; }
+  }
+
   main {
     flex: 1;
     overflow: auto;
@@ -334,6 +370,12 @@
 <div id="error-banner"></div>
 
 <div id="filter-bar"></div>
+
+<div id="view-tabs">
+  <button type="button" class="view-tab" id="tab-6mo" data-months="6">6 Months</button>
+  <button type="button" class="view-tab" id="tab-12mo" data-months="12">12 Months</button>
+  <button type="button" class="view-tab" id="tab-all" data-months="all">All</button>
+</div>
 
 <main>
   <div id="board"></div>
@@ -532,18 +574,50 @@ function refresh() {
   render(filtered, currentMilestones);
 }
 
-const VISIBLE_MONTH_COUNT = 6;
+let visibleMonthCount = 6; // number of months, or "all" for no time limit
 
 function buildMonthRange() {
+  if (visibleMonthCount === "all") {
+    if (!currentMilestones.length) return [];
+    let minY = Infinity, minM = 0, maxY = -Infinity, maxM = 0;
+    currentMilestones.forEach(ms => {
+      const y = ms.finish.getUTCFullYear(), m = ms.finish.getUTCMonth();
+      if (y < minY || (y === minY && m < minM)) { minY = y; minM = m; }
+      if (y > maxY || (y === maxY && m > maxM)) { maxY = y; maxM = m; }
+    });
+    const months = [];
+    let y = minY, m = minM;
+    while (y < maxY || (y === maxY && m <= maxM)) {
+      months.push({ y, m });
+      m++; if (m > 11) { m = 0; y++; }
+    }
+    return months;
+  }
+
   const now = new Date();
   let y = now.getUTCFullYear(), m = now.getUTCMonth();
   const months = [];
-  for (let i = 0; i < VISIBLE_MONTH_COUNT; i++) {
+  for (let i = 0; i < visibleMonthCount; i++) {
     months.push({ y, m });
     m++; if (m > 11) { m = 0; y++; }
   }
   return months;
 }
+
+function setViewMonths(months) {
+  if (visibleMonthCount === months) return;
+  visibleMonthCount = months;
+  document.querySelectorAll(".view-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.months === String(months));
+  });
+  refresh();
+}
+
+document.querySelectorAll(".view-tab").forEach(btn => {
+  const value = btn.dataset.months === "all" ? "all" : Number(btn.dataset.months);
+  btn.classList.toggle("active", value === visibleMonthCount);
+  btn.addEventListener("click", () => setViewMonths(value));
+});
 
 function render(milestones, allMilestones) {
   const board = document.getElementById("board");
