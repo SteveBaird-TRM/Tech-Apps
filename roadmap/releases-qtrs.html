@@ -208,27 +208,42 @@
   #board {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 28px;
     min-height: 100%;
   }
 
-  .quarter-row {
+  .view-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 24px;
+  }
+  .quarter-cluster {
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
-  .quarter-row-label {
+  .quarter-cluster-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .quarter-cluster-label-text {
     font-family: var(--font-display);
     font-size: 13px;
     font-weight: 700;
     color: var(--text-muted);
     letter-spacing: 0.03em;
-    text-align: center;
+    white-space: nowrap;
   }
-  .quarter-row-columns {
+  .quarter-cluster-label-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .quarter-cluster-columns {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
     gap: 14px;
     align-items: flex-start;
   }
@@ -371,7 +386,7 @@
     body { display: block; }
     main { overflow: visible; padding: 0; }
     #board { display: flex; flex-direction: column; }
-    .quarter-row { break-inside: avoid; }
+    .quarter-cluster { break-inside: avoid; }
     .column { max-height: none !important; break-inside: avoid; }
     .card-list { overflow: visible !important; max-height: none !important; }
     .info-icon, #hover-tooltip { display: none !important; }
@@ -676,88 +691,104 @@ function render(milestones, allMilestones) {
     grouped.get(key).push(ms);
   });
 
-  const rows = [];
-  let currentRow = null;
-  for (const { y, m } of months) {
-    const q = quarterOfMonth(m);
-    if (!currentRow || currentRow.y !== y || currentRow.q !== q) {
-      currentRow = { y, q, months: [] };
-      rows.push(currentRow);
-    }
-    currentRow.months.push({ y, m });
-  }
+  const VIEW_ROW_SIZE = 6;
+  for (let i = 0; i < months.length; i += VIEW_ROW_SIZE) {
+    const rowMonths = months.slice(i, i + VIEW_ROW_SIZE);
 
-  for (const row of rows) {
     const rowEl = document.createElement("div");
-    rowEl.className = "quarter-row";
+    rowEl.className = "view-row";
 
-    const label = document.createElement("div");
-    label.className = "quarter-row-label";
-    label.textContent = quarterLabel(row.y, row.q);
-    rowEl.appendChild(label);
+    const clusters = [];
+    let currentCluster = null;
+    for (const { y, m } of rowMonths) {
+      const q = quarterOfMonth(m);
+      if (!currentCluster || currentCluster.y !== y || currentCluster.q !== q) {
+        currentCluster = { y, q, months: [] };
+        clusters.push(currentCluster);
+      }
+      currentCluster.months.push({ y, m });
+    }
 
-    const cols = document.createElement("div");
-    cols.className = "quarter-row-columns";
+    for (const cluster of clusters) {
+      const clusterEl = document.createElement("div");
+      clusterEl.className = "quarter-cluster";
 
-    for (const { y, m } of row.months) {
-      const key = `${y}-${String(m + 1).padStart(2, "0")}`;
-      const items = (grouped.get(key) || []).sort((a, b) => a.order - b.order);
+      const label = document.createElement("div");
+      label.className = "quarter-cluster-label";
+      const labelText = document.createElement("span");
+      labelText.className = "quarter-cluster-label-text";
+      labelText.textContent = quarterLabel(cluster.y, cluster.q);
+      const labelLine = document.createElement("span");
+      labelLine.className = "quarter-cluster-label-line";
+      label.appendChild(labelText);
+      label.appendChild(labelLine);
+      clusterEl.appendChild(label);
 
-      const col = document.createElement("div");
-      col.className = "column" + (items.length === 0 ? " is-empty" : "");
+      const cols = document.createElement("div");
+      cols.className = "quarter-cluster-columns";
 
-      const header = document.createElement("div");
-      header.className = "column-header";
-      header.innerHTML = `<span class="month">${monthLabel(y, m)}</span><span class="count">${items.length}</span>`;
-      col.appendChild(header);
+      for (const { y, m } of cluster.months) {
+        const key = `${y}-${String(m + 1).padStart(2, "0")}`;
+        const items = (grouped.get(key) || []).sort((a, b) => a.order - b.order);
 
-      const list = document.createElement("div");
-      list.className = "card-list";
+        const col = document.createElement("div");
+        col.className = "column" + (items.length === 0 ? " is-empty" : "");
 
-      if (items.length === 0) {
-        const note = document.createElement("div");
-        note.className = "empty-note";
-        note.textContent = "No milestones";
-        list.appendChild(note);
-      } else {
-        for (const ms of items) {
-          const card = document.createElement("div");
-          card.className = "card";
-          if (ms.color) card.style.setProperty("--card-color", ms.color);
+        const header = document.createElement("div");
+        header.className = "column-header";
+        header.innerHTML = `<span class="month">${monthLabel(y, m)}</span><span class="count">${items.length}</span>`;
+        col.appendChild(header);
 
-          const nameRow = document.createElement("div");
-          nameRow.className = "name-row";
+        const list = document.createElement("div");
+        list.className = "card-list";
 
-          const nameEl = document.createElement("div");
-          nameEl.className = "name";
-          nameEl.textContent = ms.name;
-          nameRow.appendChild(nameEl);
+        if (items.length === 0) {
+          const note = document.createElement("div");
+          note.className = "empty-note";
+          note.textContent = "No milestones";
+          list.appendChild(note);
+        } else {
+          for (const ms of items) {
+            const card = document.createElement("div");
+            card.className = "card";
+            if (ms.color) card.style.setProperty("--card-color", ms.color);
 
-          if (ms.projectId) {
-            const info = document.createElement("button");
-            info.type = "button";
-            info.className = "info-icon";
-            info.textContent = "i";
-            info.setAttribute("aria-label", "Project details");
-            info.dataset.requestor = ms.requestorName || "";
-            info.dataset.description = ms.description || "";
-            info.addEventListener("mouseenter", () => showTooltip(info, ms));
-            info.addEventListener("mouseleave", hideTooltip);
-            info.addEventListener("focus", () => showTooltip(info, ms));
-            info.addEventListener("blur", hideTooltip);
-            nameRow.appendChild(info);
+            const nameRow = document.createElement("div");
+            nameRow.className = "name-row";
+
+            const nameEl = document.createElement("div");
+            nameEl.className = "name";
+            nameEl.textContent = ms.name;
+            nameRow.appendChild(nameEl);
+
+            if (ms.projectId) {
+              const info = document.createElement("button");
+              info.type = "button";
+              info.className = "info-icon";
+              info.textContent = "i";
+              info.setAttribute("aria-label", "Project details");
+              info.dataset.requestor = ms.requestorName || "";
+              info.dataset.description = ms.description || "";
+              info.addEventListener("mouseenter", () => showTooltip(info, ms));
+              info.addEventListener("mouseleave", hideTooltip);
+              info.addEventListener("focus", () => showTooltip(info, ms));
+              info.addEventListener("blur", hideTooltip);
+              nameRow.appendChild(info);
+            }
+
+            card.appendChild(nameRow);
+            list.appendChild(card);
           }
-
-          card.appendChild(nameRow);
-          list.appendChild(card);
         }
+
+        col.appendChild(list);
+        cols.appendChild(col);
       }
 
-      col.appendChild(list);
-      cols.appendChild(col);
+      clusterEl.appendChild(cols);
+      rowEl.appendChild(clusterEl);
     }
 
-    rowEl.appendChild(cols);
     board.appendChild(rowEl);
   }
 }
@@ -931,12 +962,17 @@ function exportPNG() {
     ctx.fillRect(0, 0, width, height);
     ctx.textBaseline = "middle";
 
-    for (const label of clone.querySelectorAll(".quarter-row-label")) {
-      const lRect = rel(label);
-      ctx.fillStyle = getComputedStyle(label).color;
+    for (const labelText of clone.querySelectorAll(".quarter-cluster-label-text")) {
+      const tRect = rel(labelText);
+      ctx.fillStyle = getComputedStyle(labelText).color;
       ctx.font = "700 13px Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif";
       ctx.textAlign = "left";
-      ctx.fillText(label.textContent, lRect.x, lRect.y + lRect.h / 2);
+      ctx.fillText(labelText.textContent, tRect.x, tRect.y + tRect.h / 2);
+    }
+    for (const labelLine of clone.querySelectorAll(".quarter-cluster-label-line")) {
+      const liRect = rel(labelLine);
+      ctx.fillStyle = getComputedStyle(labelLine).backgroundColor;
+      ctx.fillRect(liRect.x, liRect.y, liRect.w, Math.max(1, liRect.h));
     }
 
     for (const col of clone.querySelectorAll(".column")) {
@@ -1090,25 +1126,40 @@ function buildStaticDocument() {
   #board {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 28px;
   }
-  .quarter-row {
+  .view-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 24px;
+  }
+  .quarter-cluster {
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
-  .quarter-row-label {
+  .quarter-cluster-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .quarter-cluster-label-text {
     font-family: var(--font-display);
     font-size: 13px;
     font-weight: 700;
     color: var(--text-muted);
     letter-spacing: 0.03em;
-    text-align: center;
+    white-space: nowrap;
   }
-  .quarter-row-columns {
+  .quarter-cluster-label-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .quarter-cluster-columns {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
     gap: 14px;
     align-items: flex-start;
   }
