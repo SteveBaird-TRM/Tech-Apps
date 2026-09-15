@@ -15,12 +15,12 @@
   const DEFAULT_COLOR_1 = '#5b8cff';
   const DEFAULT_COLOR_2 = '#7c5cff';
   const PRESET_COLORS = [
-    { name: 'Happy Red', hex: '#FF4853' },
-    { name: 'Happy Orange', hex: '#FF8B3E' },
-    { name: 'Happy Yellow', hex: '#FFD505' },
-    { name: 'Happy Green', hex: '#4FCE65' },
-    { name: 'Happy Blue', hex: '#5B8CFF' },
-    { name: 'Happy Purple', hex: '#DC60C3' },
+    { name: 'Cyber:Happy Red', hex: '#FF4853' },
+    { name: 'Ops:Happy Orange', hex: '#FF8B3E' },
+    { name: 'Data:Happy Yellow', hex: '#FFD505' },
+    { name: 'Dev:Happy Green', hex: '#4FCE65' },
+    { name: 'BAU:Happy Blue', hex: '#5B8CFF' },
+    { name: 'UX:Happy Purple', hex: '#DC60C3' },
     { name: 'Light Grey', hex: '#E0E0E0' },
     { name: '60% Grey', hex: '#666666' },
     { name: 'Shadow Red', hex: '#B3323A' },
