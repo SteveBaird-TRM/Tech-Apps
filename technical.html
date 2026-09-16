@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRM Web Apps — Technical Brief</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    
+    h1 {
+      font-size: 2em;
+      margin-top: 0;
+      margin-bottom: 0.5em;
+      color: #1a1a1a;
+    }
+    
+    h2 {
+      font-size: 1.5em;
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+      color: #1a1a1a;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 0.3em;
+    }
+    
+    h3 {
+      font-size: 1.1em;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+      color: #333;
+    }
+    
+    code {
+      background: #f0f0f0;
+      padding: 0.2em 0.4em;
+      border-radius: 3px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+    
+    pre {
+      background: #f0f0f0;
+      padding: 1em;
+      border-radius: 5px;
+      overflow-x: auto;
+      border-left: 3px solid #007acc;
+    }
+    
+    pre code {
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5em 0;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    th, td {
+      padding: 0.75em;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    th {
+      background: #f5f5f5;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    tr:hover {
+      background: #fafafa;
+    }
+    
+    ul, ol {
+      margin: 1em 0;
+      padding-left: 2em;
+    }
+    
+    li {
+      margin: 0.5em 0;
+    }
+    
+    strong {
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+    
+    a {
+      color: #007acc;
+      text-decoration: none;
+    }
+    
+    a:hover {
+      text-decoration: underline;
+    }
+    
+    blockquote {
+      border-left: 3px solid #ddd;
+      padding-left: 1em;
+      margin-left: 0;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+
+<h1>TRM Web Apps — Technical Brief</h1>
+
+<p><strong>Scope:</strong> <code>admin</code>, <code>comparison</code>, <code>devops-visualiser</code>, <code>intake</code>, <code>project-list</code>, <code>roadmap</code>, <code>schedule-a</code>, <code>shared</code>.</p>
+
+<h2>1.  Basics</h2>
+
+<ul>
+  <li>The core code is a mix of <code>hmtl</code>, <code>javascript</code>, and <code>css</code>.</lip>
+  <li>Code is uploaded to a <code>github</code> repository before being published via a <code>vercel</code> project.  Both <code>vercel.app</code>, and <code>ixiapps.co.uk</code> domains make the apps availablity to users.</li>
+  <li>A <code>supabase</code> postgres database is used to store project releated data and services user authentication.</li>
+</ul>
+
+<h2>2.  Architecture</h2>
+
+<ul>
+  <li><strong>No monorepo, no framework, no build step.</strong> There is no root <code>package.json</code>, no workspaces config, no bundler.  Each app folder is a self-contained set of plain <code>.html</code>/<code>.js</code>/<code>.css</code> files.  The Supabase JS client is loaded via CDN <code>&lt;script&gt;</code> tag as a UMD global (<code>window.supabase.createClient(...)</code>).</li>
+  <li><strong>Pure BaaS pattern.</strong> Apps talk directly to Supabase Postgres from the browser (<code>sbClient.from(table)...</code>).  There is no custom backend/API server for CRUD.  Authorization is enforced entirely by Postgres Row Level Security (RLS), not by any server-side app code.</li>
+  <li><strong>One exception:</strong> a Supabase <strong>Edge Function</strong> (<code>admin-users</code>, under the excluded <code>supabase/functions/</code> folder) handles privileged <code>auth.users</code> administration (create/delete/reset-password) using the service-role key.  This is the only place a service-role key is used, and it runs server-side (Deno), never shipped to a browser.</li>
+  <li><strong>Config is hardcoded, not environment-driven.</strong> There are no <code>.env</code>/<code>.env.example</code> files.  <code>SUPABASE_URL</code> and the publishable/anon key are literal strings inside every copy of <code>auth-gate.js</code>:
+    <pre><code>SUPABASE_URL = 'https://aczahhxneshsrnqsezzg.supabase.co'
+SUPABASE_KEY = 'sb_publishable_...'   (public anon-equivalent key — safe to expose client-side by design)</code></pre>
+  </li>
+  <li><strong>Code sharing is duplication, not packaging.</strong> <code>auth-gate.js</code> is an identical file, copy-pasted into every gated app rather than centralized — a deliberate choice noted in the file's own header comment, since there's no shared build step to import from.  <code>shared/project-picker.js</code> is the one genuine shared module, consumed via <code>&lt;script src="/shared/project-picker.js"&gt;</code> by <code>intake</code> and <code>roadmap</code> only.</li>
+  <li><strong>Hosting.</strong> Hosting is on vercel.com via GitHub.</li>
+  <li><strong>Domains.</strong> Primary domain ixiapps.co.uk, secondary domain vercel.app</li>
+</ul>
+
+<h2>3.  Database schema</h2>
+
+<p>Supabase project ref: <code>aczahhxneshsrnqsezzg</code>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Table</th>
+      <th>Key columns</th>
+      <th>Purpose</th>
+      <th>Used by</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>projects</strong></td>
+      <td><code>id uuid PK</code>, <code>canonical_name text</code>, <code>origin_app text</code>, <code>created_by uuid → auth.users(id) on delete set null</code>, <code>status text</code> (<code>open</code>/<code>delivered</code>/<code>rejected</code>), <code>pm text</code>, <code>ba text</code>, <code>sme text</code>, <code>description text</code>, <code>created_at</code>, <code>updated_at</code></td>
+      <td>Canonical cross-app project registry.  <code>pm</code>/<code>ba</code>/<code>sme</code> are <strong>intentionally free text</strong>, not <code>auth.users</code> references — a project can have more than one person in a role, so this was a deliberate design choice, not an oversight.</td>
+      <td>intake, roadmap, schedule-a, project-list, comparison, admin</td>
+    </tr>
+    <tr>
+      <td><strong>project_comments</strong></td>
+      <td><code>id</code>, <code>project_id</code>, <code>category</code>, <code>source_app</code>, <code>created_by</code>, <code>created_at</td>
+      <td>Centralised project comments registry.  Records a comment to a project with a category, creator and time.</td>
+      <td>intake, roadmap, project-list</td>
+    </tr>
+    <tr>
+      <td><strong>project_access</strong></td>
+      <td><code>user_id</code>, <code>project_key</code> (<code>intake</code> / <code>roadmap-db</code> / <code>schedule-a-db-v2</code> / <code>implementation-forum</code>), <code>role</code> (<code>viewer</code>/<code>editor</code>)</td>
+      <td>Central per-user, per-app access control table.  Every <code>auth-gate.js</code> and almost every RLS policy consults this.</td>
+      <td>all gated apps, admin</td>
+    </tr>
+    <tr>
+      <td><strong>roadmap_tasks</strong></td>
+      <td><code>id</code>, <code>name</code>, <code>start_date</code>, <code>duration_weeks</code>, <code>sort_order</code>, <code>color</code>, <code>team</code>, <code>phase</code>, <code>health</code>, <code>project_id uuid → projects(id) on delete set null</code></td>
+      <td>Roadmap's Gantt task list.</td>
+      <td>roadmap, project-list, comparison, admin</td>
+    </tr>
+    <tr>
+      <td><strong>intake_cards</strong></td>
+      <td><code>id</code>, <code>data jsonb</code>, <code>project_id uuid → projects(id) on delete set null</code></td>
+      <td>Intake pipeline cards (free-form fields live in the <code>data</code> JSON blob).</td>
+      <td>intake, roadmap/releases.html, admin</td>
+    </tr>
+    <tr>
+      <td><strong>intake_columns</strong></td>
+      <td><code>id</code>, <code>data jsonb</code></td>
+      <td>Intake board's column/lane config.</td>
+      <td>intake</td>
+    </tr>
+    <tr>
+      <td><strong>resource_allocations</strong></td>
+      <td><code>id integer PK</code> (legacy numeric ids), <code>resource_name</code>, <code>project_label text</code>, <code>project_id uuid → projects(id)</code>, <code>start_week</code>, <code>duration_weeks</code>, <code>allocation_pct</code>, <code>sort_order</code>, <code>created_at</code>, <code>updated_at</code></td>
+      <td>Schedule-A's per-resource allocation rows.</td>
+      <td>schedule-a, comparison, admin</td>
+    </tr>
+    <tr>
+      <td><strong>schedule_settings</strong></td>
+      <td><code>id integer PK default 1</code> (singleton, <code>check (id = 1)</code>), <code>timeline_start date</code>, <code>next_id integer</code>, <code>roles_catalog jsonb</code>, <code>resource_roles jsonb</code>, <code>updated_at</code></td>
+      <td>Schedule-A's global settings.</td>
+      <td>schedule-a</td>
+    </tr>
+	<!--
+	<tr>
+      <td><strong>gantt_state</strong></td>
+      <td><code>id</code>, <code>data jsonb</code></td>
+      <td><strong>Legacy</strong>, superseded by <code>resource_allocations</code> + <code>schedule_settings</code>.  No longer queried directly by <code>schedule-a</code>; may still exist in the live DB.</td>
+      <td>(deprecated)</td>
+    </tr>
+    -->
+  </tbody>
+</table>
+
+<p><code>devops-visualiser</code> has no database connection at all — it's a fully offline, client-side CSV visualizer.</p>
+
+<p><strong>Cross-app data flow to note:</strong> <code>roadmap/releases.html</code> reads <code>intake_cards</code> directly to pull the original requestor's name for each milestone — this is the one place a "downstream" app reaches back into an "upstream" app's table rather than going through <code>projects</code>.</p>
+
+<h2>4.  Row Level Security (RLS)</h2>
+
+<p>RLS is enabled on every table listed above.  Findings from the tracked migrations, corroborated by an in-repo security review (<code>security check.txt</code> at the repo root — not excluded, worth reading in full):</p>
+
+<ul>
+  <li><strong><code>is_app_admin()</code></strong> — a <code>security definer</code> SQL function that returns true only if the caller's JWT email matches one hardcoded admin address.  This is the sole "super admin" check used throughout the schema (governs <code>projects</code> delete, and full read/write/delete on <code>project_access</code>).</li>
+  <li><strong><code>has_project_access(project_key, min_role)</code></strong> — the workhorse function behind almost every other policy (not present in tracked migrations — predates tracking, confirm its current definition against the live database).</li>
+  <li><strong><code>project_access</code>:</strong> self-read (<code>user_id = auth.uid()</code>) plus admin-only read-all/insert/update/delete, gated on <code>is_app_admin()</code>.</li>
+  <li><strong><code>project_comments</code>:</strong> self-read (<code>user_id = auth.uid()</code>), gated on <code>is_app_admin()</code>.</li>
+  <li><strong><code>projects</code>:</strong> select — any user with viewer+ access to <code>intake</code>, <code>roadmap-db</code>, or <code>schedule-a-db-v2</code>; insert — editors of any of those three keys; update — editors of any of the three; delete — admin only.</li>
+  <li><strong><code>resource_allocations</code> / <code>schedule_settings</code>:</strong> select requires <code>schedule-a-db-v2</code> viewer; insert/update/delete require <code>schedule-a-db-v2</code> editor.</li>
+  <li><strong><code>roadmap_tasks</code> / <code>intake_cards</code> / <code>intake_columns</code>:</strong> standard <code>has_project_access()</code>-based read/write policies scoped to their respective project keys (a redundant, inconsistent policy set on <code>intake_columns</code> was cleaned up in a later migration to match this pattern).</li>
+  <li>The prior security review states explicitly: <strong>"no wide-open <code>using(true)</code> policies anywhere."</strong></li>
+  <li><strong>A recurring foot-gun in this codebase:</strong> RLS policies being correct is not sufficient — the underlying Postgres <code>GRANT</code> to the <code>authenticated</code>/<code>service_role</code> roles must also exist, or you get "permission denied" even with a correct policy.  Two migrations exist purely to fix missing base grants after RLS was already right (<code>project_access</code>, <code>projects</code> delete).  Worth remembering if you hit unexplained permission errors while extending the schema.</li>
+</ul>
+
+<h2>5.  Authentication</h2>
+
+<ul>
+  <li>Every gated app loads its own copy of <strong><code>auth-gate.js</code></strong>, which:
+    <ol>
+      <li>Creates one Supabase client (<code>window.sbClient</code>).</li>
+      <li>Uses <code>sbClient.auth.signInWithPassword({ email, password })</code> — email/password auth only, no OAuth/SSO/magic-link in evidence.</li>
+      <li>Reads a page-level <code>window.AUTH_REQUIREMENTS</code> array (e.g.  <code>[{ project: 'roadmap-db', role: 'viewer' }]</code>), fetches the signed-in user's rows from <code>project_access</code>, and shows a login/blocked overlay if requirements aren't met.</li>
+    </ol>
+  </li>
+  <li><strong>This client-side gate is UX only — real enforcement is RLS.</strong> Every query independently re-checks <code>project_access</code> via <code>has_project_access()</code>/<code>is_app_admin()</code> at the database layer, regardless of what the client-side overlay shows.</li>
+  <li>Per-page access requirements:</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>App / page</th>
+      <th>Required access</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>roadmap (<code>index.html</code>, <code>releases.html</code>)</td>
+      <td><code>roadmap-db</code> viewer (editor to persist changes)</td>
+    </tr>
+    <tr>
+      <td>schedule-a</td>
+      <td><code>schedule-a-db-v2</code> viewer (editor to persist changes)</td>
+    </tr>
+    <tr>
+      <td>intake (<code>index.html</code>, dashboards)</td>
+      <td><code>intake</code> viewer</td>
+    </tr>
+    <tr>
+      <td>intake <code>admin.html</code></td>
+      <td><code>intake</code> editor</td>
+    </tr>
+    <tr>
+      <td>project-list (<code>index.html</code>, <code>view.html</code>)</td>
+      <td><code>roadmap-db</code> viewer (no key of its own — piggybacks on roadmap)</td>
+    </tr>
+    <tr>
+      <td>comparison</td>
+      <td><code>roadmap-db</code> viewer <strong>and</strong> <code>schedule-a-db-v2</code> viewer</td>
+    </tr>
+    <tr>
+      <td>admin</td>
+      <td>any authenticated user can load the shell; every actual action is additionally gated server-side by <code>is_app_admin()</code> and by the hardcoded admin email</td>
+    </tr>
+    <tr>
+      <td>devops-visualiser</td>
+      <td>none — no login</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li><strong>Privileged user management.</strong> (<code>supabase/functions/admin-users/index.ts</code>, excluded folder but worth knowing about) is an Edge Function running under the service-role key.  It never trusts the client's claimed identity — it independently validates the caller's bearer token via <code>admin.auth.getUser(token)</code> and re-checks the resulting email against the hardcoded admin address on every request.</li>
+  <li><strong>Auto sign out.</strong> A user is automatically signed out every 14 days forcing a new sign in.  <code>auth-gate.js</code>, enforces this by checking <code>user.last_sign_in_at</code> against the <code>MAX_SESSION_AGE_DAYS</code> setting.</li>
+
+</ul>
+
+<h2>6.  Security notes and open items</h2>
+
+<ul>
+  <li><strong>No client-side service-role usage found.</strong> A full-tree search for <code>service_role</code> only turns up server-side GRANTs (SQL) and the Edge Function's Deno environment variable — never shipped to the browser.  No issue here.</li>
+  <li><strong>CORS</strong> on the <code>admin-users</code> Edge Function is <code>Access-Control-Allow-Origin: *</code>.  Assessed as low-risk since every request still requires a valid bearer token and independent identity re-check, but could be tightened to the app's real domain for defence in depth.</li>
+  <li><strong>Outstanding recommendations from the last security review, not yet applied: (only available in a paid plan)</strong>
+    <ul>
+      <li>Enable Supabase Auth's "leaked password protection" (HaveIBeenPwned check) — a dashboard toggle, no code change needed.</li>
+      <li>Harden the <code>set_updated_at()</code> trigger function with <code>SET search_path = public, pg_temp</code> (low real-world risk today, since it uses no unqualified identifiers, but it's the standard hardening for <code>security definer</code>-adjacent functions).</li>
+    </ul>
+  </li>
+  <li><strong>The public anon/publishable key being hardcoded and identical across every app is expected and fine</strong> — it's a public key by design, and the whole security model deliberately rests on RLS + <code>project_access</code>, not key secrecy.</li>
+</ul>
+
+<h2>7.  Quick reference: tables ↔ project keys</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>project_key</th>
+      <th>Tables it governs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>intake</code></td>
+      <td><code>intake_cards</code>, <code>intake_columns</code></td>
+    </tr>
+    <tr>
+      <td><code>roadmap-db</code></td>
+      <td><code>roadmap_tasks</code></td>
+    </tr>
+    <tr>
+      <td><code>schedule-a-db-v2</code></td>
+      <td><code>resource_allocations</code>, <code>schedule_settings</code></td>
+    </tr>
+    <tr>
+      <td><em>(none — admin only)</em></td>
+      <td><code>project_access</code>, <code>projects</code> delete</td>
+    </tr>
+    <tr>
+      <td><em>(shared, multi-key read)</em></td>
+      <td><code>projects</code> (readable by viewers of any of the three keys above)</td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>
