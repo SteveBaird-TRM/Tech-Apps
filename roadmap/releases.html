@@ -579,10 +579,11 @@ let visibleMonthCount = 6; // number of months, or "all" for no time limit
 function buildMonthRange() {
   if (visibleMonthCount === "all") {
     if (!currentMilestones.length) return [];
-    let minY = Infinity, minM = 0, maxY = -Infinity, maxM = 0;
+    const now = new Date();
+    const minY = now.getUTCFullYear(), minM = now.getUTCMonth();
+    let maxY = minY, maxM = minM;
     currentMilestones.forEach(ms => {
       const y = ms.finish.getUTCFullYear(), m = ms.finish.getUTCMonth();
-      if (y < minY || (y === minY && m < minM)) { minY = y; minM = m; }
       if (y > maxY || (y === maxY && m > maxM)) { maxY = y; maxM = m; }
     });
     const months = [];
