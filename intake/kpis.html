@@ -706,7 +706,7 @@
   function buildPriorTile(cards) {
     var tile = document.createElement("div");
     tile.className = "tile tile-mini";
-    tile.style.setProperty("--tile-status-color", "var(--status-info)");
+    tile.style.setProperty("--tile-status-color", "#999999");
     var rowsHtml = KPIS.map(function (kpi) {
       var result = kpi.compute(cards, PRIOR_WINDOW);
       var view = kpi.render(result);
