@@ -226,6 +226,34 @@
     color: var(--text-faint);
     line-height: 1.4;
   }
+  .tiles + .tiles {
+    margin-top: 16px;
+  }
+  .tile-mini {
+    padding: 14px 16px 10px;
+  }
+  .tile-mini-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 0;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+  }
+  .tile-mini-row:first-of-type {
+    border-top: none;
+  }
+  .tile-mini-row .k {
+    color: var(--text-muted);
+  }
+  .tile-mini-row .v {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+  }
   .meter {
     position: relative;
     margin: 14px 0 2px;
@@ -280,6 +308,8 @@
 
   <div class="main">
     <div class="tiles" id="tiles"></div>
+    <div class="tiles" id="tiles-prior"></div>
+    <div class="tiles" id="tiles-roadmap"></div>
   </div>
 </div>
 
@@ -308,6 +338,7 @@
   }
 
   var CURRENT_WINDOW = { from: daysAgo(92), to: daysAgo(0) };
+  var PRIOR_WINDOW = { from: daysAgo(122), to: daysAgo(30) };
 
   var KPIS = [
     {
@@ -493,7 +524,10 @@
         if (result.pct >= this.thresholds.warning) return "warning";
         return "critical";
       }
-    },
+    }
+  ];
+
+  var ROADMAP_KPIS = [
     {
       id: "project-status",
       label: "Live Projects",
@@ -652,24 +686,53 @@
     "</div>";
   }
 
+  function buildKpiTile(kpi, cards, roadmapTasks) {
+    var result = kpi.compute(cards, undefined, roadmapTasks);
+    var view = kpi.render(result);
+    var status = kpi.status ? kpi.status(result) : null;
+    var tile = document.createElement("div");
+    tile.className = "tile" + (result ? "" : " tile-empty");
+    if (status) tile.style.setProperty("--tile-status-color", "var(--status-" + status + ")");
+    tile.innerHTML =
+      '<div class="tile-label">' + escapeHtml(kpi.label) + "</div>" +
+      '<div class="tile-value">' + escapeHtml(view.value) +
+        (view.unit ? ' <span class="unit">' + escapeHtml(view.unit) + "</span>" : "") +
+      "</div>" +
+      (kpi.showMeter && result ? buildMeterHtml(kpi.meterValue ? kpi.meterValue(result) : result.pct, kpi.thresholds, kpi.meterOptions) : "") +
+      '<div class="tile-caption">' + escapeHtml(view.caption) + "</div>";
+    return tile;
+  }
+
+  function buildPriorTile(cards) {
+    var tile = document.createElement("div");
+    tile.className = "tile tile-mini";
+    tile.style.setProperty("--tile-status-color", "var(--status-info)");
+    var rowsHtml = KPIS.map(function (kpi) {
+      var result = kpi.compute(cards, PRIOR_WINDOW);
+      var view = kpi.render(result);
+      var value = view.value + (view.unit ? " " + view.unit : "");
+      return '<div class="tile-mini-row"><span class="k">' + escapeHtml(kpi.label) + '</span>' +
+        '<span class="v">' + escapeHtml(value) + "</span></div>";
+    }).join("");
+    tile.innerHTML = '<div class="tile-label">30 days ago</div>' + rowsHtml;
+    return tile;
+  }
+
   function renderTiles(cards, roadmapTasks) {
     var container = document.getElementById("tiles");
     container.innerHTML = "";
     KPIS.forEach(function (kpi) {
-      var result = kpi.compute(cards, undefined, roadmapTasks);
-      var view = kpi.render(result);
-      var status = kpi.status ? kpi.status(result) : null;
-      var tile = document.createElement("div");
-      tile.className = "tile" + (result ? "" : " tile-empty");
-      if (status) tile.style.setProperty("--tile-status-color", "var(--status-" + status + ")");
-      tile.innerHTML =
-        '<div class="tile-label">' + escapeHtml(kpi.label) + "</div>" +
-        '<div class="tile-value">' + escapeHtml(view.value) +
-          (view.unit ? ' <span class="unit">' + escapeHtml(view.unit) + "</span>" : "") +
-        "</div>" +
-        (kpi.showMeter && result ? buildMeterHtml(kpi.meterValue ? kpi.meterValue(result) : result.pct, kpi.thresholds, kpi.meterOptions) : "") +
-        '<div class="tile-caption">' + escapeHtml(view.caption) + "</div>";
-      container.appendChild(tile);
+      container.appendChild(buildKpiTile(kpi, cards, roadmapTasks));
+    });
+
+    var priorContainer = document.getElementById("tiles-prior");
+    priorContainer.innerHTML = "";
+    priorContainer.appendChild(buildPriorTile(cards));
+
+    var roadmapContainer = document.getElementById("tiles-roadmap");
+    roadmapContainer.innerHTML = "";
+    ROADMAP_KPIS.forEach(function (kpi) {
+      roadmapContainer.appendChild(buildKpiTile(kpi, cards, roadmapTasks));
     });
   }
 
@@ -716,7 +779,7 @@
     });
   }
 
-  function buildStandaloneHtml(tilesHtml, imageDataUri) {
+  function buildStandaloneHtml(tilesHtml, priorTilesHtml, roadmapTilesHtml, imageDataUri) {
     var css = document.querySelector("style").textContent;
     var imgHtml = imageDataUri
       ? '<div style="display:flex;justify-content:center;padding:20px 24px 0;background:var(--surface);">' +
@@ -735,7 +798,11 @@
       '  <div class="topbar">\n' +
       "    <div><h1>How well are we doing?</h1><span class=\"sub\">Snapshot published " + escapeHtml(new Date().toLocaleString()) + "</span></div>\n" +
       "  </div>\n" +
-      '  <div class="main"><div class="tiles">' + tilesHtml + "</div></div>\n" +
+      '  <div class="main">\n' +
+      '    <div class="tiles">' + tilesHtml + "</div>\n" +
+      '    <div class="tiles">' + priorTilesHtml + "</div>\n" +
+      '    <div class="tiles">' + roadmapTilesHtml + "</div>\n" +
+      "  </div>\n" +
       "</div>\n" +
       "</body></html>\n";
   }
@@ -743,9 +810,11 @@
   function publishStandaloneHtml() {
     var container = document.getElementById("tiles");
     if (!container.children.length) { toast("Nothing to publish yet"); return; }
+    var priorContainer = document.getElementById("tiles-prior");
+    var roadmapContainer = document.getElementById("tiles-roadmap");
     embedThumbnail("kpis-thumbnail.jpg").then(function (imageSrc) {
       if (!imageSrc) toast("Publishing without thumbnail — kpis-thumbnail.jpg not found");
-      var html = buildStandaloneHtml(container.innerHTML, imageSrc);
+      var html = buildStandaloneHtml(container.innerHTML, priorContainer.innerHTML, roadmapContainer.innerHTML, imageSrc);
       var filename = "how-well-are-we-doing-" + new Date().toISOString().slice(0, 10) + ".html";
       downloadText(filename, html, "text/html");
       toast("Published " + filename);
