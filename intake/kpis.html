@@ -709,7 +709,8 @@
     var rowsHtml = KPIS.map(function (kpi) {
       var result = kpi.compute(cards, PRIOR_WINDOW);
       var view = kpi.render(result);
-      var value = view.value + (view.unit ? " " + view.unit : "");
+      var unit = view.unit === "days avg" ? "days" : view.unit;
+      var value = view.value + (unit ? " " + unit : "");
       return '<div class="tile-mini-row"><span class="k">' + escapeHtml(kpi.label) + '</span>' +
         '<span class="v">' + escapeHtml(value) + "</span></div>";
     }).join("");
