@@ -29,6 +29,7 @@
     --status-warning: #FF9900;
     --status-critical: #FF3300;
     --status-info: #5B8CFF;
+    --status-muted: #999999;
 
     --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
     --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
@@ -526,10 +527,80 @@
     }
   ];
 
+  // Teams counted by the "…(Delivery/Digital Tech/Enterprise/None)" tiles below.
+  // '' represents roadmap tasks with no team set ("None").
+  var CORE_TEAMS = ["Delivery", "Digital Tech", "Enterprise", ""];
+
+  function filterTasksByCoreTeams(roadmapTasks) {
+    return roadmapTasks.filter(function (t) {
+      return CORE_TEAMS.indexOf(t.team || "") !== -1;
+    });
+  }
+
   var ROADMAP_KPIS = [
     {
+      id: "project-status-core-teams",
+      label: "Live Delivery Projects",
+      ACTIVE_PHASES: ["Discovery", "Build", "Test"],
+      NOT_STARTED_PHASES: ["Not Started", "Blocked"],
+      compute: function (cards, window, roadmapTasks) {
+        if (!roadmapTasks) return null;
+        var activePhases = this.ACTIVE_PHASES;
+        var notStartedPhases = this.NOT_STARTED_PHASES;
+        var active = 0;
+        var notStarted = 0;
+        var teamTasks = filterTasksByCoreTeams(roadmapTasks);
+        teamTasks.forEach(function (t) {
+          if (activePhases.indexOf(t.phase) !== -1) active++;
+          else if (notStartedPhases.indexOf(t.phase) !== -1) notStarted++;
+        });
+        return { active: active, notStarted: notStarted, total: teamTasks.length };
+      },
+      render: function (result) {
+        return {
+          value: result ? result.active + " of " + result.total : "—",
+          unit: "",
+          caption: "Active/Total projects on the roadmap"
+        };
+      },
+      status: function (result) {
+        return result ? "info" : null;
+      }
+    },
+    {
+      id: "weeks-remaining-core-teams",
+      label: "Planned Delivery Work",
+      compute: function (cards, window, roadmapTasks) {
+        if (!roadmapTasks) return null;
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        var totalRemaining = 0;
+        var teamTasks = filterTasksByCoreTeams(roadmapTasks);
+        teamTasks.forEach(function (t) {
+          if (t.phase === "Complete") return;
+          var start = new Date(t.start_date + "T00:00:00");
+          if (isNaN(start.getTime())) return;
+          var duration = Math.max(0, parseInt(t.duration_weeks, 10) || 0);
+          var weeksElapsed = (today - start) / (7 * 86400000);
+          var weeksDone = Math.min(duration, Math.max(0, weeksElapsed));
+          totalRemaining += duration - weeksDone;
+        });
+        return { weeks: totalRemaining };
+      },
+      render: function (result) {
+        return {
+          value: result ? Math.round(result.weeks).toLocaleString() : "—",
+          unit: result ? "weeks" : "",
+          caption: "Remaining effort to deliver project on roadmap"
+        };
+      },
+      status: function (result) {
+        return result ? "info" : null;
+      }
+    },
+    {
       id: "project-status",
-      label: "Live Projects",
+      label: "Live Tech Projects",
       ACTIVE_PHASES: ["Discovery", "Build", "Test"],
       NOT_STARTED_PHASES: ["Not Started", "Blocked"],
       compute: function (cards, window, roadmapTasks) {
@@ -552,12 +623,12 @@
         };
       },
       status: function (result) {
-        return result ? "info" : null;
+        return result ? "muted" : null;
       }
     },
     {
       id: "weeks-remaining",
-      label: "Planned Work",
+      label: "Planned Tech Work",
       compute: function (cards, window, roadmapTasks) {
         if (!roadmapTasks) return null;
         var today = new Date();
@@ -578,11 +649,11 @@
         return {
           value: result ? Math.round(result.weeks).toLocaleString() : "—",
           unit: result ? "weeks" : "",
-          caption: "Remianing effort to deliver all projects on roadmap"
+          caption: "Remaining effort to deliver project on roadmap"
         };
       },
       status: function (result) {
-        return result ? "info" : null;
+        return result ? "muted" : null;
       }
     }
   ];
@@ -635,7 +706,7 @@
   var ROADMAP_STORAGE_KEY = "intake-kpis-roadmap-cache-v1"; // local cache only, used if Supabase is unreachable
 
   function fetchRoadmapTasksFromSupabase() {
-    return sb.from(ROADMAP_TABLE).select("phase, start_date, duration_weeks").then(function (res) {
+    return sb.from(ROADMAP_TABLE).select("phase, start_date, duration_weeks, team").then(function (res) {
       if (res.error) throw res.error;
       return res.data || [];
     });
