@@ -262,7 +262,6 @@
                 <th>Intake</th>
                 <th>Roadmap</th>
                 <th>Schedule A</th>
-                <th>Forum</th>
                 <th></th>
               </tr>
             </thead>
@@ -318,7 +317,7 @@
   "use strict";
 
   var ADMIN_EMAIL = "steve.baird@royalmint.com";
-  var PROJECT_KEYS = ["intake", "roadmap-db", "schedule-a-db-v2", "implementation-forum"];
+  var PROJECT_KEYS = ["intake", "roadmap-db", "schedule-a-db-v2"];
 
   var sb;
   var currentUserId = null;
@@ -423,7 +422,7 @@
     if (!users.length) {
       var tr0 = document.createElement("tr");
       var td0 = document.createElement("td");
-      td0.colSpan = 6;
+      td0.colSpan = 5;
       td0.className = "empty-note";
       td0.textContent = "No users yet.";
       tr0.appendChild(td0);
