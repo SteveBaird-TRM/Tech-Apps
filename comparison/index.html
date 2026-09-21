@@ -26,24 +26,33 @@
         <span id="zoom-level" class="zoom-level">100%</span>
         <button type="button" id="zoom-in-btn" class="zoom-btn" title="Zoom in">+</button>
       </div>
-      <button type="button" id="filter-btn" class="btn" title="Choose which projects are shown">Filter</button>
-      <button type="button" id="theme-toggle-btn" class="btn" title="Toggle light/dark theme">Theme</button>
     </div>
   </header>
 
-  <dialog id="filter-dialog" class="edit-dialog filter-dialog">
-    <h2>Filter Projects</h2>
-    <p class="filter-hint">Only checked projects are shown on the timeline.</p>
-    <div class="filter-actions-row">
-      <button type="button" id="filter-select-all-btn" class="btn">Select All</button>
-      <button type="button" id="filter-select-none-btn" class="btn">Select None</button>
+  <div id="filter-panel" class="filter-panel">
+    <button type="button" id="filter-toggle-btn" class="filter-toggle-btn" aria-expanded="true" aria-controls="filter-panel-body">
+      <span class="filter-toggle-caret" aria-hidden="true">▾</span>
+      <span>Filter</span>
+      <span id="filter-active-badge" class="filter-active-badge" hidden></span>
+    </button>
+    <div id="filter-panel-body" class="filter-panel-body">
+      <div class="filter-row">
+        <span class="filter-row-label">Team</span>
+        <div id="filter-team-row" class="filter-pill-list"></div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-row-label">Phase</span>
+        <div id="filter-phase-row" class="filter-pill-list"></div>
+      </div>
+      <div class="filter-row filter-search-row">
+        <div class="filter-search-wrap">
+          <input type="text" id="filter-search-input" class="filter-search-input" placeholder="Search projects by title…" autocomplete="off" aria-label="Search projects by title" />
+          <ul id="filter-search-results" class="filter-search-results" hidden></ul>
+        </div>
+        <button type="button" id="filter-clear-btn" class="btn filter-clear-btn">Clear filters</button>
+      </div>
     </div>
-    <div id="filter-project-list" class="filter-project-list"></div>
-    <div class="edit-dialog-actions">
-      <button type="button" id="filter-cancel-btn" class="btn">Cancel</button>
-      <button type="button" id="filter-apply-btn" class="btn btn-primary">OK</button>
-    </div>
-  </dialog>
+  </div>
 
   <main class="compare-wrap">
     <div id="empty-state" class="empty-state">

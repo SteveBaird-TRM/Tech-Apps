@@ -11,10 +11,17 @@
   const DEFAULT_ZOOM = 1;
   const ZOOM_STORAGE_KEY = 'timeline-compare-zoom';
   const THEME_STORAGE_KEY = 'timeline-compare-theme';
-  const FILTER_STORAGE_KEY = 'timeline-compare-filter';
+  const FILTER_COLLAPSED_STORAGE_KEY = 'timeline-compare-filter-collapsed';
   const START_DATE_STORAGE_KEY = 'timeline-compare-start-date';
   const MIN_VISIBLE_WEEKS = 10;
   const PADDING_WEEKS = 2;
+
+  // Must match the option lists in roadmap/app.js.
+  const TEAM_OPTIONS = [
+    'Cyber', 'Data and BI', 'Delivery', 'Development', 'Digital Tech', 'Ecommerce', 'Enterprise', 'Operations',
+  ];
+  const PHASE_OPTIONS = ['Not Started', 'Discovery', 'Build', 'Test', 'Blocked', 'Complete'];
+  const DEFAULT_PHASE = 'Not Started';
 
   // Resource start/duration in schedule-a-db-v2 are stored as week-offsets from
   // this fixed Monday — must match schedule-a-db-v2/app.js exactly to convert
@@ -33,15 +40,15 @@
   const zoomInBtn = document.getElementById('zoom-in-btn');
   const zoomOutBtn = document.getElementById('zoom-out-btn');
   const zoomLevelEl = document.getElementById('zoom-level');
-  const themeToggleBtn = document.getElementById('theme-toggle-btn');
   const tableEl = document.getElementById('compare-table');
-  const filterBtn = document.getElementById('filter-btn');
-  const filterDialog = document.getElementById('filter-dialog');
-  const filterProjectListEl = document.getElementById('filter-project-list');
-  const filterSelectAllBtn = document.getElementById('filter-select-all-btn');
-  const filterSelectNoneBtn = document.getElementById('filter-select-none-btn');
-  const filterCancelBtn = document.getElementById('filter-cancel-btn');
-  const filterApplyBtn = document.getElementById('filter-apply-btn');
+  const filterPanelEl = document.getElementById('filter-panel');
+  const filterToggleBtn = document.getElementById('filter-toggle-btn');
+  const filterActiveBadge = document.getElementById('filter-active-badge');
+  const filterClearBtn = document.getElementById('filter-clear-btn');
+  const filterTeamRowEl = document.getElementById('filter-team-row');
+  const filterPhaseRowEl = document.getElementById('filter-phase-row');
+  const filterSearchInput = document.getElementById('filter-search-input');
+  const filterSearchResultsEl = document.getElementById('filter-search-results');
   const startDateInput = document.getElementById('start-date-input');
 
   const supabaseClient = window.sbClient;
@@ -66,14 +73,18 @@
   let projects = [];
   let projectsByName = new Map();
 
-  // null = no filter active (every project shown); otherwise the set of project
-  // names to display, checked against the current project list on every load.
-  let filterVisibleNames = null;
+  // An empty set means "All" for that category. Team and phase come from the
+  // Roadmap-DB entry, so schedule-only projects drop out while either is active.
+  let filterTeams = new Set();
+  let filterPhases = new Set();
+  let filterSearchQuery = '';
+  let filterSearchName = null;
+
+  let filterCollapsed = false;
   try {
-    const storedFilter = JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || 'null');
-    if (Array.isArray(storedFilter)) filterVisibleNames = new Set(storedFilter);
+    filterCollapsed = localStorage.getItem(FILTER_COLLAPSED_STORAGE_KEY) === 'true';
   } catch (err) {
-    // localStorage unavailable or corrupt — fall back to no filter.
+    // localStorage unavailable — start expanded.
   }
 
   let zoom = DEFAULT_ZOOM;
@@ -191,6 +202,12 @@
 
       buildProjects();
       reconcileFilter();
+      try {
+        // Superseded by the pill filters; drop the old per-project checklist.
+        localStorage.removeItem('timeline-compare-filter');
+      } catch (err) {
+        // ignore
+      }
       setFileStatus('Connected to Supabase', 'connected');
       showTable(true);
       render();
@@ -212,7 +229,14 @@
       const start = parseISODate(r.start_date);
       if (!start) return;
       const durationWeeks = Math.max(1, parseInt(r.duration_weeks, 10) || 1);
-      roadmapByName.set(name, { id: r.id, start, end: addDays(start, durationWeeks * 7), durationWeeks });
+      roadmapByName.set(name, {
+        id: r.id,
+        start,
+        end: addDays(start, durationWeeks * 7),
+        durationWeeks,
+        team: r.team || '',
+        phase: PHASE_OPTIONS.includes(r.phase) ? r.phase : DEFAULT_PHASE,
+      });
     });
 
     const scheduleGroups = new Map();
@@ -235,7 +259,9 @@
         const sg = scheduleGroups.get(name);
         return {
           name,
-          roadmap: rm ? { id: rm.id, start: rm.start, end: rm.end, durationWeeks: rm.durationWeeks } : null,
+          roadmap: rm
+            ? { id: rm.id, start: rm.start, end: rm.end, durationWeeks: rm.durationWeeks, team: rm.team, phase: rm.phase }
+            : null,
           schedule: sg
             ? { start: addWeeks(DATA_EPOCH, sg.minStart), end: addWeeks(DATA_EPOCH, sg.maxEnd), count: sg.count }
             : null,
@@ -246,83 +272,200 @@
     projectsByName = new Map(projects.map((p) => [p.name, p]));
   }
 
-  // ---------- Filter (which projects are shown) ----------
-  // Drops names from a stored filter that no longer exist (e.g. after a rename
-  // or merge), and collapses to "no filter" if that leaves nothing hidden.
-  function reconcileFilter() {
-    if (!filterVisibleNames) return;
-    const allNames = new Set(projects.map((p) => p.name));
-    const kept = new Set([...filterVisibleNames].filter((n) => allNames.has(n)));
-    filterVisibleNames = kept.size > 0 && kept.size < allNames.size ? kept : null;
-    persistFilter();
+  // ---------- Filter (team / phase / title) ----------
+  function teamsInUse() {
+    const present = new Set(projects.filter((p) => p.roadmap).map((p) => p.roadmap.team));
+    const ordered = TEAM_OPTIONS.filter((t) => present.has(t));
+    if (present.has('')) ordered.push('');
+    return ordered;
   }
 
-  function persistFilter() {
-    try {
-      if (filterVisibleNames) {
-        localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...filterVisibleNames]));
-      } else {
-        localStorage.removeItem(FILTER_STORAGE_KEY);
-      }
-    } catch (err) {
-      // ignore — persistence is a convenience, not a requirement
+  function phasesInUse() {
+    const present = new Set(projects.filter((p) => p.roadmap).map((p) => p.roadmap.phase));
+    return PHASE_OPTIONS.filter((ph) => present.has(ph));
+  }
+
+  // Drops selections that no longer exist (e.g. after a rename or a team/phase
+  // change in Roadmap) so a stale pill can't hide every project.
+  function reconcileFilter() {
+    const teams = new Set(teamsInUse());
+    const phases = new Set(phasesInUse());
+    filterTeams = new Set([...filterTeams].filter((t) => teams.has(t)));
+    filterPhases = new Set([...filterPhases].filter((ph) => phases.has(ph)));
+    if (filterSearchName && !projectsByName.has(filterSearchName)) {
+      filterSearchName = null;
+      filterSearchInput.value = '';
     }
+  }
+
+  function toggleFilterValue(set, value) {
+    if (set.has(value)) set.delete(value);
+    else set.add(value);
+  }
+
+  function projectPassesFilter(p) {
+    if (filterTeams.size && !(p.roadmap && filterTeams.has(p.roadmap.team))) return false;
+    if (filterPhases.size && !(p.roadmap && filterPhases.has(p.roadmap.phase))) return false;
+    if (filterSearchName) return p.name === filterSearchName;
+    if (filterSearchQuery && !p.name.toLowerCase().includes(filterSearchQuery)) return false;
+    return true;
   }
 
   function visibleProjects() {
-    if (!filterVisibleNames) return projects;
-    return projects.filter((p) => filterVisibleNames.has(p.name));
+    return projects.filter(projectPassesFilter);
   }
 
-  function syncFilterButton() {
-    const isActive = !!filterVisibleNames;
-    filterBtn.classList.toggle('active', isActive);
-    filterBtn.textContent = isActive ? 'Filter (' + visibleProjects().length + '/' + projects.length + ')' : 'Filter';
+  function syncFilterBadge() {
+    const activeCount = filterTeams.size + filterPhases.size + (filterSearchName || filterSearchQuery ? 1 : 0);
+    filterActiveBadge.hidden = activeCount === 0;
+    filterActiveBadge.textContent = String(activeCount);
   }
 
-  function openFilterDialog() {
-    const currentlyVisible = filterVisibleNames || new Set(projects.map((p) => p.name));
-    filterProjectListEl.innerHTML = '';
-    if (!projects.length) {
-      const empty = document.createElement('p');
-      empty.className = 'filter-empty';
-      empty.textContent = 'No projects to filter yet.';
-      filterProjectListEl.appendChild(empty);
-    }
-    projects.forEach((p) => {
-      const row = document.createElement('label');
-      row.className = 'filter-check-row';
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = currentlyVisible.has(p.name);
-      checkbox.dataset.name = p.name;
-      const span = document.createElement('span');
-      span.textContent = p.name;
-      row.appendChild(checkbox);
-      row.appendChild(span);
-      filterProjectListEl.appendChild(row);
-    });
-    filterDialog.showModal();
+  // ---------- Title search ----------
+  function hideSearchResults() {
+    filterSearchResultsEl.hidden = true;
+    filterSearchResultsEl.innerHTML = '';
   }
 
-  function setAllFilterCheckboxes(checked) {
-    filterProjectListEl.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
-      cb.checked = checked;
-    });
+  function matchingSearchProjects() {
+    if (!filterSearchQuery) return [];
+    return projects.filter((p) => p.name.toLowerCase().includes(filterSearchQuery));
   }
 
-  filterBtn.addEventListener('click', openFilterDialog);
-  filterSelectAllBtn.addEventListener('click', () => setAllFilterCheckboxes(true));
-  filterSelectNoneBtn.addEventListener('click', () => setAllFilterCheckboxes(false));
-  filterCancelBtn.addEventListener('click', () => filterDialog.close());
-
-  filterApplyBtn.addEventListener('click', () => {
-    const checkboxes = Array.from(filterProjectListEl.querySelectorAll('input[type="checkbox"]'));
-    const checkedNames = checkboxes.filter((cb) => cb.checked).map((cb) => cb.dataset.name);
-    filterVisibleNames = checkedNames.length === checkboxes.length ? null : new Set(checkedNames);
-    persistFilter();
-    filterDialog.close();
+  function selectSearchResult(project) {
+    filterSearchName = project.name;
+    filterSearchQuery = '';
+    filterSearchInput.value = project.name;
+    hideSearchResults();
     render();
+  }
+
+  function renderSearchResults() {
+    filterSearchResultsEl.innerHTML = '';
+    if (!filterSearchQuery) {
+      hideSearchResults();
+      return;
+    }
+    const matches = matchingSearchProjects().slice(0, 8);
+    if (!matches.length) {
+      const li = document.createElement('li');
+      li.className = 'filter-search-empty';
+      li.textContent = 'No matching projects';
+      filterSearchResultsEl.appendChild(li);
+      filterSearchResultsEl.hidden = false;
+      return;
+    }
+    matches.forEach((p) => {
+      const li = document.createElement('li');
+      li.className = 'filter-search-result';
+      li.textContent = p.name;
+      // mousedown fires before the input's blur, so the click registers before the dropdown closes.
+      li.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        selectSearchResult(p);
+      });
+      filterSearchResultsEl.appendChild(li);
+    });
+    filterSearchResultsEl.hidden = false;
+  }
+
+  function clearSearch() {
+    filterSearchQuery = '';
+    filterSearchName = null;
+    filterSearchInput.value = '';
+    hideSearchResults();
+  }
+
+  // Builds one row of pills for a filter category: an "All" pill that clears
+  // the category, followed by one pill per value in use.
+  function renderFilterPillRow(container, options, activeSet, pillClass, labelFn) {
+    container.innerHTML = '';
+    if (!options.length) {
+      const empty = document.createElement('span');
+      empty.className = 'filter-empty';
+      empty.textContent = 'Nothing set yet.';
+      container.appendChild(empty);
+      return;
+    }
+
+    const allPill = document.createElement('button');
+    allPill.type = 'button';
+    allPill.className = 'filter-pill all-pill';
+    allPill.textContent = 'All';
+    allPill.classList.toggle('active', activeSet.size === 0);
+    allPill.addEventListener('click', () => {
+      activeSet.clear();
+      render();
+    });
+    container.appendChild(allPill);
+
+    options.forEach((value) => {
+      const pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = 'filter-pill ' + pillClass;
+      pill.textContent = labelFn(value);
+      pill.classList.toggle('active', activeSet.has(value));
+      pill.addEventListener('click', () => {
+        toggleFilterValue(activeSet, value);
+        render();
+      });
+      container.appendChild(pill);
+    });
+  }
+
+  function renderFilterPanel() {
+    renderFilterPillRow(filterTeamRowEl, teamsInUse(), filterTeams, 'filter-pill-team', (v) => v || 'None');
+    renderFilterPillRow(filterPhaseRowEl, phasesInUse(), filterPhases, 'filter-pill-phase', (v) => v);
+    syncFilterBadge();
+  }
+
+  function applyFilterCollapsed() {
+    filterPanelEl.classList.toggle('collapsed', filterCollapsed);
+    filterToggleBtn.setAttribute('aria-expanded', String(!filterCollapsed));
+  }
+
+  function setFilterCollapsed(collapsed) {
+    filterCollapsed = collapsed;
+    try {
+      localStorage.setItem(FILTER_COLLAPSED_STORAGE_KEY, String(filterCollapsed));
+    } catch (err) {
+      // ignore — persistence is a convenience, not a requirement
+    }
+    applyFilterCollapsed();
+  }
+
+  function clearFilters() {
+    filterTeams.clear();
+    filterPhases.clear();
+    clearSearch();
+    render();
+  }
+
+  filterToggleBtn.addEventListener('click', () => setFilterCollapsed(!filterCollapsed));
+  filterClearBtn.addEventListener('click', clearFilters);
+  applyFilterCollapsed();
+
+  filterSearchInput.addEventListener('input', () => {
+    filterSearchName = null;
+    filterSearchQuery = filterSearchInput.value.trim().toLowerCase();
+    renderSearchResults();
+    render();
+  });
+  filterSearchInput.addEventListener('focus', () => {
+    if (filterSearchQuery && !filterSearchName) renderSearchResults();
+  });
+  filterSearchInput.addEventListener('blur', () => {
+    setTimeout(hideSearchResults, 100);
+  });
+  filterSearchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      clearSearch();
+      render();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const matches = matchingSearchProjects();
+      if (matches.length) selectSearchResult(matches[0]);
+    }
   });
 
   // ---------- Timeline range / columns ----------
@@ -547,7 +690,7 @@
 
     tableEl.style.width = (LABEL_WIDTH_PX + totalWidthPx) + 'px';
     syncZoomControls();
-    syncFilterButton();
+    renderFilterPanel();
     syncStartDateControl();
   }
 
@@ -610,7 +753,9 @@
     // localStorage unavailable — fall back to the OS theme.
   }
 
-  themeToggleBtn.addEventListener('click', () => {
+  // The on-page button is gone; the stored/OS theme still applies and this
+  // toggle stays callable from the console.
+  window.toggleCompareTheme = () => {
     const next = currentEffectiveTheme() === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
     try {
@@ -618,7 +763,7 @@
     } catch (err) {
       // ignore — persistence is a convenience, not a requirement
     }
-  });
+  };
 
   // ---------- Rename (the only edit this app allows) ----------
   async function renameProject(oldName, newName) {
@@ -627,6 +772,19 @@
       const project = projectsByName.get(oldName);
       if (!project) throw new Error('Project not found');
       if (!canEditProject(project)) throw new Error("You don't have edit access to this project.");
+
+      // A resource_allocations row is just a label, so relabeling it onto an existing project
+      // is a real merge. A roadmap_tasks row is an actual timeline entry, though — if both the
+      // old and new names already have one, there's no single safe choice of which survives,
+      // so refuse rather than silently renaming one and leaving the other as an orphaned
+      // duplicate (invisible here, since projects are keyed by name, but still very much
+      // present — and re-appearing as a real duplicate bar — in roadmap/index.html).
+      const target = projectsByName.get(newName);
+      if (project.roadmap && target && target.roadmap) {
+        throw new Error(
+          'Both "' + oldName + '" and "' + newName + '" already have their own Roadmap entry — remove or consolidate one in Roadmap first, then rename here.'
+        );
+      }
 
       const ops = [];
       if (project.roadmap) {
@@ -671,6 +829,17 @@
     }
     if (newName === oldName) return;
     if (projectsByName.has(newName)) {
+      const oldProject = projectsByName.get(oldName);
+      const targetProject = projectsByName.get(newName);
+      if (oldProject && oldProject.roadmap && targetProject && targetProject.roadmap) {
+        window.alert(
+          'Both "' + oldName + '" and "' + newName + '" already have their own entry in Roadmap. ' +
+          'Renaming here would leave one of them as an orphaned duplicate instead of a real merge — ' +
+          'remove or consolidate one of the two Roadmap entries first, then rename here.'
+        );
+        el.value = oldName;
+        return;
+      }
       const merge = window.confirm(
         'A project named "' + newName + '" already exists. Renaming will merge "' + oldName + '" into it. Continue?'
       );
