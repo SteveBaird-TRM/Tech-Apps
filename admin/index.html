@@ -219,6 +219,8 @@
     transition: opacity 180ms ease, transform 180ms ease; z-index: 50;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .report-desc { font-size: 12.5px; color: var(--text-muted); margin: 0 0 12px; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -293,6 +295,13 @@
             </thead>
             <tbody id="projectsBody"></tbody>
           </table>
+        </div>
+
+        <h2 class="section-heading">Reports<span class="sub">Export data</span></h2>
+        <div class="add-user-card">
+          <h2>Projects CSV</h2>
+          <p class="report-desc">One row per project — pm/ba/sme, intake fields, roadmap phase/health, and aggregated resource allocations and comments. Missing data is left blank.</p>
+          <button type="button" class="btn btn-primary" id="exportProjectsCsvBtn">Download projects CSV</button>
         </div>
       </div>
     </div>
@@ -637,6 +646,209 @@
       toast("Couldn't delete project: " + err.message);
     });
   }
+
+  var REPORT_COLUMNS = [
+    ["id", "project_id"],
+    ["canonical_name", "canonical_name"],
+    ["status", "status"],
+    ["origin_app", "origin_app"],
+    ["pm", "pm"],
+    ["ba", "ba"],
+    ["sme", "sme"],
+    ["description", "description"],
+    ["intake_project_number", "intake_project_number"],
+    ["intake_project_title", "intake_project_title"],
+    ["intake_project_type", "intake_project_type"],
+    ["intake_channel", "intake_channel"],
+    ["intake_department", "intake_department"],
+    ["intake_requestor_name", "intake_requestor_name"],
+    ["intake_project_description", "intake_project_description"],
+    ["intake_business_benefit", "intake_business_benefit"],
+    ["intake_defined_business_benefit", "intake_defined_business_benefit"],
+    ["intake_big_thinking", "intake_big_thinking"],
+    ["intake_big_thinking_notes", "intake_big_thinking_notes"],
+    ["intake_status", "intake_status"],
+    ["intake_comments", "intake_comments"],
+    ["intake_date_received", "intake_date_received"],
+    ["intake_date_business_case_received", "intake_date_business_case_received"],
+    ["intake_date_ipa_sent", "intake_date_ipa_sent"],
+    ["intake_date_prioritisation", "intake_date_prioritisation"],
+    ["intake_promise_date", "intake_promise_date"],
+    ["intake_release_date", "intake_release_date"],
+    ["intake_strategic_score", "intake_strategic_score"],
+    ["intake_commercial_score", "intake_commercial_score"],
+    ["intake_operational_score", "intake_operational_score"],
+    ["intake_customer_score", "intake_customer_score"],
+    ["intake_annual_value", "intake_annual_value"],
+    ["roadmap_name", "roadmap_name"],
+    ["roadmap_start_date", "roadmap_start_date"],
+    ["roadmap_duration_weeks", "roadmap_duration_weeks"],
+    ["roadmap_phase", "roadmap_phase"],
+    ["roadmap_health", "roadmap_health"],
+    ["roadmap_team", "roadmap_team"],
+    ["roadmap_color", "roadmap_color"],
+    ["resource_count", "resource_count"],
+    ["resources", "resources"],
+    ["comment_count", "comment_count"],
+    ["comments_log", "comments_log"]
+  ];
+
+  function csvField(val) {
+    if (val === null || val === undefined) return "";
+    var s = String(val);
+    if (/[",\r\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function csvDate(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function downloadCsv(filename, csvText) {
+    var blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function buildIntakeFields(data) {
+    data = data || {};
+    return {
+      intake_project_number: data.projectNumber,
+      intake_project_title: data.projectTitle,
+      intake_project_type: data.projectType,
+      intake_channel: data.intake,
+      intake_department: data.department,
+      intake_requestor_name: data.requestorName,
+      intake_project_description: data.projectDescription,
+      intake_business_benefit: data.businessBenefit,
+      intake_defined_business_benefit: data.definedBusinessBenefit,
+      intake_big_thinking: data.bigThinking,
+      intake_big_thinking_notes: data.bigThinkingNotes,
+      intake_status: data.status,
+      intake_comments: data.comments,
+      intake_date_received: data.dateReceived,
+      intake_date_business_case_received: data.dateBusinessCaseReceived,
+      intake_date_ipa_sent: data.dateIpaSent,
+      intake_date_prioritisation: data.datePrioritisation,
+      intake_promise_date: data.promiseDate,
+      intake_release_date: data.releaseDate,
+      intake_strategic_score: data.strategicScore,
+      intake_commercial_score: data.commercialScore,
+      intake_operational_score: data.operationalScore,
+      intake_customer_score: data.customerScore,
+      intake_annual_value: data.annualValue
+    };
+  }
+
+  function loadProjectsReportData() {
+    return Promise.all([
+      sb.from("projects").select("id, canonical_name, origin_app, status, pm, ba, sme, description").order("canonical_name"),
+      sb.from("intake_cards").select("project_id, data").not("project_id", "is", null),
+      sb.from("roadmap_tasks").select("project_id, name, start_date, duration_weeks, phase, health, team, color, sort_order")
+        .not("project_id", "is", null).order("project_id").order("sort_order"),
+      sb.from("resource_allocations").select("project_id, resource_name, allocation_pct, start_week, duration_weeks")
+        .not("project_id", "is", null).order("project_id").order("sort_order"),
+      sb.from("project_comments").select("project_id, body, category, source_app, created_at")
+        .not("project_id", "is", null).order("project_id").order("created_at")
+    ]).then(function (results) {
+      var projectsRes = results[0], intakeRes = results[1], roadmapRes = results[2], allocRes = results[3], commentsRes = results[4];
+      if (projectsRes.error) throw projectsRes.error;
+      if (intakeRes.error) throw intakeRes.error;
+      if (roadmapRes.error) throw roadmapRes.error;
+      if (allocRes.error) throw allocRes.error;
+      if (commentsRes.error) throw commentsRes.error;
+
+      var intakeByProject = {};
+      (intakeRes.data || []).forEach(function (row) {
+        intakeByProject[row.project_id] = buildIntakeFields(row.data);
+      });
+
+      // A handful of projects have more than one roadmap_tasks row; the report
+      // keeps only the first by sort_order as the project's canonical roadmap entry.
+      var roadmapByProject = {};
+      (roadmapRes.data || []).forEach(function (row) {
+        if (!roadmapByProject[row.project_id]) roadmapByProject[row.project_id] = row;
+      });
+
+      var resourcesByProject = {};
+      (allocRes.data || []).forEach(function (row) {
+        var list = resourcesByProject[row.project_id] || (resourcesByProject[row.project_id] = []);
+        var endWeek = row.start_week + row.duration_weeks - 1;
+        list.push(row.resource_name + " (" + row.allocation_pct + "%, wk " + row.start_week + "–" + endWeek + ")");
+      });
+
+      var commentsByProject = {};
+      (commentsRes.data || []).forEach(function (row) {
+        var list = commentsByProject[row.project_id] || (commentsByProject[row.project_id] = []);
+        list.push("[" + csvDate(row.created_at) + " " + (row.category || "general") + "/" + row.source_app + "] " + row.body);
+      });
+
+      return (projectsRes.data || []).map(function (project) {
+        var intake = intakeByProject[project.id] || {};
+        var roadmap = roadmapByProject[project.id] || {};
+        var resources = resourcesByProject[project.id] || [];
+        var comments = commentsByProject[project.id] || [];
+
+        var row = {
+          id: project.id,
+          canonical_name: project.canonical_name,
+          status: project.status,
+          origin_app: project.origin_app,
+          pm: project.pm,
+          ba: project.ba,
+          sme: project.sme,
+          description: project.description,
+          roadmap_name: roadmap.name,
+          roadmap_start_date: roadmap.start_date,
+          roadmap_duration_weeks: roadmap.duration_weeks,
+          roadmap_phase: roadmap.phase,
+          roadmap_health: roadmap.health,
+          roadmap_team: roadmap.team,
+          roadmap_color: roadmap.color,
+          resource_count: resources.length,
+          resources: resources.join(" | "),
+          comment_count: comments.length,
+          comments_log: comments.join(" | ")
+        };
+        Object.keys(intake).forEach(function (key) { row[key] = intake[key]; });
+        return row;
+      });
+    });
+  }
+
+  function buildCsv(rows) {
+    var lines = [REPORT_COLUMNS.map(function (c) { return csvField(c[1]); }).join(",")];
+    rows.forEach(function (row) {
+      lines.push(REPORT_COLUMNS.map(function (c) { return csvField(row[c[0]]); }).join(","));
+    });
+    return lines.join("\r\n");
+  }
+
+  document.getElementById("exportProjectsCsvBtn").addEventListener("click", function () {
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = "Building report…";
+    loadProjectsReportData().then(function (rows) {
+      var csv = buildCsv(rows);
+      var today = new Date().toISOString().slice(0, 10);
+      downloadCsv("projects-report-" + today + ".csv", csv);
+      toast("Downloaded projects-report-" + today + ".csv (" + rows.length + " projects)");
+    }).catch(function (err) {
+      toast("Couldn't build report: " + err.message);
+    }).finally(function () {
+      btn.disabled = false;
+      btn.textContent = "Download projects CSV";
+    });
+  });
 
   document.getElementById("hideFinishedToggle").addEventListener("change", function (e) {
     hideFinished = e.target.checked;
