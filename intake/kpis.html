@@ -600,7 +600,7 @@
     },
     {
       id: "project-status",
-      label: "Live Tech Projects",
+      label: "Live All Tech Projects",
       ACTIVE_PHASES: ["Discovery", "Build", "Test"],
       NOT_STARTED_PHASES: ["Not Started", "Blocked"],
       compute: function (cards, window, roadmapTasks) {
@@ -628,7 +628,7 @@
     },
     {
       id: "weeks-remaining",
-      label: "Planned Tech Work",
+      label: "Planned All Tech Work",
       compute: function (cards, window, roadmapTasks) {
         if (!roadmapTasks) return null;
         var today = new Date();
@@ -776,7 +776,7 @@
   function buildPriorTile(cards) {
     var tile = document.createElement("div");
     tile.className = "tile tile-mini";
-    tile.style.setProperty("--tile-status-color", "#999999");
+    tile.style.setProperty("--tile-status-color", "var(--status-info");
     var rowsHtml = KPIS.map(function (kpi) {
       var result = kpi.compute(cards, PRIOR_WINDOW);
       var view = kpi.render(result);
