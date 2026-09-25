@@ -153,6 +153,48 @@
     flex-wrap: wrap;
     gap: 10px;
   }
+  .switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .switch input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+  .switch .track {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    border-radius: 9px;
+    background: var(--border);
+    transition: background-color 120ms ease;
+    flex: none;
+  }
+  .switch .track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    transition: transform 120ms ease;
+  }
+  .switch input:checked + .track { background: var(--accent); }
+  .switch input:checked + .track::after { transform: translateX(14px); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tiles:empty { display: none; }
+
   .file-status {
     font-size: 12px;
     color: var(--text-muted);
@@ -302,6 +344,17 @@
     </div>
     <div class="topbar-actions">
       <span class="file-status" id="syncStatusLabel"></span>
+      <label class="switch">
+		Show:
+        <input type="checkbox" role="switch" id="togglePrior">
+        <span class="track"></span>
+        30 days ago
+      </label>
+      <label class="switch">
+        <input type="checkbox" role="switch" id="toggleAllTech">
+        <span class="track"></span>
+        All Tech
+      </label>
       <button class="btn btn-primary" id="btnPublish">Publish</button>
     </div>
   </div>
@@ -601,6 +654,7 @@
     {
       id: "project-status",
       label: "Live All Tech Projects",
+      allTech: true,
       ACTIVE_PHASES: ["Discovery", "Build", "Test"],
       NOT_STARTED_PHASES: ["Not Started", "Blocked"],
       compute: function (cards, window, roadmapTasks) {
@@ -629,6 +683,7 @@
     {
       id: "weeks-remaining",
       label: "Planned All Tech Work",
+      allTech: true,
       compute: function (cards, window, roadmapTasks) {
         if (!roadmapTasks) return null;
         var today = new Date();
@@ -789,7 +844,34 @@
     return tile;
   }
 
+  // Tile visibility toggles; remembered per browser (also applies to the
+  // dashboard's ?embed=1 iframe, which shares this origin's storage).
+  var VIEW_PREFS_KEY = "intake-kpis-view-prefs-v1";
+  var viewPrefs = { showPrior: true, showAllTech: true };
+  try {
+    var savedPrefs = JSON.parse(localStorage.getItem(VIEW_PREFS_KEY) || "null");
+    if (savedPrefs) {
+      if (typeof savedPrefs.showPrior === "boolean") viewPrefs.showPrior = savedPrefs.showPrior;
+      if (typeof savedPrefs.showAllTech === "boolean") viewPrefs.showAllTech = savedPrefs.showAllTech;
+    }
+  } catch (e) { /* ignore */ }
+
+  var lastRendered = null;
+
+  function bindViewToggle(id, prefKey) {
+    var input = document.getElementById(id);
+    input.checked = viewPrefs[prefKey];
+    input.addEventListener("change", function () {
+      viewPrefs[prefKey] = input.checked;
+      try { localStorage.setItem(VIEW_PREFS_KEY, JSON.stringify(viewPrefs)); } catch (e) { /* ignore */ }
+      if (lastRendered) renderTiles(lastRendered.cards, lastRendered.roadmapTasks);
+    });
+  }
+  bindViewToggle("togglePrior", "showPrior");
+  bindViewToggle("toggleAllTech", "showAllTech");
+
   function renderTiles(cards, roadmapTasks) {
+    lastRendered = { cards: cards, roadmapTasks: roadmapTasks };
     var container = document.getElementById("tiles");
     container.innerHTML = "";
     KPIS.forEach(function (kpi) {
@@ -798,11 +880,12 @@
 
     var priorContainer = document.getElementById("tiles-prior");
     priorContainer.innerHTML = "";
-    priorContainer.appendChild(buildPriorTile(cards));
+    if (viewPrefs.showPrior) priorContainer.appendChild(buildPriorTile(cards));
 
     var roadmapContainer = document.getElementById("tiles-roadmap");
     roadmapContainer.innerHTML = "";
     ROADMAP_KPIS.forEach(function (kpi) {
+      if (kpi.allTech && !viewPrefs.showAllTech) return;
       roadmapContainer.appendChild(buildKpiTile(kpi, cards, roadmapTasks));
     });
   }
@@ -871,7 +954,7 @@
       "  </div>\n" +
       '  <div class="main">\n' +
       '    <div class="tiles">' + tilesHtml + "</div>\n" +
-      '    <div class="tiles">' + priorTilesHtml + "</div>\n" +
+      (priorTilesHtml ? '    <div class="tiles">' + priorTilesHtml + "</div>\n" : "") +
       '    <div class="tiles">' + roadmapTilesHtml + "</div>\n" +
       "  </div>\n" +
       "</div>\n" +
