@@ -132,6 +132,11 @@
   const cleanupTaskListEl = document.getElementById('cleanup-task-list');
   const cleanupCancelBtn = document.getElementById('cleanup-cancel-btn');
   const cleanupOkBtn = document.getElementById('cleanup-ok-btn');
+  const deliveredDialog = document.getElementById('delivered-dialog');
+  const deliveredHintEl = document.getElementById('delivered-hint');
+  const deliveredYesBtn = document.getElementById('delivered-yes-btn');
+  const deliveredNoBtn = document.getElementById('delivered-no-btn');
+  let deliveredPromptProjectId = null;
   const timelineStartInput = document.getElementById('timeline-start-input');
   const labelColResizeHandle = document.getElementById('label-col-resize-handle');
 
@@ -1437,6 +1442,7 @@
     task.durationWeeks = Math.max(1, parseInt(editDurationInput.value, 10) || 1);
     task.color = editColorInput.value || '';
     task.team = editTeamInput.value || '';
+    const becameComplete = editPhaseInput.value === 'Complete' && task.phase !== 'Complete';
     task.phase = editPhaseInput.value || DEFAULT_PHASE;
     task.health = editHealthInput.value || '';
 
@@ -1457,6 +1463,48 @@
 
     render();
     scheduleSave();
+
+    if (becameComplete && task.projectId) openDeliveredDialog(task);
+  });
+
+  // ---------- Delivered prompt ----------
+  // When a linked project's phase is set to Complete, ask whether it has been
+  // delivered. On yes, move its intake card(s) to the Delivered column and
+  // mirror the intake app by marking the shared project as delivered.
+  function openDeliveredDialog(task) {
+    deliveredPromptProjectId = task.projectId;
+    deliveredHintEl.textContent = `Has "${task.name || 'Untitled'}" been delivered? Yes will set its intake status to Delivered.`;
+    deliveredDialog.showModal();
+  }
+
+  async function markProjectDelivered(projectId) {
+    const now = new Date().toISOString();
+    const { data: cards, error } = await supabaseClient
+      .from('intake_cards').select('id, data').eq('project_id', projectId);
+    if (error) throw error;
+    if (!cards || !cards.length) {
+      window.alert('No intake card is linked to this project, so there was no intake status to update.');
+    } else {
+      for (const card of cards) {
+        const data = Object.assign({}, card.data, { status: 'delivered', updatedAt: now });
+        if (!data.releaseDate) data.releaseDate = formatISODate(new Date());
+        const res = await supabaseClient.from('intake_cards').update({ data }).eq('id', card.id);
+        if (res.error) throw res.error;
+      }
+    }
+    const res = await supabaseClient.from('projects').update({ status: 'delivered', updated_at: now }).eq('id', projectId);
+    if (res.error) throw res.error;
+  }
+
+  deliveredNoBtn.addEventListener('click', () => deliveredDialog.close());
+  deliveredYesBtn.addEventListener('click', () => {
+    const projectId = deliveredPromptProjectId;
+    deliveredDialog.close();
+    if (!projectId) return;
+    markProjectDelivered(projectId).catch((err) => {
+      console.error(err);
+      window.alert(`Couldn't set intake status to Delivered: ${err.message || err}`);
+    });
   });
 
   // ---------- Export ----------
