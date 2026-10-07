@@ -45,6 +45,7 @@
     width: 100%;
   }
   .field.alloc input { width: 90px; }
+  .dialog .field input, .dialog .roles-new-row input { margin-top: 0; }
 
   .modal-overlay {
     position: fixed; inset: 0; z-index: 100;
@@ -52,11 +53,7 @@
     display: flex; align-items: center; justify-content: center;
     padding: 24px;
   }
-  .modal {
-    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
-    padding: 18px 20px; width: 320px; max-width: 100%;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.24);
-  }
+  .modal { width: 320px; max-width: 100%; }
   .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
   .modal-title { font-size: 14px; font-weight: 700; }
   .add-form {
@@ -66,18 +63,6 @@
     gap: 12px;
   }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
-  .add-form button[type="submit"] {
-    font: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 6px;
-    border: none;
-    background: var(--series-1);
-    color: #fff;
-    cursor: pointer;
-  }
-  .add-form button[type="submit"]:hover { filter: brightness(1.08); }
 
   .roles-modal { width: 380px; }
   .roles-new-row { display: flex; gap: 8px; margin-bottom: 14px; }
@@ -96,7 +81,7 @@
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .role-select {
-    font: inherit; font-size: 12px; padding: 5px 7px; flex: none; max-width: 160px;
+    font: inherit; font-size: 13px; padding: 5px 7px; flex: none; max-width: 160px;
     border: 1px solid var(--baseline); border-radius: 6px;
     background: var(--surface-1); color: var(--text-primary);
   }
@@ -120,12 +105,6 @@
   .cleanup-row-project { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cleanup-row-resource { color: var(--text-secondary); margin-top: 1px; }
   .cleanup-row-date { flex: none; color: var(--text-muted); }
-  #cleanupOkBtn {
-    font: inherit; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 6px;
-    border: none; background: var(--series-1); color: #fff; cursor: pointer;
-  }
-  #cleanupOkBtn:hover { filter: brightness(1.08); }
-  #cleanupOkBtn:disabled { opacity: 0.5; cursor: default; filter: none; }
 
   .add-entry-btn {
     flex: none; width: 22px; height: 22px;
@@ -147,7 +126,7 @@
 
   .side-panel {
     width: 280px; flex: none;
-    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg);
     padding: 16px; position: sticky; top: 24px;
     display: none;
   }

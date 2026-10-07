@@ -114,7 +114,7 @@
   <div class="drag-tip" id="dragTip"></div>
 
   <div class="modal-overlay" id="addModalOverlay" style="display:none">
-    <div class="modal">
+    <div class="dialog modal">
       <div class="modal-header">
         <div class="modal-title">Add resource</div>
         <button type="button" class="panel-close" id="addModalClose" title="Close">✕</button>
@@ -136,14 +136,14 @@
         </div>
         <div class="modal-actions">
           <button type="button" class="btn" id="addModalCancel">Cancel</button>
-          <button type="submit" title="Bars default to a one-week span starting after this resource's last entry in the same project">Add resource</button>
+          <button type="submit" class="btn btn-primary" title="Bars default to a one-week span starting after this resource's last entry in the same project">Add resource</button>
         </div>
       </form>
     </div>
   </div>
 
   <div class="modal-overlay" id="rolesModalOverlay" style="display:none">
-    <div class="modal roles-modal">
+    <div class="dialog modal roles-modal">
       <div class="modal-header">
         <div class="modal-title">Manage Roles</div>
         <button type="button" class="panel-close" id="rolesModalClose" title="Close">✕</button>
@@ -157,7 +157,7 @@
   </div>
 
   <div class="modal-overlay" id="cleanupModalOverlay" style="display:none">
-    <div class="modal cleanup-modal">
+    <div class="dialog modal cleanup-modal">
       <div class="modal-header">
         <div class="modal-title">Data Clean Up</div>
         <button type="button" class="panel-close" id="cleanupModalClose" title="Close">✕</button>
@@ -166,7 +166,7 @@
       <div class="cleanup-list" id="cleanupList"></div>
       <div class="modal-actions">
         <button type="button" class="btn" id="cleanupCancelBtn">Cancel</button>
-        <button type="button" id="cleanupOkBtn">OK</button>
+        <button type="button" class="btn btn-primary" id="cleanupOkBtn">OK</button>
       </div>
     </div>
   </div>
