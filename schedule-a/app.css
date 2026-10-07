@@ -63,15 +63,16 @@
   }
 
   * { box-sizing: border-box; }
-  body { margin: 0; }
+  /* 34px strip (app tabs + signed-in user) is fixed above the page; clear it. */
+  body { margin: 0; padding-top: 34px; }
   .app {
     font-family: var(--font-body);
     background: var(--page-plane);
     color: var(--text-primary);
     min-height: 100vh;
-    padding: 24px;
+    padding: 8px 24px 24px;
   }
-  .header h1 { font-family: var(--font-display); font-weight: 400; letter-spacing: 0.2px; font-size: 20px; margin: 0 0 4px; }
+  .toolbar h1 { font-family: var(--font-display); font-weight: 400; letter-spacing: 0.2px; font-size: 20px; margin: 0; }
   .header p { margin: 0 0 18px; color: var(--text-secondary); font-size: 13px; }
 
   .field { display: flex; flex-direction: column; gap: 4px; }
@@ -178,7 +179,7 @@
   }
   .add-entry-btn:hover { background: var(--page-plane); color: var(--series-1); border-color: var(--series-1); }
 
-  .toolbar { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px 16px; margin: 0 0 14px; }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 16px; margin: 0 0 14px; }
   .toolbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: none; margin-left: auto; }
   .start-date-field { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
   .start-date-field input[type="date"] {
@@ -509,6 +510,7 @@
     .header, .toolbar, .filters-block, .side-panel, .lock-overlay,
     .drag-tip, .modal-overlay, .col-resize-handle,
     .add-entry-btn, .bar-del-btn, .collapse-toggle { display: none !important; }
+    body { padding-top: 0; }
     .app { padding: 0; }
     .layout { display: block; }
     .gantt-card { border: none; box-shadow: none; }
