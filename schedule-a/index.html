@@ -2,44 +2,45 @@
 <title>Schedule A</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="/shared/theme.css">
+<link rel="stylesheet" href="/shared/components.css">
 <link rel="stylesheet" href="app.css">
 
 
 <div class="app" id="app">
+    <div class="topbar">
+      <h1>Schedule A: Resource Planner</h1>
+      <div class="topbar-actions">
+        <div class="start-date-control" title="Timeline start (snaps to the Monday of the chosen week)">
+          <label for="timelineStartInput">Start</label>
+          <input type="date" id="timelineStartInput" class="input" />
+        </div>
+        <div class="view-toggle" id="viewToggle" role="group" aria-label="Group chart by">
+          <button type="button" class="view-btn" data-view="project">Projects</button>
+          <button type="button" class="view-btn" data-view="resource">Resources</button>
+        </div>
+        <div class="view-toggle" id="sortToggle" role="group" aria-label="Sort chart">
+          <button type="button" class="view-btn" id="sortAzBtn" title="Sort project or resource rows alphabethical, then by date">Sort A-Z</button>
+          <button type="button" class="view-btn" id="sortDateBtn" title="Sort by start date, then end date, then alphabetically">Sort Date</button>
+        </div>
+        <button type="button" class="btn" id="densityToggleBtn">Density:Normal</button>
+        <div class="zoom-toggle">
+          <button type="button" class="zoom-btn" id="zoomOutBtn" title="Zoom out (narrower weeks)">−</button>
+          <span class="zoom-level" id="zoomLevelLabel">100%</span>
+          <button type="button" class="zoom-btn" id="zoomInBtn" title="Zoom in (wider weeks)">+</button>
+        </div>
+        <button type="button" class="btn" id="manageRolesBtn">Assign Role</button>
+        <button type="button" class="btn" id="openFileBtn" style="display:none">Import Backup</button>
+        <input type="file" id="importFileInput" accept="application/json" style="display:none" />
+        <button type="button" class="btn" id="cleanupBtn" style="display:none">Data Clean Up</button>
+        <button type="button" class="btn" id="exportBtn">Back Up Data</button>
+        <button type="button" class="btn" id="exportPngBtn" style="display:none">Export PNG</button>
+        <button type="button" class="btn" id="exportPdfBtn" style="display:none">Export PDF</button>
+        <span class="save-status" id="saveStatus">—</span>
+      </div>
+    </div>
+
   <div class="layout">
     <div class="main-col">
-      <div class="toolbar">
-        <h1>Schedule A: Resource Planner</h1>
-        <div class="toolbar-actions">
-          <div class="start-date-field" title="Timeline start (snaps to the Monday of the chosen week)">
-            <label for="timelineStartInput">Start</label>
-            <input type="date" id="timelineStartInput" />
-          </div>
-          <div class="view-toggle" id="viewToggle" role="group" aria-label="Group chart by">
-            <button type="button" class="view-toggle-btn" data-view="project">Projects</button>
-            <button type="button" class="view-toggle-btn" data-view="resource">Resources</button>
-          </div>
-          <div class="view-toggle" id="sortToggle" role="group" aria-label="Sort chart">
-            <button type="button" class="view-toggle-btn" id="sortAzBtn" title="Sort project or resource rows alphabethical, then by date">Sort A-Z</button>
-            <button type="button" class="view-toggle-btn" id="sortDateBtn" title="Sort by start date, then end date, then alphabetically">Sort Date</button>
-          </div>
-          <button type="button" class="ghost-btn" id="densityToggleBtn">Density:Normal</button>
-          <div class="zoom-control">
-            <button type="button" id="zoomOutBtn" title="Zoom out (narrower weeks)">−</button>
-            <span class="zoom-level" id="zoomLevelLabel">100%</span>
-            <button type="button" id="zoomInBtn" title="Zoom in (wider weeks)">+</button>
-          </div>
-          <button type="button" class="ghost-btn" id="manageRolesBtn">Assign Role</button>
-          <button type="button" class="ghost-btn" id="openFileBtn" style="display:none">Import Backup</button>
-          <input type="file" id="importFileInput" accept="application/json" style="display:none" />
-          <button type="button" class="ghost-btn" id="cleanupBtn" style="display:none">Data Clean Up</button>
-          <button type="button" class="ghost-btn" id="exportBtn">Back Up Data</button>
-          <button type="button" class="ghost-btn" id="exportPngBtn" style="display:none">Export PNG</button>
-          <button type="button" class="ghost-btn" id="exportPdfBtn" style="display:none">Export PDF</button>
-          <span class="save-status" id="saveStatus">—</span>
-        </div>
-      </div>
-
       <div class="editable-area" id="editableArea">
         <div class="filters-block" id="filtersBlock" style="display:none">
           <div class="filters-block-header">
@@ -72,7 +73,7 @@
           <div class="lock-overlay-inner">
             <p id="lockOverlayText">Loading schedule…</p>
             <div class="lock-overlay-actions" id="lockOverlayActions" style="display:none">
-              <button type="button" class="ghost-btn" id="gateRetryBtn">Retry</button>
+              <button type="button" class="btn" id="gateRetryBtn">Retry</button>
             </div>
           </div>
         </div>
@@ -88,8 +89,8 @@
         <button type="button" class="panel-close" id="panelClose" title="Close">✕</button>
       </div>
       <div class="view-toggle" id="panelViewToggle" role="group" aria-label="Show in panel">
-        <button type="button" class="view-toggle-btn" data-panel-view="project">Projects</button>
-        <button type="button" class="view-toggle-btn" data-panel-view="resource">Resources</button>
+        <button type="button" class="view-btn" data-panel-view="project">Projects</button>
+        <button type="button" class="view-btn" data-panel-view="resource">Resources</button>
       </div>
       <div class="panel-filter">
         <div class="panel-filter-header">
@@ -134,7 +135,7 @@
           <input id="allocInput" type="number" min="0" step="1" value="100" required />
         </div>
         <div class="modal-actions">
-          <button type="button" class="ghost-btn" id="addModalCancel">Cancel</button>
+          <button type="button" class="btn" id="addModalCancel">Cancel</button>
           <button type="submit" title="Bars default to a one-week span starting after this resource's last entry in the same project">Add resource</button>
         </div>
       </form>
@@ -149,7 +150,7 @@
       </div>
       <div class="roles-new-row">
         <input id="newRoleInput" type="text" placeholder="Add a new role…" maxlength="40" />
-        <button type="button" class="ghost-btn" id="addRoleBtn">Add</button>
+        <button type="button" class="btn" id="addRoleBtn">Add</button>
       </div>
       <div class="roles-resource-list" id="rolesResourceList"></div>
     </div>
@@ -164,7 +165,7 @@
       <div class="cleanup-warning">Don't forget to make a back up!</div>
       <div class="cleanup-list" id="cleanupList"></div>
       <div class="modal-actions">
-        <button type="button" class="ghost-btn" id="cleanupCancelBtn">Cancel</button>
+        <button type="button" class="btn" id="cleanupCancelBtn">Cancel</button>
         <button type="button" id="cleanupOkBtn">OK</button>
       </div>
     </div>

@@ -21,40 +21,11 @@ body {
   flex-direction: column;
 }
 
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--gridline);
-  background: var(--surface-1);
-  flex-wrap: wrap;
-  gap: 10px;
-  flex: 0 0 auto;
-}
-
-.topbar h1 {
-  font-family: var(--font-display);
-  font-size: 18px;
-  margin: 0;
-  font-weight: 400;
-  letter-spacing: 0.2px;
-}
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
 .file-status { font-size: 12px; color: var(--text-secondary); }
 .file-status.connected { color: var(--success); }
 .file-status.error { color: var(--danger); }
 
-.save-status { font-size: 12px; color: var(--text-secondary); min-width: 60px; text-align: right; }
-.save-status.saving { color: var(--series-1); }
-.save-status.error { color: var(--danger); }
+.save-status { min-width: 60px; text-align: right; }
 
 .legend {
   display: flex;
@@ -85,85 +56,6 @@ body {
   background: var(--series-1);
   border-radius: 3px;
 }
-
-.btn {
-  border: 1px solid var(--gridline);
-  background: var(--panel-alt);
-  color: var(--text-primary);
-  padding: 7px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.btn:hover { border-color: var(--series-1); }
-
-.btn.active {
-  border-color: var(--series-1);
-  color: var(--series-1);
-}
-
-.btn-primary {
-  background: var(--series-1);
-  border-color: var(--series-1);
-  color: #fff;
-  font-weight: 600;
-}
-
-.zoom-toggle {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  border: 1px solid var(--gridline);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.zoom-btn {
-  background: var(--panel-alt);
-  color: var(--text-primary);
-  border: none;
-  width: 28px;
-  height: 30px;
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.zoom-btn:hover:not(:disabled) { background: var(--hover-bg); }
-.zoom-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.zoom-level {
-  font-size: 12px;
-  color: var(--text-secondary);
-  padding: 0 8px;
-  min-width: 40px;
-  text-align: center;
-  user-select: none;
-}
-
-.start-date-control {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.start-date-control label {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.start-date-input {
-  border: 1px solid var(--gridline);
-  background: var(--panel-alt);
-  color: var(--text-primary);
-  padding: 6px 8px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-family: inherit;
-}
-
-.start-date-input:hover { border-color: var(--series-1); }
 
 .compare-wrap {
   padding: 0 24px 24px;
