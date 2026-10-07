@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Technology Roadmap</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="/shared/theme.css" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -31,7 +32,7 @@
         <button type="button" id="sort-date-btn" class="view-btn" disabled title="Sort projects by start date">By Date</button>
         <button type="button" id="sort-name-btn" class="view-btn" disabled title="Sort projects alphabetically by name">By Project</button>
       </div>
-      <button id="display-btn" class="btn" title="Change label, density, and theme display options">Display</button>
+      <button id="display-btn" class="btn" title="Change label and density display options">Display</button>
       <button id="cleanup-btn" class="btn" disabled title="Find projects that have already finished and remove them">Data Clean Up</button>
       <button id="export-btn" class="btn" disabled title="Export the roadmap as JSON, CSV, PNG, or PDF">Export</button>
       <button id="add-task-btn" class="btn btn-primary" disabled>+ Project</button>
@@ -188,13 +189,6 @@
         <button type="button" class="view-btn" data-group="density" data-value="narrow">Narrow</button>
         <button type="button" class="view-btn" data-group="density" data-value="normal">Normal</button>
         <button type="button" class="view-btn" data-group="density" data-value="wide">Wide</button>
-      </div>
-    </div>
-    <div class="display-group">
-      <span class="display-group-label">Theme</span>
-      <div class="view-toggle" role="group" aria-label="Color theme">
-        <button type="button" class="view-btn" data-group="theme" data-value="dark">Dark</button>
-        <button type="button" class="view-btn" data-group="theme" data-value="light">Light</button>
       </div>
     </div>
     <div class="edit-dialog-actions">
