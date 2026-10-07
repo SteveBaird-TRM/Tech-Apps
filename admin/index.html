@@ -187,7 +187,9 @@
   .status-badge {
     display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase;
     letter-spacing: 0.03em; padding: 2px 8px; border-radius: 999px;
+    font-family: inherit; border: 1px solid transparent; cursor: pointer;
   }
+  .status-badge:hover { filter: brightness(0.95); box-shadow: 0 0 0 2px var(--border); }
   .status-open { background: var(--surface-alt); color: var(--text-muted); border: 1px solid var(--border); }
   .status-delivered { background: var(--accent-tint); color: var(--accent); }
   .status-rejected { background: var(--danger-tint); color: var(--danger); }
@@ -312,6 +314,7 @@
 <script>window.AUTH_REQUIREMENTS = [];</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-gate.js"></script>
+<script src="/app-tabs.js" data-push></script>
 <script>
 (function () {
   "use strict";
@@ -522,11 +525,62 @@
   var projectsData = null; // { projects, inIntake, inRoadmap, inScheduleA }
   var hideFinished = false;
 
+  var PROJECT_STATUSES = ["open", "delivered", "rejected"];
+
   function statusBadge(status) {
-    var span = document.createElement("span");
+    var span = document.createElement("button");
+    span.type = "button";
     span.className = "status-badge status-" + status;
+    span.title = "Click to change status";
     span.textContent = status;
     return span;
+  }
+
+  // Badge that turns into a dropdown on click; saves the chosen status to projects.status.
+  function buildStatusCell(project) {
+    var td = document.createElement("td");
+    var badge = statusBadge(project.status);
+    td.appendChild(badge);
+
+    badge.addEventListener("click", function () {
+      var select = document.createElement("select");
+      select.className = "role-select";
+      PROJECT_STATUSES.forEach(function (s) {
+        var o = document.createElement("option");
+        o.value = s;
+        o.textContent = s;
+        select.appendChild(o);
+      });
+      select.value = project.status;
+      td.replaceChild(select, badge);
+      select.focus();
+
+      var done = false;
+      function restore() {
+        if (done) return;
+        done = true;
+        renderProjects();
+      }
+
+      select.addEventListener("change", function () {
+        var next = select.value;
+        if (next === project.status) { restore(); return; }
+        select.disabled = true;
+        sb.from("projects").update({ status: next }).eq("id", project.id).then(function (res) {
+          if (res.error) {
+            toast("Couldn't update status: " + res.error.message);
+            restore();
+            return;
+          }
+          project.status = next;
+          toast('"' + project.canonical_name + '" set to ' + next);
+          renderProjects(); // re-render so the "hide delivered/rejected" filter applies
+        });
+      });
+      select.addEventListener("blur", function () { if (!select.disabled) restore(); });
+    });
+
+    return td;
   }
 
   function renderProjects() {
@@ -562,9 +616,7 @@
       tdId.textContent = project.id;
       tr.appendChild(tdId);
 
-      var tdStatus = document.createElement("td");
-      tdStatus.appendChild(statusBadge(project.status));
-      tr.appendChild(tdStatus);
+      tr.appendChild(buildStatusCell(project));
 
       tr.appendChild(checkCell(inIntake.has(project.id)));
       tr.appendChild(checkCell(inRoadmap.has(project.id)));
