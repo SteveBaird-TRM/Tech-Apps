@@ -1,5 +1,5 @@
 // Shared login gate for all claude-projects apps. Identical copy lives in
-// every project directory (comparison, dashboard, implementation-forum, intake,
+// every project directory (comparison, dashboard, intake,
 // roadmap-db, schedule-a-db-v2) since these are plain static sites with no
 // shared build step.
 //
