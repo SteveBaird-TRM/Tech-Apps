@@ -6,6 +6,7 @@
 <title>Intake Tracker · View Only</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="/shared/theme.css">
+<link rel="stylesheet" href="/shared/components.css">
 <style>
   /* Colours and fonts come from /shared/theme.css */
   :root {
@@ -48,24 +49,7 @@
   }
 
   /* ---------- Top bar ---------- */
-  .topbar {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 18px 24px;
-    border-bottom: 1px solid var(--gridline);
-    background: var(--surface-1);
-    flex: none;
-  }
-  .topbar h1 {
-    font-family: var(--font-display);
-    font-weight: 400;
-    font-size: 22px;
-    letter-spacing: 0.2px;
-    margin: 0;
-    text-wrap: balance;
-  }
+  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
   .topbar .sub {
     font-size: 12.5px;
     color: var(--text-secondary);
@@ -83,40 +67,12 @@
     padding: 3px 9px;
     margin-left: 10px;
   }
-  .topbar-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
   .file-status {
     font-size: 12px;
     color: var(--text-secondary);
     white-space: nowrap;
     margin-right: 2px;
   }
-  .btn {
-    border: 1px solid var(--gridline);
-    background: var(--surface-1);
-    color: var(--text-primary);
-    border-radius: 7px;
-    padding: 7px 13px;
-    font-size: 13px;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    cursor: pointer;
-    transition: background-color 120ms ease, border-color 120ms ease;
-  }
-  .btn:hover { background: var(--panel-alt); }
-  .btn-primary {
-    background: var(--series-1);
-    border-color: var(--series-1);
-    color: var(--accent-contrast);
-  }
-  .btn-primary:hover { filter: brightness(1.06); }
   #btnKpis, #btnExport, #btnExportCsv { display: none; }
 
   .search-group {
@@ -124,25 +80,12 @@
     align-items: center;
     gap: 6px;
   }
-  .search-input, .search-select {
-    border: 1px solid var(--gridline);
-    background: var(--surface-1);
-    color: var(--text-primary);
-    border-radius: 7px;
-    padding: 7px 10px;
-    font-size: 13px;
-    font-family: inherit;
-  }
   .search-input {
     width: 120px;
     font-family: var(--font-mono);
   }
   .search-select {
     width: 190px;
-  }
-  .search-input:focus, .search-select:focus {
-    outline: 2px solid var(--series-1);
-    outline-offset: -1px;
   }
 
   /* ---------- Filter modal ---------- */
@@ -158,14 +101,14 @@
   .modal-overlay.show { display: flex; }
   .modal {
     background: var(--surface-1);
-    border: 1px solid var(--gridline);
-    border-radius: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
     width: 380px;
     max-width: calc(100vw - 40px);
     max-height: calc(100vh - 80px);
     display: flex;
     flex-direction: column;
-    box-shadow: var(--shadow);
   }
   .modal-head {
     display: flex;
@@ -508,8 +451,8 @@
     <div class="topbar-actions">
       <span class="file-status" id="syncStatusLabel"></span>
       <div class="search-group">
-        <input type="text" inputmode="numeric" class="search-input" id="searchNumberInput" placeholder="Project #" aria-label="Search by project number" />
-        <select class="search-select" id="searchTitleSelect" aria-label="Search by project title">
+        <input type="text" inputmode="numeric" class="input search-input" id="searchNumberInput" placeholder="Project #" aria-label="Search by project number" />
+        <select class="input search-select" id="searchTitleSelect" aria-label="Search by project title">
           <option value="">Search by title…</option>
         </select>
       </div>

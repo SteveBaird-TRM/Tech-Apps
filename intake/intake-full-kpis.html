@@ -4,6 +4,7 @@
 <title>Delivery KPIs</title>
 <link rel="icon" type="image/svg+xml" href="kpi-favicon.svg">
 <link rel="stylesheet" href="/shared/theme.css">
+<link rel="stylesheet" href="/shared/components.css">
 <style>
   /* Colours and fonts come from /shared/theme.css */
   :root {
@@ -41,35 +42,11 @@
     flex-direction: column;
   }
 
-  .topbar {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 18px 24px;
-    border-bottom: 1px solid var(--gridline);
-    background: var(--surface-1);
-    flex: none;
-    flex-wrap: wrap;
-  }
-  .topbar h1 {
-    font-family: var(--font-display);
-    font-weight: 400;
-    font-size: 22px;
-    letter-spacing: 0.2px;
-    margin: 0;
-    text-wrap: balance;
-  }
+  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
   .topbar .sub {
     font-size: 12.5px;
     color: var(--text-secondary);
     margin-left: 10px;
-  }
-  .topbar-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
   }
   .file-status {
     font-size: 12px;
@@ -77,21 +54,6 @@
     white-space: nowrap;
     margin-right: 2px;
   }
-  .btn {
-    border: 1px solid var(--gridline);
-    background: var(--surface-1);
-    color: var(--text-primary);
-    border-radius: 7px;
-    padding: 7px 13px;
-    font-size: 13px;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    transition: background-color 120ms ease, border-color 120ms ease;
-  }
-  .btn:hover { background: var(--panel-alt); }
 
   .toast {
     position: fixed;
@@ -214,12 +176,6 @@
     color: var(--text-primary);
     white-space: nowrap;
   }
-  .btn-primary {
-    background: var(--series-1);
-    border-color: var(--series-1);
-    color: var(--accent-contrast);
-  }
-  .btn-primary:hover { filter: brightness(1.06); }
   #btnExportTxt { display: none; }
   .main {
     flex: 1;
