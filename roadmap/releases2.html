@@ -5,91 +5,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Feature Releases Roadmap</title>
 <link rel="icon" type="image/svg+xml" href="releases-favicon.svg">
+<link rel="stylesheet" href="/shared/theme.css">
+<link rel="stylesheet" href="/shared/components.css">
 <style>
+  /* Colours and fonts come from /shared/theme.css */
   :root {
-    color-scheme: light dark;
-    --bg: #f4f5f7;
-    --panel: #ffffff;
-    --border: #e1e4e8;
-    --text: #1f2328;
-    --text-muted: #6b7280;
-    --accent: #5b8cff;
     --accent-fg: #ffffff;
     --shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 1px rgba(0,0,0,0.04);
     --empty-col-bg: repeating-linear-gradient(45deg, rgba(0,0,0,0.02), rgba(0,0,0,0.02) 8px, transparent 8px, transparent 16px);
-
-    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
-    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #14161a;
-      --panel: #1d2026;
-      --border: #2c3038;
-      --text: #e6e8eb;
-      --text-muted: #9aa1ac;
-      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 1px 1px rgba(0,0,0,0.3);
-      --empty-col-bg: repeating-linear-gradient(45deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03) 8px, transparent 8px, transparent 16px);
-    }
   }
 
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
     padding-top: 34px;
-    background: var(--bg);
-    color: var(--text);
+    background: var(--page-plane);
+    color: var(--text-primary);
     font-family: var(--font-body);
     display: flex;
     flex-direction: column;
   }
 
-  header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
-  }
-  header h1 {
-    font-family: var(--font-display);
-    font-size: 18px;
-    font-weight: 400;
-    letter-spacing: 0.2px;
-    margin: 0;
-    margin-right: auto;
-  }
+  header.topbar { justify-content: flex-start; gap: 8px 12px; }
+  header.topbar h1 { margin-right: auto; }
   .file-info {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     max-width: 320px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--accent);
-    color: var(--accent-fg);
-    border: none;
-    border-radius: 6px;
-    padding: 8px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    line-height: 1;
-  }
-  .btn:hover { filter: brightness(1.08); }
-  .btn:active { filter: brightness(0.95); }
-  .btn.secondary {
-    background: var(--panel);
-    color: var(--text);
-    border: 1px solid var(--border);
   }
   #error-banner {
     display: none;
@@ -104,8 +49,8 @@
     flex-direction: column;
     gap: 6px;
     padding: 10px 20px;
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
+    background: var(--surface-1);
+    border-bottom: 1px solid var(--gridline);
   }
   .filter-row {
     display: flex;
@@ -116,20 +61,20 @@
   #filter-bar .filter-label {
     font-size: 12px;
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     margin-right: 2px;
   }
   .chip {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    border: 1px solid var(--border);
-    background: var(--bg);
+    border: 1px solid var(--gridline);
+    background: var(--page-plane);
     border-radius: 999px;
     padding: 4px 10px 4px 8px;
     font-size: 12px;
     cursor: pointer;
-    color: var(--text);
+    color: var(--text-primary);
     user-select: none;
   }
   .chip .swatch {
@@ -139,14 +84,14 @@
     background: var(--swatch-color, #8a8f98);
     flex-shrink: 0;
   }
-  .chip .count { color: var(--text-muted); }
+  .chip .count { color: var(--text-secondary); }
   .chip.inactive {
     opacity: 0.4;
   }
   .chip.inactive .swatch { filter: grayscale(0.6); }
   .chip-action {
     font-size: 12px;
-    color: var(--accent);
+    color: var(--series-1);
     cursor: pointer;
     background: none;
     border: none;
@@ -171,24 +116,24 @@
   .column {
     flex: 0 0 250px;
     width: 250px;
-    background: var(--panel);
-    border: 1px solid var(--border);
+    background: var(--surface-1);
+    border: 1px solid var(--gridline);
     border-radius: 10px;
     display: flex;
     flex-direction: column;
     max-height: calc(100vh - 100px);
   }
-  .column.is-empty { background: var(--empty-col-bg), var(--panel); }
+  .column.is-empty { background: var(--empty-col-bg), var(--surface-1); }
 
   .column-header {
     position: sticky;
     top: 0;
     padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--gridline);
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    background: var(--panel);
+    background: var(--surface-1);
     border-radius: 10px 10px 0 0;
   }
   .column-header .month {
@@ -198,8 +143,8 @@
   }
   .column-header .count {
     font-size: 11px;
-    color: var(--text-muted);
-    background: var(--bg);
+    color: var(--text-secondary);
+    background: var(--page-plane);
     border-radius: 10px;
     padding: 1px 7px;
   }
@@ -213,9 +158,9 @@
   }
 
   .card {
-    background: var(--bg);
+    background: var(--page-plane);
     border-radius: 8px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--gridline);
     border-left: 4px solid var(--card-color, #8a8f98);
     padding: 8px 10px;
     box-shadow: var(--shadow);
@@ -240,10 +185,10 @@
     height: 15px;
     margin-top: 1px;
     border-radius: 50%;
-    border: 1px solid var(--text-muted);
+    border: 1px solid var(--text-secondary);
     background: none;
     padding: 0;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-size: 10px;
     font-style: italic;
     font-family: Georgia, "Times New Roman", serif;
@@ -252,8 +197,8 @@
     cursor: default;
   }
   .info-icon:hover, .info-icon:focus {
-    border-color: var(--accent);
-    color: var(--accent);
+    border-color: var(--series-1);
+    color: var(--series-1);
     outline: none;
   }
 
@@ -263,18 +208,18 @@
     z-index: 1000;
     width: 240px;
     max-width: calc(100vw - 16px);
-    background: var(--panel);
-    border: 1px solid var(--border);
+    background: var(--surface-1);
+    border: 1px solid var(--gridline);
     border-radius: 8px;
     box-shadow: var(--shadow);
     padding: 8px 10px;
     font-size: 12px;
     line-height: 1.4;
-    color: var(--text);
+    color: var(--text-primary);
   }
   .tooltip-requestor { margin-bottom: 6px; }
   .tooltip-description {
-    color: var(--text-muted);
+    color: var(--text-secondary);
     white-space: pre-wrap;
     word-break: break-word;
   }
@@ -283,13 +228,13 @@
     padding: 20px 10px;
     text-align: center;
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--text-secondary);
   }
 
   #empty-state {
     display: none;
     text-align: center;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     margin-top: 60px;
     font-size: 14px;
   }
@@ -308,13 +253,13 @@
 </head>
 <body>
 
-<header>
+<header class="topbar">
   <h1>Feature Release Roadmap</h1>
   <span class="file-info" id="file-info">Connecting...</span>
-  <button class="btn secondary" id="reload-btn">Reload</button>
-  <button class="btn secondary" id="export-png-btn">Export PNG</button>
-  <button class="btn secondary" id="export-pdf-btn">Export PDF</button>
-  <button class="btn secondary" id="publish-btn">Publish</button>
+  <button class="btn" id="reload-btn">Reload</button>
+  <button class="btn" id="export-png-btn">Export PNG</button>
+  <button class="btn" id="export-pdf-btn">Export PDF</button>
+  <button class="btn" id="publish-btn">Publish</button>
 </header>
 
 <div id="error-banner"></div>
@@ -897,13 +842,13 @@ function buildStaticDocument() {
 <title>Technology Releases Roadmap</title>
 <style>
   :root {
-    color-scheme: light dark;
-    --bg: #f4f5f7;
-    --panel: #ffffff;
-    --border: #e1e4e8;
-    --text: #1f2328;
-    --text-muted: #6b7280;
-    --accent: #5b8cff;
+    color-scheme: light;
+    --bg: #f9f9f7;
+    --panel: #fcfcfb;
+    --border: #e1e0d9;
+    --text: #0b0b0b;
+    --text-muted: #52514e;
+    --accent: #2a78d6;
     --shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 1px rgba(0,0,0,0.04);
     --empty-col-bg: repeating-linear-gradient(45deg, rgba(0,0,0,0.02), rgba(0,0,0,0.02) 8px, transparent 8px, transparent 16px);
 
@@ -913,17 +858,6 @@ function buildStaticDocument() {
   }
   .publish-logo { display: block; width: 50vw; max-width: 100%; height: auto; max-height: 240px; object-fit: contain; margin: 0 auto 14px; }
   .page-title { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #14161a;
-      --panel: #1d2026;
-      --border: #2c3038;
-      --text: #e6e8eb;
-      --text-muted: #9aa1ac;
-      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 1px 1px rgba(0,0,0,0.3);
-      --empty-col-bg: repeating-linear-gradient(45deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03) 8px, transparent 8px, transparent 16px);
-    }
-  }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {

@@ -1,0 +1,24 @@
+/* Shared look for all apps.  Based on Schedule-A.  Light only. */
+:root {
+  color-scheme: light;
+
+  --surface-1:      #fcfcfb;
+  --page-plane:     #f9f9f7;
+  --panel-alt:      #f1f1ee;
+  --hover-bg:       #eceae2;
+  --text-primary:   #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted:     #898781;
+  --gridline:       #e1e0d9;
+  --baseline:       #c3c2b7;
+  --border:         rgba(11,11,11,0.10);
+
+  --series-1: #2a78d6; --series-2: #008300; --series-3: #e87ba4; --series-4: #eda100;
+  --series-5: #1baf7a; --series-6: #eb6834; --series-7: #4a3aa7; --series-8: #e34948;
+  --danger:  #d03b3b;
+  --success: #006300;
+
+  --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+}

@@ -56,7 +56,6 @@
   const ZOOM_MAX = 2.5;
   const ZOOM_STEP = 0.25;
   const DEFAULT_ZOOM = 1;
-  const THEME_STORAGE_KEY = 'roadmap-gantt-theme';
   const LABEL_WIDTH_STORAGE_KEY = 'roadmap-gantt-label-width';
   const MIN_LABEL_WIDTH = 160;
   const MAX_LABEL_WIDTH = 480;
@@ -182,14 +181,6 @@
     if (!Number.isNaN(storedZoom) && storedZoom >= ZOOM_MIN && storedZoom <= ZOOM_MAX) zoomLevel = storedZoom;
   } catch (err) {
     // localStorage unavailable — fall back to the default zoom.
-  }
-
-  let theme = 'light';
-  try {
-    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-    if (storedTheme === 'light' || storedTheme === 'dark') theme = storedTheme;
-  } catch (err) {
-    // localStorage unavailable — fall back to the default theme.
   }
 
   let labelWidth = LABEL_WIDTH;
@@ -600,23 +591,6 @@
     setZoom(zoomLevel - ZOOM_STEP);
   }
 
-  // ---------- Theme ----------
-  function applyTheme() {
-    document.documentElement.dataset.theme = theme;
-  }
-
-  function setTheme(next) {
-    if ((next !== 'dark' && next !== 'light') || next === theme) return;
-    theme = next;
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, theme);
-    } catch (err) {
-      // ignore — persistence is a convenience, not a requirement
-    }
-    applyTheme();
-    syncDisplayDialog();
-  }
-
   // ---------- Task column width ----------
   function applyLabelWidth() {
     document.documentElement.style.setProperty('--label-width', labelWidth + 'px');
@@ -685,9 +659,9 @@
     render();
   }
 
-  // ---------- Display options popup (label / density / theme) ----------
+  // ---------- Display options popup (label / density) ----------
   function syncDisplayDialog() {
-    const current = { label: labelMode, density, theme };
+    const current = { label: labelMode, density };
     displayGroupButtons.forEach((btn) => {
       const { group, value } = btn.dataset;
       btn.classList.toggle('active', current[group] === value);
@@ -1547,12 +1521,12 @@
     ctx.scale(scale, scale);
 
     const colors = {
-      bg: '#ffffff',
-      panelAlt: '#f4f5f7',
-      border: '#d7dae0',
-      text: '#16181d',
-      muted: '#5b6472',
-      accent: '#3b6fe0',
+      bg: '#fcfcfb',
+      panelAlt: '#f1f1ee',
+      border: '#e1e0d9',
+      text: '#0b0b0b',
+      muted: '#52514e',
+      accent: '#2a78d6',
     };
 
     ctx.fillStyle = colors.bg;
@@ -1785,7 +1759,6 @@
   zoomOutBtn.addEventListener('click', zoomOut);
   syncZoomButtons();
 
-  applyTheme();
   applyDensity();
 
   displayBtn.addEventListener('click', openDisplayDialog);
@@ -1795,7 +1768,6 @@
       const { group, value } = btn.dataset;
       if (group === 'label') setLabelMode(value);
       else if (group === 'density') setDensity(value);
-      else if (group === 'theme') setTheme(value);
     });
   });
 

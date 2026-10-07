@@ -1,93 +1,35 @@
+<meta charset="utf-8">
 <title>Technology Web Apps Guide</title>
 <link rel="icon" type="image/svg+xml" href="favicon-guide.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/theme.css">
 <style>
+  /* Colours and fonts come from /shared/theme.css */
   :root{
-    --bg: #fbfaf7;
-    --surface: #ffffff;
-    --surface-2: #f4f2ec;
-    --ink: #1c1d2e;
-    --sub: #5b5c72;
-    --faint: #8b8ca0;
-    --border: #e2e0d6;
-    --border-strong: #cfcdc0;
-    --accent: #4b3fae;
     --accent-ink: #ffffff;
-    --accent-soft: #efedfb;
-    --accent-soft-border: #d9d5f5;
-    --good: #1f7a4d;
-    --good-soft: #e6f4ec;
+    --accent-soft: color-mix(in srgb, var(--series-1) 10%, var(--surface-1));
+    --accent-soft-border: color-mix(in srgb, var(--series-1) 28%, var(--surface-1));
+    --good-soft: color-mix(in srgb, var(--success) 10%, var(--surface-1));
     --warn: #9a6a12;
     --warn-soft: #fbf1de;
-    --danger: #a3372e;
     --danger-soft: #fbeae8;
-    --code-bg: #f0eee5;
     --shadow: 0 10px 30px rgba(28,29,46,0.07);
     --radius: 10px;
-  }
-  :root:not([data-theme="light"]){
-    @media (prefers-color-scheme: dark){
-      --bg: #16151f;
-      --surface: #1d1c29;
-      --surface-2: #24232f;
-      --ink: #eeedf6;
-      --sub: #b3b2c4;
-      --faint: #82818f;
-      --border: #322f42;
-      --border-strong: #423f57;
-      --accent: #a79bff;
-      --accent-ink: #16151f;
-      --accent-soft: #29253f;
-      --accent-soft-border: #423a68;
-      --good: #6fd39e;
-      --good-soft: #1d2f27;
-      --warn: #e0b055;
-      --warn-soft: #332918;
-      --danger: #f0968c;
-      --danger-soft: #33201e;
-      --code-bg: #24222f;
-      --shadow: 0 10px 30px rgba(0,0,0,0.35);
-    }
-  }
-  :root[data-theme="dark"]{
-    --bg: #16151f;
-    --surface: #1d1c29;
-    --surface-2: #24232f;
-    --ink: #eeedf6;
-    --sub: #b3b2c4;
-    --faint: #82818f;
-    --border: #322f42;
-    --border-strong: #423f57;
-    --accent: #a79bff;
-    --accent-ink: #16151f;
-    --accent-soft: #29253f;
-    --accent-soft-border: #423a68;
-    --good: #6fd39e;
-    --good-soft: #1d2f27;
-    --warn: #e0b055;
-    --warn-soft: #332918;
-    --danger: #f0968c;
-    --danger-soft: #33201e;
-    --code-bg: #24222f;
-    --shadow: 0 10px 30px rgba(0,0,0,0.35);
   }
 
   * { box-sizing: border-box; }
   html { -webkit-font-smoothing: antialiased; }
   body{
     margin:0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: "Source Sans 3", Arial, sans-serif;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font-family: var(--font-body);
     font-size: 16px;
     line-height: 1.55;
   }
-  h1,h2,h3,h4 { font-family: "Manrope", Arial, sans-serif; text-wrap: balance; color: var(--ink); }
-  code, .kbd, .tag-mono { font-family: "IBM Plex Mono", "Consolas", monospace; }
-  a { color: var(--accent); }
-  ::selection { background: var(--accent-soft); color: var(--ink); }
+  h1,h2,h3,h4 { font-family: var(--font-body); text-wrap: balance; color: var(--text-primary); }
+  code, .kbd, .tag-mono { font-family: var(--font-mono); }
+  a { color: var(--series-1); }
+  ::selection { background: var(--accent-soft); color: var(--text-primary); }
 
   .shell{
     display: grid;
@@ -97,7 +39,7 @@
   }
   @media (max-width: 880px){
     .shell{ grid-template-columns: 1fr; }
-    .sidenav{ position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    .sidenav{ position: static; height: auto; border-right: none; border-bottom: 1px solid var(--gridline); }
   }
 
   .sidenav{
@@ -107,7 +49,7 @@
     height: 100vh;
     overflow-y: auto;
     padding: 28px 20px 40px;
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--gridline);
     display: flex;
     flex-direction: column;
     gap: 22px;
@@ -119,71 +61,71 @@
   }
   .brand-mark{
     width: 30px; height: 30px; border-radius: 8px;
-    background: var(--accent);
+    background: var(--series-1);
     display:flex; align-items:center; justify-content:center;
     flex: none;
   }
   .brand-mark svg{ width:16px; height:16px; stroke: var(--accent-ink); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-  .brand-text{ font-family:"Manrope", sans-serif; font-weight:800; font-size: 14.5px; line-height:1.25; }
-  .brand-text span{ display:block; font-family:"Source Sans 3",sans-serif; font-weight:600; font-size:11.5px; color: var(--sub); letter-spacing: .04em; text-transform: uppercase; }
+  .brand-text{ font-family:var(--font-body); font-weight:800; font-size: 14.5px; line-height:1.25; }
+  .brand-text span{ display:block; font-family:var(--font-body); font-weight:600; font-size:11.5px; color: var(--text-secondary); letter-spacing: .04em; text-transform: uppercase; }
 
   .nav-group{ display:flex; flex-direction:column; gap:2px; }
-  .nav-label{ font-size: 11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color: var(--faint); margin: 10px 0 4px 10px; }
+  .nav-label{ font-size: 11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color: var(--text-muted); margin: 10px 0 4px 10px; }
   .nav-link{
     display:flex; align-items:center; gap:8px;
     padding: 7px 10px;
     border-radius: 7px;
-    color: var(--sub);
+    color: var(--text-secondary);
     text-decoration:none;
     font-size: 14px;
     font-weight: 500;
   }
-  .nav-link:hover{ background: var(--surface-2); color: var(--ink); }
-  .nav-dot{ width:6px; height:6px; border-radius:50%; background: var(--border-strong); flex:none; }
+  .nav-link:hover{ background: var(--panel-alt); color: var(--text-primary); }
+  .nav-dot{ width:6px; height:6px; border-radius:50%; background: var(--baseline); flex:none; }
 
   main{ padding: 48px clamp(20px,4vw,64px) 100px; min-width:0; }
 
   .lede{ max-width: 62ch; }
   .eyebrow{
     font-size: 11.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
-    color: var(--accent); margin: 0 0 10px;
+    color: var(--series-1); margin: 0 0 10px;
   }
   h1.page-title{ font-size: clamp(28px,3.4vw,38px); font-weight: 800; margin: 0 0 14px; letter-spacing: -0.01em; }
-  .lede p{ color: var(--sub); font-size: 17px; margin: 0 0 12px; }
+  .lede p{ color: var(--text-secondary); font-size: 17px; margin: 0 0 12px; }
 
   .callout{
     margin-top: 24px;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--surface-1);
+    border: 1px solid var(--gridline);
     border-radius: var(--radius);
     padding: 16px 18px;
     display:flex; gap: 12px;
     max-width: 62ch;
   }
-  .callout svg{ width:18px; height:18px; stroke: var(--accent); fill:none; stroke-width:1.8; flex:none; margin-top:2px; }
-  .callout p{ margin:0; color: var(--sub); font-size: 14.5px; }
-  .callout strong{ color: var(--ink); }
+  .callout svg{ width:18px; height:18px; stroke: var(--series-1); fill:none; stroke-width:1.8; flex:none; margin-top:2px; }
+  .callout p{ margin:0; color: var(--text-secondary); font-size: 14.5px; }
+  .callout strong{ color: var(--text-primary); }
 
   section{ margin-top: 64px; scroll-margin-top: 24px; }
   section h2{ font-size: 22px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em; }
-  .section-sub{ color: var(--sub); font-size: 15px; margin: 0 0 24px; max-width: 68ch; }
+  .section-sub{ color: var(--text-secondary); font-size: 15px; margin: 0 0 24px; max-width: 68ch; }
 
   /* connection diagram */
   .diagram{
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--surface-1);
+    border: 1px solid var(--gridline);
     border-radius: 14px;
     padding: 28px clamp(16px,3vw,36px);
     box-shadow: var(--shadow);
     overflow-x: auto;
   }
   .diagram svg{ display:block; margin: 0 auto; min-width: 640px; width: 100%; height: auto; }
-  .diagram-note{ margin: 16px 0 0; font-size: 13.5px; color: var(--sub); text-align:center; }
+  .diagram-note{ margin: 16px 0 0; font-size: 13.5px; color: var(--text-secondary); text-align:center; }
 
   /* app cards */
   .app-card{
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--surface-1);
+    border: 1px solid var(--gridline);
     border-radius: 14px;
     box-shadow: var(--shadow);
     padding: 26px clamp(18px,3vw,32px);
@@ -192,64 +134,64 @@
   .app-head{ display:flex; align-items:flex-start; justify-content:space-between; gap: 16px; flex-wrap:wrap; }
   .app-name{ display:flex; align-items:center; gap:10px; }
   .app-icon{ width:32px; height:32px; border-radius:8px; background: var(--accent-soft); border:1px solid var(--accent-soft-border); display:flex; align-items:center; justify-content:center; flex:none; }
-  .app-icon svg{ width:17px; height:17px; stroke: var(--accent); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .app-icon svg{ width:17px; height:17px; stroke: var(--series-1); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
   .app-name h3{ font-size: 19px; font-weight:800; margin:0; }
-  .app-name .subtitle{ font-size:13px; color: var(--sub); margin-top: 1px; }
+  .app-name .subtitle{ font-size:13px; color: var(--text-secondary); margin-top: 1px; }
 
   .badges{ display:flex; gap:6px; flex-wrap:wrap; }
   .badge{
     font-size: 11.5px; font-weight:600; padding: 4px 9px; border-radius: 999px;
-    border:1px solid var(--border-strong); color: var(--sub); white-space:nowrap;
+    border:1px solid var(--baseline); color: var(--text-secondary); white-space:nowrap;
   }
   .badge.req{ background: var(--warn-soft); color: var(--warn); border-color: transparent; }
-  .badge.open{ background: var(--good-soft); color: var(--good); border-color: transparent; }
-  .badge.standalone{ background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .badge.open{ background: var(--good-soft); color: var(--success); border-color: transparent; }
+  .badge.standalone{ background: var(--accent-soft); color: var(--series-1); border-color: transparent; }
 
-  .app-desc{ color: var(--sub); font-size: 15px; margin: 14px 0 18px; max-width: 66ch; }
+  .app-desc{ color: var(--text-secondary); font-size: 15px; margin: 14px 0 18px; max-width: 66ch; }
 
   .app-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 22px; }
   @media (max-width: 700px){ .app-grid{ grid-template-columns: 1fr; } }
 
   .field{ display:flex; flex-direction:column; gap:3px; }
-  .field-label{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color: var(--faint); }
-  .field-value{ font-size: 14px; color: var(--ink); }
+  .field-label{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color: var(--text-muted); }
+  .field-value{ font-size: 14px; color: var(--text-primary); }
   .field-value a{ text-decoration:none; border-bottom: 1px solid var(--accent-soft-border); }
   .pagelist{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px; }
   .pagelist li{ font-size: 14px; }
-  .pagelist code{ background: var(--code-bg); padding: 1.5px 6px; border-radius:5px; font-size: 12.5px; }
+  .pagelist code{ background: var(--panel-alt); padding: 1.5px 6px; border-radius:5px; font-size: 12.5px; }
 
-  .steps{ margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--border); }
-  .steps-title{ font-size: 12.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color: var(--sub); margin: 0 0 10px; }
+  .steps{ margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--gridline); }
+  .steps-title{ font-size: 12.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color: var(--text-secondary); margin: 0 0 10px; }
   .steps ol{ margin:0; padding-left: 0; list-style:none; counter-reset: step; display:flex; flex-direction:column; gap: 9px; }
   .steps li{ counter-increment: step; display:flex; gap: 10px; font-size: 14.5px; }
   .steps li::before{
     content: counter(step);
     flex: none; width: 20px; height: 20px; border-radius: 50%;
-    background: var(--accent-soft); color: var(--accent);
-    font-family:"IBM Plex Mono",monospace; font-size: 11px; font-weight:600;
+    background: var(--accent-soft); color: var(--series-1);
+    font-family:var(--font-mono); font-size: 11px; font-weight:600;
     display:flex; align-items:center; justify-content:center; margin-top: 1px;
   }
-  .ui { font-family:"IBM Plex Mono",monospace; font-size: 12.5px; background: var(--code-bg); padding: 1.5px 6px; border-radius: 5px; color: var(--ink); white-space: nowrap; }
+  .ui { font-family:var(--font-mono); font-size: 12.5px; background: var(--panel-alt); padding: 1.5px 6px; border-radius: 5px; color: var(--text-primary); white-space: nowrap; }
 
   /* task index table */
-  .task-table{ width:100%; border-collapse: collapse; background: var(--surface); border:1px solid var(--border); border-radius: 14px; overflow:hidden; box-shadow: var(--shadow); }
+  .task-table{ width:100%; border-collapse: collapse; background: var(--surface-1); border:1px solid var(--gridline); border-radius: 14px; overflow:hidden; box-shadow: var(--shadow); }
   .task-table-wrap{ overflow-x:auto; border-radius:14px; }
-  .task-table th{ text-align:left; font-size: 11.5px; letter-spacing:.06em; text-transform:uppercase; color: var(--faint); font-weight:700; padding: 12px 18px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
-  .task-table td{ padding: 13px 18px; border-bottom: 1px solid var(--border); font-size: 14.5px; vertical-align: top; }
+  .task-table th{ text-align:left; font-size: 11.5px; letter-spacing:.06em; text-transform:uppercase; color: var(--text-muted); font-weight:700; padding: 12px 18px; background: var(--panel-alt); border-bottom: 1px solid var(--gridline); }
+  .task-table td{ padding: 13px 18px; border-bottom: 1px solid var(--gridline); font-size: 14.5px; vertical-align: top; }
   .task-table tr:last-child td{ border-bottom:none; }
-  .task-table td.task{ color: var(--ink); font-weight:600; width: 26%; }
+  .task-table td.task{ color: var(--text-primary); font-weight:600; width: 26%; }
   .task-table td.app{ width: 20%; }
-  .task-table td.how{ color: var(--sub); }
-  .app-pill{ display:inline-flex; align-items:center; gap:6px; font-size: 13px; font-weight:600; color: var(--accent); }
-  .app-pill .dot{ width:6px; height:6px; border-radius:50%; background: var(--accent); }
+  .task-table td.how{ color: var(--text-secondary); }
+  .app-pill{ display:inline-flex; align-items:center; gap:6px; font-size: 13px; font-weight:600; color: var(--series-1); }
+  .app-pill .dot{ width:6px; height:6px; border-radius:50%; background: var(--series-1); }
 
   .perm-grid{ display:grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-top: 18px; }
   @media (max-width: 780px){ .perm-grid{ grid-template-columns: 1fr; } }
-  .perm-card{ background: var(--surface); border:1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .perm-card{ background: var(--surface-1); border:1px solid var(--gridline); border-radius: 12px; padding: 16px 18px; }
   .perm-card h4{ margin:0 0 6px; font-size:14.5px; }
-  .perm-card p{ margin:0; font-size:13.5px; color: var(--sub); }
+  .perm-card p{ margin:0; font-size:13.5px; color: var(--text-secondary); }
 
-  footer{ margin-top: 70px; padding-top: 22px; border-top: 1px solid var(--border); color: var(--faint); font-size: 13px; }
+  footer{ margin-top: 70px; padding-top: 22px; border-top: 1px solid var(--gridline); color: var(--text-muted); font-size: 13px; }
 </style>
 
 <div class="shell">
@@ -302,14 +244,14 @@
     <section id="big-picture">
       <h2>The big picture</h2>
       <p class="section-sub">Every app below is a plain, self-contained website — no login wall in common, no shared menu bar. What ties them together is one shared database of projects sitting behind the scenes.</p>
-      <ul style="max-width:66ch;color:var(--sub);font-size:15px;line-height:1.7;padding-left:20px;margin:0;">
-        <li><strong style="color:var(--ink)">Intake</strong> is where a new project idea first gets logged and triaged.</li>
-        <li><strong style="color:var(--ink)">Roadmap</strong> is the master timeline — the source of truth most other apps read from.</li>
-        <li><strong style="color:var(--ink)">Schedule A</strong> plans who is allocated to what, week by week.</li>
-        <li><strong style="color:var(--ink)">Project List</strong> and <strong style="color:var(--ink)">Comparison</strong> are read-oriented views built on top of Roadmap and Schedule A.</li>
-        <li><strong style="color:var(--ink)">DevOps Visualiser</strong> stands alone — a CSV-in, diagram-out tool with no login and no shared data.</li>
+      <ul style="max-width:66ch;color:var(--text-secondary);font-size:15px;line-height:1.7;padding-left:20px;margin:0;">
+        <li><strong style="color:var(--text-primary)">Intake</strong> is where a new project idea first gets logged and triaged.</li>
+        <li><strong style="color:var(--text-primary)">Roadmap</strong> is the master timeline — the source of truth most other apps read from.</li>
+        <li><strong style="color:var(--text-primary)">Schedule A</strong> plans who is allocated to what, week by week.</li>
+        <li><strong style="color:var(--text-primary)">Project List</strong> and <strong style="color:var(--text-primary)">Comparison</strong> are read-oriented views built on top of Roadmap and Schedule A.</li>
+        <li><strong style="color:var(--text-primary)">DevOps Visualiser</strong> stands alone — a CSV-in, diagram-out tool with no login and no shared data.</li>
 
-<!--    <li><strong style="color:var(--ink)">Admin</strong> is where access to everything else is granted - you don't need to worry about that!</li>
+<!--    <li><strong style="color:var(--text-primary)">Admin</strong> is where access to everything else is granted - you don't need to worry about that!</li>
 -->
       </ul>
     </section>
@@ -319,15 +261,15 @@
       <p class="section-sub">Every app except DevOps Visualiser checks who you are before showing anything. Access is granted per app, at two levels.</p>
       <div class="perm-grid">
         <div class="perm-card">
-          <h4 style="color:var(--sub)">No access</h4>
+          <h4 style="color:var(--text-secondary)">No access</h4>
           <p>You can reach the page but see a sign-in / access-denied screen. Ask whoever manages Admin to grant you a role.</p>
         </div>
         <div class="perm-card">
-          <h4 style="color:var(--good)">Viewer</h4>
+          <h4 style="color:var(--success)">Viewer</h4>
           <p>You can open the app and see all its data — boards, timelines, dashboards — but can't change anything.</p>
         </div>
         <div class="perm-card">
-          <h4 style="color:var(--accent)">Editor</h4>
+          <h4 style="color:var(--series-1)">Editor</h4>
           <p>Full read/write for that app: create, drag, edit, delete. Comparison needs editor on two apps to matter, since it's read-only itself.</p>
         </div>
       </div>
@@ -344,16 +286,16 @@
         <svg viewBox="0 0 920 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of how the apps connect through the shared projects registry">
           <defs>
             <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M0 0 L10 5 L0 10 z" fill="var(--border-strong)"/>
+              <path d="M0 0 L10 5 L0 10 z" fill="var(--baseline)"/>
             </marker>
           </defs>
           <style>
-            .node-box{ fill: var(--surface); stroke: var(--border-strong); stroke-width:1.3; }
-            .node-box.hub{ fill: var(--accent-soft); stroke: var(--accent); }
-            .node-label{ font-family:"Manrope",sans-serif; font-weight:700; font-size:14px; fill: var(--ink); }
-            .node-sub{ font-family:"Source Sans 3",sans-serif; font-size:11px; fill: var(--sub); }
-            .edge{ stroke: var(--border-strong); stroke-width:1.4; fill:none; marker-end:url(#arrow); }
-            .standalone-label{ font-family:"Source Sans 3",sans-serif; font-size:12px; fill: var(--faint); font-style: italic; }
+            .node-box{ fill: var(--surface-1); stroke: var(--baseline); stroke-width:1.3; }
+            .node-box.hub{ fill: var(--accent-soft); stroke: var(--series-1); }
+            .node-label{ font-family:var(--font-body); font-weight:700; font-size:14px; fill: var(--text-primary); }
+            .node-sub{ font-family:var(--font-body); font-size:11px; fill: var(--text-secondary); }
+            .edge{ stroke: var(--baseline); stroke-width:1.4; fill:none; marker-end:url(#arrow); }
+            .standalone-label{ font-family:var(--font-body); font-size:12px; fill: var(--text-muted); font-style: italic; }
           </style>
 
           <!-- hub -->
@@ -436,7 +378,7 @@
             <span class="field-label">Pages</span>
             <ul class="pagelist">
               <li><code>index.html</code> — the board</li>
-<!--              <li><code>admin.html</code> — manage columns <em style="color:var(--faint)">(editor only)</em></li>
+<!--              <li><code>admin.html</code> — manage columns <em style="color:var(--text-muted)">(editor only)</em></li>
 -->
               <li><code>kpis.html</code> — dashboard</li>
               <li><code>priority.html</code> — scoring view</li>

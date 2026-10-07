@@ -22,14 +22,8 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    :root { --app-tabs-bg: #EAEDF1; --app-tabs-line: #9aa0ab; --app-tabs-text: #4a4f5a;
-      --app-tabs-idle: rgba(255,255,255,.55); --app-tabs-active: #fff; }
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme="light"]) { --app-tabs-bg: #14171C; --app-tabs-line: #3a4050; --app-tabs-text: #b8bec9;
-        --app-tabs-idle: rgba(255,255,255,.05); --app-tabs-active: #1C2027; }
-    }
-    :root[data-theme="dark"] { --app-tabs-bg: #14171C; --app-tabs-line: #3a4050; --app-tabs-text: #b8bec9;
-      --app-tabs-idle: rgba(255,255,255,.05); --app-tabs-active: #1C2027; }
+    :root { --app-tabs-bg: #f1f1ee; --app-tabs-line: #c3c2b7; --app-tabs-text: #52514e;
+      --app-tabs-idle: rgba(252,252,251,.55); --app-tabs-active: #fcfcfb; }
     #app-tabs { position: fixed; top: 0; left: 0; right: 0; height: 34px; z-index: 999997;
       display: flex; align-items: flex-end; gap: 0; padding: 0 0 0 12px; box-sizing: border-box;
       background: var(--app-tabs-bg);

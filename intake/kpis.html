@@ -4,118 +4,47 @@
 <title>How well are we doing?</title>
 <link rel="icon" type="image/svg+xml" href="kpi-favicon.svg">
 <script>
-  // ?embed=1 is used when this page is loaded inside dashboard/dashboard.html's
+  // ?embed=1 is used when this page is loaded inside dashboard/index.html's
   // iframe: it hides the page chrome (heading, buttons) so only the tiles show.
   // Set on <html> (not <body>) so it's available before body parses.
   if (new URLSearchParams(location.search).get("embed") === "1") {
     document.documentElement.classList.add("embed-mode");
   }
 </script>
+<link rel="stylesheet" href="/shared/theme.css">
+<link rel="stylesheet" href="/shared/components.css">
 <style>
+  /* Colours and fonts come from /shared/theme.css */
   :root {
-    --bg: #EAEDF1;
-    --surface: #FFFFFF;
-    --surface-alt: #F2F4F7;
-    --border: #DBE0E7;
-    --text: #191D23;
-    --text-muted: #5E6572;
-    --text-faint: #9BA1AC;
-    --accent: #0E7A6C;
     --accent-contrast: #FFFFFF;
-    --accent-tint: #0E7A6C1A;
+    --accent-tint: #2A78D61A;
     --shadow: 0 1px 2px rgba(20, 24, 30, 0.06), 0 1px 1px rgba(20, 24, 30, 0.04);
-
     --status-good: #33CC66;
     --status-warning: #FF9900;
     --status-critical: #FF3300;
-    --status-info: #5B8CFF;
+    --status-info: #2a78d6;
     --status-muted: #999999;
-
-    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
-    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #14171C;
-      --surface: #1C2027;
-      --surface-alt: #20242C;
-      --border: #2C313B;
-      --text: #E8EAED;
-      --text-muted: #99A0AC;
-      --text-faint: #6B717C;
-      --accent: #3FC7B3;
-      --accent-contrast: #0A1512;
-      --accent-tint: #3FC7B326;
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #14171C;
-    --surface: #1C2027;
-    --surface-alt: #20242C;
-    --border: #2C313B;
-    --text: #E8EAED;
-    --text-muted: #99A0AC;
-    --text-faint: #6B717C;
-    --accent: #3FC7B3;
-    --accent-contrast: #0A1512;
-    --accent-tint: #3FC7B326;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
-  }
-  :root[data-theme="light"] {
-    --bg: #EAEDF1;
-    --surface: #FFFFFF;
-    --surface-alt: #F2F4F7;
-    --border: #DBE0E7;
-    --text: #191D23;
-    --text-muted: #5E6572;
-    --text-faint: #9BA1AC;
-    --accent: #0E7A6C;
-    --accent-contrast: #FFFFFF;
-    --accent-tint: #0E7A6C1A;
-  }
 
   * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
     margin: 0;
     padding-top: 34px;
-    background: var(--bg);
-    color: var(--text);
+    background: var(--page-plane);
+    color: var(--text-primary);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
   }
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--series-1);
     outline-offset: 2px;
   }
   button {
     font-family: inherit;
     cursor: pointer;
   }
-  .btn {
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    border-radius: 7px;
-    padding: 7px 13px;
-    font-size: 13px;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    transition: background-color 120ms ease, border-color 120ms ease;
-  }
-  .btn:hover { background: var(--surface-alt); }
-  .btn-primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--accent-contrast);
-  }
-  .btn-primary:hover { filter: brightness(1.06); }
 
   .app {
     height: calc(100vh - 34px);
@@ -123,42 +52,18 @@
     flex-direction: column;
   }
 
-  .topbar {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 18px 24px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    flex: none;
-    flex-wrap: wrap;
-  }
-  .topbar h1 {
-    font-family: var(--font-display);
-    font-weight: 400;
-    font-size: 22px;
-    letter-spacing: 0.2px;
-    margin: 0;
-    text-wrap: balance;
-  }
+  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
   .topbar .sub {
     font-size: 12.5px;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     margin-left: 10px;
-  }
-  .topbar-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
   }
   .switch {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    color: var(--text);
+    color: var(--text-primary);
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
@@ -174,7 +79,7 @@
     width: 32px;
     height: 18px;
     border-radius: 9px;
-    background: var(--border);
+    background: var(--gridline);
     transition: background-color 120ms ease;
     flex: none;
   }
@@ -190,14 +95,14 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
     transition: transform 120ms ease;
   }
-  .switch input:checked + .track { background: var(--accent); }
+  .switch input:checked + .track { background: var(--series-1); }
   .switch input:checked + .track::after { transform: translateX(14px); }
-  .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .switch input:focus-visible + .track { outline: 2px solid var(--series-1); outline-offset: 2px; }
   .tiles:empty { display: none; }
 
   .file-status {
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     white-space: nowrap;
   }
 
@@ -206,8 +111,8 @@
     bottom: 22px;
     left: 50%;
     transform: translateX(-50%) translateY(8px);
-    background: var(--text);
-    color: var(--bg);
+    background: var(--text-primary);
+    color: var(--page-plane);
     padding: 9px 16px;
     border-radius: 8px;
     font-size: 13px;
@@ -232,9 +137,9 @@
     gap: 16px;
   }
   .tile {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--tile-status-color, var(--border));
+    background: var(--surface-1);
+    border: 1px solid var(--gridline);
+    border-left: 4px solid var(--tile-status-color, var(--gridline));
     border-radius: 10px;
     padding: 20px 22px;
     box-shadow: var(--shadow);
@@ -244,7 +149,7 @@
     font-weight: 600;
     letter-spacing: 0.3px;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     margin-bottom: 10px;
   }
   .tile-value {
@@ -252,21 +157,21 @@
     font-size: 40px;
     font-weight: 600;
     line-height: 1;
-    color: var(--text);
+    color: var(--text-primary);
   }
   .tile-value .unit {
     font-size: 15px;
     font-weight: 500;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     margin-left: 6px;
   }
   .tile-empty .tile-value {
-    color: var(--text-faint);
+    color: var(--text-muted);
   }
   .tile-caption {
     margin-top: 10px;
     font-size: 12px;
-    color: var(--text-faint);
+    color: var(--text-muted);
     line-height: 1.4;
   }
   .tiles + .tiles {
@@ -281,20 +186,20 @@
     justify-content: space-between;
     gap: 10px;
     padding: 5px 0;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--gridline);
     font-size: 12.5px;
   }
   .tile-mini-row:first-of-type {
     border-top: none;
   }
   .tile-mini-row .k {
-    color: var(--text-muted);
+    color: var(--text-secondary);
   }
   .tile-mini-row .v {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     font-weight: 600;
-    color: var(--text);
+    color: var(--text-primary);
     white-space: nowrap;
   }
   .meter {
@@ -306,7 +211,7 @@
     height: 6px;
     border-radius: 3px;
     overflow: hidden;
-    background: var(--border);
+    background: var(--gridline);
   }
   .meter-segment {
     height: 100%;
@@ -320,7 +225,7 @@
     left: 0;
     width: 2px;
     height: 14px;
-    background: var(--text);
+    background: var(--text-primary);
     border-radius: 1px;
     transform: translate(-50%, -50%);
   }
@@ -937,7 +842,7 @@
   function buildStandaloneHtml(tilesHtml, priorTilesHtml, roadmapTilesHtml, imageDataUri) {
     var css = document.querySelector("style").textContent;
     var imgHtml = imageDataUri
-      ? '<div style="display:flex;justify-content:center;padding:20px 24px 0;background:var(--surface);">' +
+      ? '<div style="display:flex;justify-content:center;padding:20px 24px 0;background:var(--surface-1);">' +
           '<img src="' + imageDataUri + '" alt="" style="max-height:240px;height:auto;width:auto;display:block;">' +
         "</div>"
       : "";

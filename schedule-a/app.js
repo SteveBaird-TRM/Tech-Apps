@@ -52,7 +52,7 @@
   var exportPngBtn = document.getElementById('exportPngBtn');
   var exportPdfBtn = document.getElementById('exportPdfBtn');
   var viewToggle = document.getElementById('viewToggle');
-  var viewToggleBtns = viewToggle.querySelectorAll('.view-toggle-btn');
+  var viewToggleBtns = viewToggle.querySelectorAll('.view-btn');
   var timelineStartInput = document.getElementById('timelineStartInput');
   var densityToggleBtn = document.getElementById('densityToggleBtn');
   var zoomOutBtn = document.getElementById('zoomOutBtn');
@@ -70,7 +70,7 @@
   var sidePanel = document.getElementById('sidePanel');
   var panelDate = document.getElementById('panelDate');
   var panelViewToggle = document.getElementById('panelViewToggle');
-  var panelViewToggleBtns = panelViewToggle.querySelectorAll('.view-toggle-btn');
+  var panelViewToggleBtns = panelViewToggle.querySelectorAll('.view-btn');
   var panelFilterLabel = document.getElementById('panelFilterLabel');
   var panelSummary = document.getElementById('panelSummary');
   var panelList = document.getElementById('panelList');
@@ -1138,7 +1138,7 @@
         emptyMsg.textContent = 'No resources yet.';
         var emptyAddBtn = document.createElement('button');
         emptyAddBtn.type = 'button';
-        emptyAddBtn.className = 'ghost-btn';
+        emptyAddBtn.className = 'btn';
         emptyAddBtn.style.marginTop = '10px';
         emptyAddBtn.textContent = '+ Add resource';
         emptyAddBtn.addEventListener('click', function () { openAddModal(); });
@@ -1467,7 +1467,7 @@
   });
 
   panelViewToggle.addEventListener('click', function (e) {
-    var btn = e.target.closest('.view-toggle-btn');
+    var btn = e.target.closest('.view-btn');
     if (!btn || btn.dataset.panelView === panelViewMode) return;
     panelViewMode = btn.dataset.panelView;
     renderPanel();
@@ -1810,7 +1810,7 @@
   }
 
   viewToggle.addEventListener('click', function (e) {
-    var btn = e.target.closest('.view-toggle-btn');
+    var btn = e.target.closest('.view-btn');
     if (!btn || btn.dataset.view === viewMode) return;
     viewMode = btn.dataset.view;
     try { localStorage.setItem('gantt-view-mode', viewMode); } catch (err) {}
