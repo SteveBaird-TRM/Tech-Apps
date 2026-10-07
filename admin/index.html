@@ -6,6 +6,7 @@
 <title>User Access Admin</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="/shared/theme.css">
+<link rel="stylesheet" href="/shared/components.css">
 <style>
   /* Colours and fonts come from /shared/theme.css */
   :root {
@@ -25,15 +26,7 @@
   button { font-family: inherit; cursor: pointer; }
 
   .app { min-height: 100vh; display: flex; flex-direction: column; }
-  .topbar {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
-    padding: 18px 24px; border-bottom: 1px solid var(--gridline); background: var(--surface-1);
-    flex: none; flex-wrap: wrap;
-  }
-  .topbar h1 {
-    font-family: var(--font-display); font-weight: 400; font-size: 22px;
-    letter-spacing: 0.2px; margin: 0;
-  }
+  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
   .topbar .sub { font-size: 12.5px; color: var(--text-secondary); margin-left: 10px; }
 
   .main { flex: 1; display: flex; justify-content: center; padding: 28px 24px 60px; }
@@ -62,29 +55,20 @@
   }
 
   .add-user-card {
-    background: var(--surface-1); border: 1px solid var(--gridline); border-radius: 12px;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg);
     box-shadow: var(--shadow); padding: 16px; margin-bottom: 20px;
   }
   .add-user-card h2 { font-size: 14px; margin: 0 0 10px; font-weight: 600; }
   .add-user-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .add-user-row input {
-    flex: 1; min-width: 220px; border: 1px solid var(--gridline); background: var(--panel-alt);
-    color: var(--text-primary); border-radius: 7px; padding: 8px 11px; font-size: 13px; font-family: inherit;
+    flex: 1; min-width: 220px;
   }
-  .btn {
-    border: 1px solid var(--gridline); background: var(--surface-1); color: var(--text-primary);
-    border-radius: 7px; padding: 8px 14px; font-size: 13px; font-weight: 500;
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-  .btn:hover { background: var(--panel-alt); }
-  .btn-primary { background: var(--series-1); border-color: var(--series-1); color: var(--accent-contrast); }
-  .btn-primary:hover { filter: brightness(1.06); }
   .btn-danger { color: var(--danger); border-color: var(--danger); background: transparent; }
   .btn-danger:hover { background: var(--danger-tint); }
   .btn:disabled { opacity: .55; cursor: default; }
 
   .users-card {
-    background: var(--surface-1); border: 1px solid var(--gridline); border-radius: 12px;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg);
     box-shadow: var(--shadow); overflow: hidden;
   }
   table.users-table { width: 100%; border-collapse: collapse; }
@@ -98,8 +82,8 @@
   .user-email { font-weight: 500; }
   .user-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
   .role-select {
-    border: 1px solid var(--gridline); background: var(--panel-alt); color: var(--text-primary);
-    border-radius: 6px; padding: 5px 7px; font-size: 12.5px; font-family: inherit;
+    border: 1px solid var(--baseline); background: var(--surface-1); color: var(--text-primary);
+    border-radius: var(--radius); padding: 5px 7px; font-size: 13px; font-family: inherit;
   }
   .empty-note { padding: 20px 16px; font-size: 13px; color: var(--text-muted); font-style: italic; }
 
@@ -111,7 +95,7 @@
   #adminArea > .section-heading:first-child { margin-top: 0; }
 
   .projects-card {
-    background: var(--surface-1); border: 1px solid var(--gridline); border-radius: 12px;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg);
     box-shadow: var(--shadow); overflow: hidden;
   }
   .projects-toolbar {
@@ -217,8 +201,8 @@
         <div class="add-user-card">
           <h2>Add user</h2>
           <form class="add-user-row" id="addUserForm">
-            <input type="email" id="newUserEmail" placeholder="name@royalmint.com" required />
-            <input type="text" id="newUserPassword" placeholder="Password (leave blank to auto-generate)" />
+            <input type="email" class="input" id="newUserEmail" placeholder="name@royalmint.com" required />
+            <input type="text" class="input" id="newUserPassword" placeholder="Password (leave blank to auto-generate)" />
             <button type="submit" class="btn btn-primary" id="addUserBtn">Create user</button>
           </form>
         </div>
