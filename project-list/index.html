@@ -14,6 +14,7 @@
   }
 </script>
 <link rel="stylesheet" href="/shared/theme.css">
+<link rel="stylesheet" href="/shared/components.css">
 <style>
   /* Colours and fonts come from /shared/theme.css */
   :root {
@@ -34,17 +35,8 @@
   }
 
   .app { min-height: 100vh; display: flex; flex-direction: column; padding-top: 34px; }
-  .topbar {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
-    padding: 18px 24px; border-bottom: 1px solid var(--gridline); background: var(--surface-1);
-    flex: none; flex-wrap: wrap;
-  }
-  .topbar h1 {
-    font-family: var(--font-display); font-weight: 400; font-size: 22px;
-    letter-spacing: 0.2px; margin: 0;
-  }
+  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
   .topbar .sub { font-size: 12.5px; color: var(--text-secondary); margin-left: 10px; }
-  .topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
   .main { flex: 1; display: flex; min-height: 0; }
   .list-scroll { flex: 1; overflow-y: auto; display: flex; justify-content: center; padding: 28px 24px 60px; }
@@ -120,14 +112,6 @@
   .collapse-toggle:hover { background: var(--surface-1); }
   .collapse-toggle.collapsed { transform: rotate(-90deg); }
 
-  .btn {
-    border: 1px solid var(--gridline); background: var(--surface-1); color: var(--text-primary);
-    border-radius: 7px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer;
-    font-family: inherit;
-  }
-  .btn:hover { background: var(--panel-alt); }
-  .btn-primary { background: var(--series-1); border-color: var(--series-1); color: var(--accent-contrast); }
-  .btn-primary:hover { filter: brightness(1.06); }
   .btn:disabled { opacity: .55; cursor: default; }
   a.btn { display: inline-block; text-decoration: none; }
 
@@ -135,10 +119,8 @@
   .filter-search-row { align-items: center; border-top: 1px solid var(--gridline); padding-top: 12px; }
   .filter-search-wrap { position: relative; flex: 1; min-width: 0; max-width: 320px; }
   .filter-search-input {
-    width: 100%; box-sizing: border-box; padding: 7px 12px; border: 1px solid var(--gridline);
-    border-radius: 8px; background: var(--surface-1); color: var(--text-primary); font-size: 13px; font-family: inherit;
+    width: 100%; box-sizing: border-box;
   }
-  .filter-search-input:focus { outline: none; border-color: var(--series-1); }
   .filter-search-results {
     position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; right: 0; margin: 0; padding: 4px;
     list-style: none; border: 1px solid var(--gridline); border-radius: 8px; background: var(--surface-1);
@@ -172,11 +154,12 @@
     color: var(--text-muted); margin-bottom: 5px;
   }
   .field-input, .field-select, .field-textarea {
-    width: 100%; background: var(--panel-alt); border: 1px solid var(--gridline); border-radius: 6px;
+    width: 100%; background: var(--page-plane); border: 1px solid var(--baseline); border-radius: var(--radius);
     padding: 7px 9px; font-size: 13px; font-family: var(--font-body); color: var(--text-primary);
   }
   .field-input:focus, .field-select:focus, .field-textarea:focus {
-    outline: 2px solid var(--series-1); outline-offset: -1px; background: var(--surface-1);
+    outline: none;
+    border-color: var(--series-1);
   }
   .field-input:disabled, .field-select:disabled, .field-textarea:disabled { opacity: .7; cursor: default; }
   .field-textarea { resize: vertical; min-height: 60px; line-height: 1.45; }
@@ -237,7 +220,7 @@
               </div>
               <div class="filter-row filter-search-row">
                 <div class="filter-search-wrap">
-                  <input type="text" id="filterSearchInput" class="filter-search-input" placeholder="Search projects by name…" autocomplete="off" aria-label="Search projects by name" />
+                  <input type="text" id="filterSearchInput" class="input filter-search-input" placeholder="Search projects by name…" autocomplete="off" aria-label="Search projects by name" />
                   <ul id="filterSearchResults" class="filter-search-results" hidden></ul>
                 </div>
               </div>
