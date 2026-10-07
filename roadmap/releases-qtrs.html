@@ -14,6 +14,7 @@
   }
 </script>
 <link rel="stylesheet" href="/shared/theme.css">
+<link rel="stylesheet" href="/shared/components.css">
 <style>
   /* Colours and fonts come from /shared/theme.css */
   :root {
@@ -33,23 +34,8 @@
     flex-direction: column;
   }
 
-  header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
-    background: var(--surface-1);
-    border-bottom: 1px solid var(--gridline);
-    flex-wrap: wrap;
-  }
-  header h1 {
-    font-family: var(--font-display);
-    font-size: 18px;
-    font-weight: 400;
-    letter-spacing: 0.2px;
-    margin: 0;
-    margin-right: auto;
-  }
+  header.topbar { justify-content: flex-start; gap: 8px 12px; }
+  header.topbar h1 { margin-right: auto; }
   .file-info {
     font-size: 13px;
     color: var(--text-secondary);
@@ -57,27 +43,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--series-1);
-    color: var(--accent-fg);
-    border: none;
-    border-radius: 6px;
-    padding: 8px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    line-height: 1;
-  }
-  .btn:hover { filter: brightness(1.08); }
-  .btn:active { filter: brightness(0.95); }
-  .btn.secondary {
-    background: var(--surface-1);
-    color: var(--text-primary);
-    border: 1px solid var(--gridline);
   }
   #error-banner {
     display: none;
@@ -375,13 +340,13 @@
 </head>
 <body>
 
-<header>
+<header class="topbar">
   <h1>Feature Release Roadmap</h1>
   <span class="file-info" id="file-info">Connecting...</span>
-  <button class="btn secondary" id="reload-btn">Reload</button>
-  <button class="btn secondary" id="export-png-btn">Export PNG</button>
-  <button class="btn secondary" id="export-pdf-btn">Export PDF</button>
-  <button class="btn secondary" id="publish-btn">Publish</button>
+  <button class="btn" id="reload-btn">Reload</button>
+  <button class="btn" id="export-png-btn">Export PNG</button>
+  <button class="btn" id="export-pdf-btn">Export PDF</button>
+  <button class="btn" id="publish-btn">Publish</button>
 </header>
 
 <div id="error-banner"></div>
