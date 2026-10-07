@@ -5,66 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Projects View</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="/shared/theme.css">
 <style>
+  /* Colours and fonts come from /shared/theme.css */
   :root {
-    --bg: #EAEDF1;
-    --surface: #FFFFFF;
-    --surface-alt: #F2F4F7;
-    --border: #DBE0E7;
-    --text: #191D23;
-    --text-muted: #5E6572;
-    --text-faint: #9BA1AC;
-    --accent: #0E7A6C;
     --accent-contrast: #FFFFFF;
-    --accent-tint: #0E7A6C1A;
-    --danger: #C0362C;
-    --danger-tint: #C0362C1A;
+    --accent-tint: #2A78D61A;
+    --danger-tint: #D03B3B1A;
     --shadow: 0 1px 2px rgba(20, 24, 30, 0.06), 0 1px 1px rgba(20, 24, 30, 0.04);
-
-    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
-    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #14171C; --surface: #1C2027; --surface-alt: #20242C; --border: #2C313B;
-      --text: #E8EAED; --text-muted: #99A0AC; --text-faint: #6B717C;
-      --accent: #3FC7B3; --accent-contrast: #0A1512; --accent-tint: #3FC7B326;
-      --danger: #F0685F; --danger-tint: #F0685F26;
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #14171C; --surface: #1C2027; --surface-alt: #20242C; --border: #2C313B;
-    --text: #E8EAED; --text-muted: #99A0AC; --text-faint: #6B717C;
-    --accent: #3FC7B3; --accent-contrast: #0A1512; --accent-tint: #3FC7B326;
-    --danger: #F0685F; --danger-tint: #F0685F26;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
-  }
-  :root[data-theme="light"] {
-    --bg: #EAEDF1; --surface: #FFFFFF; --surface-alt: #F2F4F7; --border: #DBE0E7;
-    --text: #191D23; --text-muted: #5E6572; --text-faint: #9BA1AC;
-    --accent: #0E7A6C; --accent-contrast: #FFFFFF; --accent-tint: #0E7A6C1A;
-    --danger: #C0362C; --danger-tint: #C0362C1A;
   }
 
   * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
-    margin: 0; background: var(--bg); color: var(--text);
+    margin: 0; background: var(--page-plane); color: var(--text-primary);
     font-family: var(--font-body); -webkit-font-smoothing: antialiased;
   }
 
   .app { min-height: 100vh; display: flex; flex-direction: column; padding-top: 34px; }
   .topbar {
     display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
-    padding: 18px 24px; border-bottom: 1px solid var(--border); background: var(--surface);
+    padding: 18px 24px; border-bottom: 1px solid var(--gridline); background: var(--surface-1);
     flex: none; flex-wrap: wrap;
   }
   .topbar h1 {
     font-family: var(--font-display); font-weight: 400; font-size: 22px;
     letter-spacing: 0.2px; margin: 0;
   }
-  .topbar .sub { font-size: 12.5px; color: var(--text-muted); margin-left: 10px; }
+  .topbar .sub { font-size: 12.5px; color: var(--text-secondary); margin-left: 10px; }
   .topbar-actions { display: flex; gap: 8px; flex: none; }
 
   .main { flex: 1; display: flex; justify-content: center; padding: 28px 24px 60px; }
@@ -82,48 +50,43 @@
   }
   .phase-filter-chip {
     display: inline-flex; align-items: center; gap: 6px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    background: var(--surface-1); border: 1px solid var(--gridline); border-radius: 999px;
     padding: 6px 12px 6px 10px; font-size: 12.5px; cursor: pointer; user-select: none;
   }
-  .phase-filter-chip input { margin: 0; accent-color: var(--accent); cursor: pointer; }
+  .phase-filter-chip input { margin: 0; accent-color: var(--series-1); cursor: pointer; }
   .phase-filter-chip.is-off { opacity: 0.55; }
   .phase-filter-chip img { width: 13px; height: 13px; }
-  :root[data-theme="dark"] .phase-filter-chip img { filter: invert(1) brightness(1.7); }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .phase-filter-chip img { filter: invert(1) brightness(1.7); }
-  }
-
   .projects-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    background: var(--surface-1); border: 1px solid var(--gridline); border-radius: 12px;
     box-shadow: var(--shadow); overflow: hidden;
   }
   table.open-projects-table { width: 100%; border-collapse: collapse; }
   .open-projects-table th {
     text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
-    color: var(--text-faint); font-weight: 600; padding: 10px 14px;
-    border-bottom: 1px solid var(--border); background: var(--surface-alt); white-space: nowrap;
+    color: var(--text-muted); font-weight: 600; padding: 10px 14px;
+    border-bottom: 1px solid var(--gridline); background: var(--panel-alt); white-space: nowrap;
   }
-  .open-projects-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .open-projects-table td { padding: 10px 14px; border-bottom: 1px solid var(--gridline); vertical-align: middle; }
   .open-projects-table tr:last-child td { border-bottom: none; }
   .open-projects-table td.col-health { width: 1%; }
   .open-projects-table td.col-phase { white-space: nowrap; }
   .open-projects-table td.col-visibility, .open-projects-table th.col-visibility { width: 1%; text-align: center; }
   .open-projects-table tr.row-hidden { opacity: 0.5; }
   .visibility-toggle {
-    background: none; border: none; padding: 4px; cursor: pointer; color: var(--text-muted);
+    background: none; border: none; padding: 4px; cursor: pointer; color: var(--text-secondary);
     display: inline-flex; align-items: center; justify-content: center; border-radius: 6px;
   }
-  .visibility-toggle:hover { background: var(--surface-alt); color: var(--text); }
+  .visibility-toggle:hover { background: var(--panel-alt); color: var(--text-primary); }
   .open-projects-table th.sortable { cursor: pointer; user-select: none; }
-  .open-projects-table th.sortable:hover { color: var(--text-muted); }
-  .open-projects-table th.sortable.active { color: var(--accent); }
-  .sort-arrow { display: inline-block; width: 10px; margin-left: 4px; font-size: 9px; color: var(--accent); }
+  .open-projects-table th.sortable:hover { color: var(--text-secondary); }
+  .open-projects-table th.sortable.active { color: var(--series-1); }
+  .sort-arrow { display: inline-block; width: 10px; margin-left: 4px; font-size: 9px; color: var(--series-1); }
   .project-title-name { font-weight: 500; }
-  .empty-note { padding: 20px 16px; font-size: 13px; color: var(--text-faint); font-style: italic; }
+  .empty-note { padding: 20px 16px; font-size: 13px; color: var(--text-muted); font-style: italic; }
 
   .health-tag {
     display: inline-block; width: 7px; height: 18px; border-radius: 3px;
-    background: var(--border);
+    background: var(--gridline);
   }
   .health-green { background: #4FCE65; }
   .health-amber { background: #FFC148; }
@@ -131,17 +94,12 @@
 
   .phase-cell { display: inline-flex; align-items: center; gap: 7px; }
   .phase-icon { width: 14px; height: 14px; flex: none; }
-  :root[data-theme="dark"] .phase-icon { filter: invert(1) brightness(1.7); }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .phase-icon { filter: invert(1) brightness(1.7); }
-  }
-
   .btn {
-    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    border: 1px solid var(--gridline); background: var(--surface-1); color: var(--text-primary);
     border-radius: 7px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer;
     font-family: inherit;
   }
-  .btn:hover { background: var(--surface-alt); }
+  .btn:hover { background: var(--panel-alt); }
   .btn:disabled { opacity: .55; cursor: default; }
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
@@ -488,25 +446,25 @@
   };
 
   var EMAIL_THEME_VARS = {
-    "--bg": "#EAEDF1",
-    "--surface": "#FFFFFF",
-    "--surface-alt": "#F2F4F7",
-    "--border": "#DBE0E7",
-    "--text": "#191D23",
-    "--text-muted": "#5E6572",
-    "--text-faint": "#9BA1AC",
-    "--accent": "#0E7A6C",
+    "--page-plane": "#f9f9f7",
+    "--surface-1": "#fcfcfb",
+    "--panel-alt": "#f1f1ee",
+    "--gridline": "#e1e0d9",
+    "--text-primary": "#0b0b0b",
+    "--text-secondary": "#52514e",
+    "--text-muted": "#898781",
+    "--series-1": "#2a78d6",
     "--accent-contrast": "#FFFFFF",
-    "--accent-tint": "#0E7A6C1A",
-    "--danger": "#C0362C",
-    "--danger-tint": "#C0362C1A",
+    "--accent-tint": "#2A78D61A",
+    "--danger": "#d03b3b",
+    "--danger-tint": "#D03B3B1A",
     "--shadow": "0 1px 2px rgba(20, 24, 30, 0.06), 0 1px 1px rgba(20, 24, 30, 0.04)",
     "--font-display": 'Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif',
     "--font-body": '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif'
   };
 
   // Outlook's Word rendering engine doesn't understand CSS custom properties —
-  // a declaration like "background: var(--surface)" is invalid to it and gets
+  // a declaration like "background: var(--surface-1)" is invalid to it and gets
   // dropped entirely, leaving elements uncolored. Bake in literal (light-theme)
   // values so the published/emailed snapshot renders correctly everywhere.
   function resolveCssVarsForEmail(css) {

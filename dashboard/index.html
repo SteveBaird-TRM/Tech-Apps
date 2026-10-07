@@ -5,50 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dashboard</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="/shared/theme.css">
 <style>
+  /* Colours and fonts come from /shared/theme.css */
   :root {
-    --bg: #EAEDF1;
-    --surface: #FFFFFF;
-    --surface-alt: #F2F4F7;
-    --border: #DBE0E7;
-    --text: #191D23;
-    --text-muted: #5E6572;
-    --text-faint: #9BA1AC;
-    --accent: #0E7A6C;
     --accent-contrast: #FFFFFF;
-    --accent-tint: #0E7A6C1A;
-    --danger: #C0362C;
-    --danger-tint: #C0362C1A;
+    --accent-tint: #2A78D61A;
+    --danger-tint: #D03B3B1A;
     --shadow: 0 1px 2px rgba(20, 24, 30, 0.06), 0 1px 1px rgba(20, 24, 30, 0.04);
-    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #14171C; --surface: #1C2027; --surface-alt: #20242C; --border: #2C313B;
-      --text: #E8EAED; --text-muted: #99A0AC; --text-faint: #6B717C;
-      --accent: #3FC7B3; --accent-contrast: #0A1512; --accent-tint: #3FC7B326;
-      --danger: #F0685F; --danger-tint: #F0685F26;
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #14171C; --surface: #1C2027; --surface-alt: #20242C; --border: #2C313B;
-    --text: #E8EAED; --text-muted: #99A0AC; --text-faint: #6B717C;
-    --accent: #3FC7B3; --accent-contrast: #0A1512; --accent-tint: #3FC7B326;
-    --danger: #F0685F; --danger-tint: #F0685F26;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
-  }
-  :root[data-theme="light"] {
-    --bg: #EAEDF1; --surface: #FFFFFF; --surface-alt: #F2F4F7; --border: #DBE0E7;
-    --text: #191D23; --text-muted: #5E6572; --text-faint: #9BA1AC;
-    --accent: #0E7A6C; --accent-contrast: #FFFFFF; --accent-tint: #0E7A6C1A;
-    --danger: #C0362C; --danger-tint: #C0362C1A;
   }
 
   * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
-    margin: 0; background: var(--bg); color: var(--text);
+    margin: 0; background: var(--page-plane); color: var(--text-primary);
     font-family: var(--font-body); -webkit-font-smoothing: antialiased;
   }
 
@@ -62,26 +32,26 @@
   }
   .tab {
     font: inherit; font-size: 13.5px; font-weight: 500; line-height: 1;
-    padding: 11px 20px; border: 1px solid var(--border); border-bottom: none;
-    border-radius: 10px 10px 0 0; background: var(--surface-alt); color: var(--text-muted);
+    padding: 11px 20px; border: 1px solid var(--gridline); border-bottom: none;
+    border-radius: 10px 10px 0 0; background: var(--panel-alt); color: var(--text-secondary);
     cursor: pointer; position: relative; top: 1px;
   }
-  .tab:hover { color: var(--text); }
+  .tab:hover { color: var(--text-primary); }
   .tab.active {
-    background: var(--surface); color: var(--text); font-weight: 600;
+    background: var(--surface-1); color: var(--text-primary); font-weight: 600;
     box-shadow: 0 -1px 3px rgba(20, 24, 30, 0.04);
   }
 
   .tab-content {
-    flex: 1; min-height: 0; background: var(--surface);
-    border-top: 1px solid var(--border);
+    flex: 1; min-height: 0; background: var(--surface-1);
+    border-top: 1px solid var(--gridline);
   }
   .tab-panel { display: none; width: 100%; height: 100%; border: 0; }
   .tab-panel.active { display: block; }
 
   .load-note {
     display: flex; align-items: center; justify-content: center; height: 100%;
-    font-size: 13px; color: var(--text-faint);
+    font-size: 13px; color: var(--text-muted);
   }
 </style>
 </head>
