@@ -144,3 +144,39 @@
 }
 .save-status.saving { color: var(--series-1); }
 .save-status.error { color: var(--danger); }
+
+.input:focus,
+.dialog input:focus,
+.dialog select:focus,
+.dialog textarea:focus {
+  outline: none;
+  border-color: var(--series-1);
+}
+
+/* Dialog card */
+.dialog {
+  background: var(--surface-1);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  max-width: 90vw;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+}
+.dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
+.dialog input[type="text"],
+.dialog input[type="date"],
+.dialog input[type="number"],
+.dialog select,
+.dialog textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 7px 9px;
+  border: 1px solid var(--baseline);
+  border-radius: var(--radius);
+  background: var(--page-plane);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+}

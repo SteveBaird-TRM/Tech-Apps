@@ -6,6 +6,7 @@
 <title>Technology Roadmap</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="/shared/theme.css" />
+<link rel="stylesheet" href="/shared/components.css" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -14,9 +15,9 @@
     <div class="topbar-actions">
       <span id="file-status" class="file-status">Connecting...</span>
       <span id="save-status" class="save-status"></span>
-      <div class="timeline-start-group" role="group" aria-label="Timeline start date">
+      <div class="start-date-control" role="group" aria-label="Timeline start date">
         <label for="timeline-start-input">Start</label>
-        <input type="date" id="timeline-start-input" class="timeline-start-input" title="Projects starting before this date are clipped to show only their remaining duration; projects that end before this date are hidden" />
+        <input type="date" id="timeline-start-input" class="input" title="Projects starting before this date are clipped to show only their remaining duration; projects that end before this date are hidden" />
       </div>
       <div class="view-toggle" role="group" aria-label="Timeline view">
         <button type="button" class="view-btn" data-view="week">Week</button>
@@ -62,7 +63,7 @@
       </div>
       <div class="filter-row filter-search-row">
         <div class="filter-search-wrap">
-          <input type="text" id="filter-search-input" class="filter-search-input" placeholder="Search projects by title…" autocomplete="off" aria-label="Search projects by title" />
+          <input type="text" id="filter-search-input" class="input filter-search-input" placeholder="Search projects by title…" autocomplete="off" aria-label="Search projects by title" />
           <ul id="filter-search-results" class="filter-search-results" hidden></ul>
         </div>
         <button type="button" id="filter-clear-btn" class="btn filter-clear-btn">Clear filters</button>
@@ -88,7 +89,7 @@
       </div>
     </main>
 
-    <div id="edit-dialog" class="edit-dialog" hidden>
+    <div id="edit-dialog" class="dialog edit-dialog" hidden>
       <form id="edit-form">
         <div class="edit-dialog-scroll">
           <div class="edit-dialog-head">
@@ -173,7 +174,7 @@
     </div>
   </div>
 
-  <dialog id="display-dialog" class="edit-dialog display-dialog">
+  <dialog id="display-dialog" class="dialog edit-dialog display-dialog">
     <h2>Display</h2>
     <div class="display-group">
       <span class="display-group-label">Label</span>
@@ -196,7 +197,7 @@
     </div>
   </dialog>
 
-  <dialog id="cleanup-dialog" class="edit-dialog cleanup-dialog">
+  <dialog id="cleanup-dialog" class="dialog edit-dialog cleanup-dialog">
     <h2>Data Clean Up</h2>
     <p class="cleanup-warning"><strong>Don't forget to take a back up!</strong></p>
     <p id="cleanup-hint" class="filter-hint">These projects have already finished. Remove them?</p>
@@ -207,7 +208,7 @@
     </div>
   </dialog>
 
-  <dialog id="delivered-dialog" class="edit-dialog">
+  <dialog id="delivered-dialog" class="dialog edit-dialog">
     <h2>Project complete</h2>
     <p id="delivered-hint" class="filter-hint">Has this project been delivered?</p>
     <div class="edit-dialog-actions">
@@ -216,7 +217,7 @@
     </div>
   </dialog>
 
-  <dialog id="export-dialog" class="edit-dialog export-dialog">
+  <dialog id="export-dialog" class="dialog edit-dialog export-dialog">
     <h2>Export</h2>
     <div class="export-grid">
       <button type="button" id="export-json-btn" class="export-option">
