@@ -83,6 +83,15 @@ body {
   margin: -4px -8px;
 }
 
+/* White title bar and controls, to match the other apps. */
+.topbar { background: var(--panel); }
+.topbar .btn:not(.btn-primary),
+.topbar .view-btn:not(.active),
+.topbar .zoom-btn,
+.topbar .timeline-start-input { background: var(--panel); }
+.topbar .view-btn:not(.active):hover,
+.topbar .zoom-btn:hover:not(:disabled) { background: var(--hover-bg); }
+
 .topbar-actions {
   display: flex;
   align-items: center;
