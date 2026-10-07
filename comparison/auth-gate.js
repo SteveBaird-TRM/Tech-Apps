@@ -38,21 +38,21 @@
   const style = document.createElement('style');
   style.textContent = `
     #auth-gate-overlay { position: fixed; inset: 0; z-index: 999999; display: flex;
-      align-items: center; justify-content: center; background: #12131a;
+      align-items: center; justify-content: center; background: #f9f9f7;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    #auth-gate-card { background: #1c1e27; color: #e6e8ec; border-radius: 12px;
+    #auth-gate-card { background: #fcfcfb; color: #0b0b0b; border: 1px solid rgba(11,11,11,0.10); border-radius: 12px;
       padding: 32px 28px; width: 320px; max-width: calc(100vw - 40px);
-      box-shadow: 0 10px 40px rgba(0,0,0,.4); }
+      box-shadow: 0 12px 32px rgba(0,0,0,.12); }
     #auth-gate-card h1 { font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif; font-size: 18px; margin: 0 0 4px; font-weight: 400; letter-spacing: 0.2px; }
-    #auth-gate-card p.sub { font-size: 12px; color: #9aa0ab; margin: 0 0 14px; }
-    #auth-gate-card label { display: block; font-size: 12px; color: #9aa0ab; margin: 12px 0 4px; }
+    #auth-gate-card p.sub { font-size: 12px; color: #52514e; margin: 0 0 14px; }
+    #auth-gate-card label { display: block; font-size: 12px; color: #52514e; margin: 12px 0 4px; }
     #auth-gate-card input { width: 100%; box-sizing: border-box; padding: 9px 10px;
-      border-radius: 7px; border: 1px solid #33364a; background: #12131a; color: #e6e8ec; font-size: 14px; }
-    #auth-gate-card input:focus { outline: none; border-color: #5b8cff; }
+      border-radius: 7px; border: 1px solid #c3c2b7; background: #f9f9f7; color: #0b0b0b; font-size: 14px; }
+    #auth-gate-card input:focus { outline: none; border-color: #2a78d6; }
     #auth-gate-card button { margin-top: 18px; width: 100%; padding: 10px; border: none;
-      border-radius: 7px; background: #5b8cff; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+      border-radius: 7px; background: #2a78d6; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
     #auth-gate-card button:disabled { opacity: .6; cursor: default; }
-    #auth-gate-error { color: #ff6b6b; font-size: 13px; margin-top: 12px; min-height: 16px; }
+    #auth-gate-error { color: #d03b3b; font-size: 13px; margin-top: 12px; min-height: 16px; }
     #auth-gate-bar { position: fixed; top: 0; right: 0; z-index: 999998; display: flex;
       align-items: center; gap: 10px; padding: 7px 14px; font: 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: #6b7280; background: rgba(255,255,255,.85); backdrop-filter: blur(4px); border-bottom-left-radius: 8px; }

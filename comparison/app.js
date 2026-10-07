@@ -10,7 +10,6 @@
   const ZOOM_STEP = 0.25;
   const DEFAULT_ZOOM = 1;
   const ZOOM_STORAGE_KEY = 'timeline-compare-zoom';
-  const THEME_STORAGE_KEY = 'timeline-compare-theme';
   const FILTER_COLLAPSED_STORAGE_KEY = 'timeline-compare-filter-collapsed';
   const START_DATE_STORAGE_KEY = 'timeline-compare-start-date';
   const MIN_VISIBLE_WEEKS = 10;
@@ -739,31 +738,6 @@
     }
     setTimelineStart(parsed);
   });
-
-  // ---------- Theme ----------
-  function currentEffectiveTheme() {
-    if (document.documentElement.dataset.theme) return document.documentElement.dataset.theme;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-
-  try {
-    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-    if (storedTheme === 'light' || storedTheme === 'dark') document.documentElement.dataset.theme = storedTheme;
-  } catch (err) {
-    // localStorage unavailable — fall back to the OS theme.
-  }
-
-  // The on-page button is gone; the stored/OS theme still applies and this
-  // toggle stays callable from the console.
-  window.toggleCompareTheme = () => {
-    const next = currentEffectiveTheme() === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, next);
-    } catch (err) {
-      // ignore — persistence is a convenience, not a requirement
-    }
-  };
 
   // ---------- Rename (the only edit this app allows) ----------
   async function renameProject(oldName, newName) {

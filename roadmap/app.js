@@ -1521,12 +1521,12 @@
     ctx.scale(scale, scale);
 
     const colors = {
-      bg: '#ffffff',
-      panelAlt: '#f4f5f7',
-      border: '#d7dae0',
-      text: '#16181d',
-      muted: '#5b6472',
-      accent: '#3b6fe0',
+      bg: '#fcfcfb',
+      panelAlt: '#f1f1ee',
+      border: '#e1e0d9',
+      text: '#0b0b0b',
+      muted: '#52514e',
+      accent: '#2a78d6',
     };
 
     ctx.fillStyle = colors.bg;
