@@ -15,6 +15,8 @@
     --danger-tint: #D03B3B1A;
     --shadow: 0 1px 2px rgba(20, 24, 30, 0.06), 0 1px 1px rgba(20, 24, 30, 0.04);
   }
+
+  * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
     margin: 0; background: var(--page-plane); color: var(--text-primary);
@@ -31,6 +33,8 @@
     font-family: var(--font-display); font-weight: 400; font-size: 20px;
     letter-spacing: 0.2px; margin: 0;
   }
+  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+  .topbar .sub { font-size: 12.5px; color: var(--text-secondary); margin-left: 10px; }
   .topbar-actions { display: flex; gap: 8px; flex: none; }
 
   .main { flex: 1; display: flex; justify-content: center; padding: 28px 24px 60px; }
@@ -92,6 +96,7 @@
 
   .phase-cell { display: inline-flex; align-items: center; gap: 7px; }
   .phase-icon { width: 14px; height: 14px; flex: none; }
+  .btn:disabled { opacity: .55; cursor: default; }
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
     clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;

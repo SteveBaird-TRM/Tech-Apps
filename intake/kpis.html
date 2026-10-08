@@ -801,8 +801,16 @@
     });
   }
 
-  function buildStandaloneHtml(tilesHtml, priorTilesHtml, roadmapTilesHtml, imageDataUri) {
-    var css = document.querySelector("style").textContent;
+  // The page's own <style> no longer holds the shared colours and base rules,
+  // so the published file needs them copied in to stay standalone.
+  function fetchSharedCss() {
+    return Promise.all(["/shared/theme.css", "/shared/components.css"].map(function (url) {
+      return fetch(url).then(function (r) { return r.ok ? r.text() : ""; }).catch(function () { return ""; });
+    })).then(function (parts) { return parts.join("\n"); });
+  }
+
+  function buildStandaloneHtml(tilesHtml, priorTilesHtml, roadmapTilesHtml, imageDataUri, sharedCss) {
+    var css = (sharedCss || "") + "\n" + document.querySelector("style").textContent;
     var imgHtml = imageDataUri
       ? '<div style="display:flex;justify-content:center;padding:20px 24px 0;background:var(--surface-1);">' +
           '<img src="' + imageDataUri + '" alt="" style="max-height:240px;height:auto;width:auto;display:block;">' +
@@ -834,9 +842,12 @@
     if (!container.children.length) { toast("Nothing to publish yet"); return; }
     var priorContainer = document.getElementById("tiles-prior");
     var roadmapContainer = document.getElementById("tiles-roadmap");
-    embedThumbnail("kpis-thumbnail.jpg").then(function (imageSrc) {
+    Promise.all([embedThumbnail("kpis-thumbnail.jpg"), fetchSharedCss()]).then(function (res) {
+      var imageSrc = res[0];
+      var sharedCss = res[1];
       if (!imageSrc) toast("Publishing without thumbnail — kpis-thumbnail.jpg not found");
-      var html = buildStandaloneHtml(container.innerHTML, priorContainer.innerHTML, roadmapContainer.innerHTML, imageSrc);
+      if (!sharedCss) toast("Published file may be missing colours — shared CSS not found");
+      var html = buildStandaloneHtml(container.innerHTML, priorContainer.innerHTML, roadmapContainer.innerHTML, imageSrc, sharedCss);
       var filename = "how-well-are-we-doing-" + new Date().toISOString().slice(0, 10) + ".html";
       downloadText(filename, html, "text/html");
       toast("Published " + filename);
