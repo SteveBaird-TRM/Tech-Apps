@@ -15,9 +15,6 @@
     --bar-track: #e1e0d9;
     --shadow: 0 1px 2px rgba(20, 24, 30, 0.06), 0 1px 1px rgba(20, 24, 30, 0.04);
   }
-
-
-  * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
     margin: 0;
@@ -27,26 +24,11 @@
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
   }
-  :focus-visible {
-    outline: 2px solid var(--series-1);
-    outline-offset: 2px;
-  }
-  button {
-    font-family: inherit;
-    cursor: pointer;
-  }
 
   .app {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-  }
-
-  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
-  .topbar .sub {
-    font-size: 12.5px;
-    color: var(--text-secondary);
-    margin-left: 10px;
   }
   .file-status {
     font-size: 12px;
@@ -192,7 +174,7 @@
 
 <script>window.AUTH_REQUIREMENTS = [{ project: 'intake', role: 'viewer' }];</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="auth-gate.js"></script>
+<script src="/shared/auth-gate.js"></script>
 <script src="/app-tabs.js"></script>
 <script>
 (function () {

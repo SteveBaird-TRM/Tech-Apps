@@ -15,19 +15,13 @@
     --danger-tint: #D03B3B1A;
     --shadow: 0 1px 2px rgba(20, 24, 30, 0.06), 0 1px 1px rgba(20, 24, 30, 0.04);
   }
-
-  * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
     margin: 0; background: var(--page-plane); color: var(--text-primary);
     font-family: var(--font-body); -webkit-font-smoothing: antialiased;
   }
-  :focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
-  button { font-family: inherit; cursor: pointer; }
 
   .app { min-height: 100vh; display: flex; flex-direction: column; }
-  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
-  .topbar .sub { font-size: 12.5px; color: var(--text-secondary); margin-left: 10px; }
 
   .main { flex: 1; display: flex; justify-content: center; padding: 28px 24px 60px; }
   .panel { width: 100%; max-width: 920px; }
@@ -65,7 +59,6 @@
   }
   .btn-danger { color: var(--danger); border-color: var(--danger); background: transparent; }
   .btn-danger:hover { background: var(--danger-tint); }
-  .btn:disabled { opacity: .55; cursor: default; }
 
   .users-card {
     background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg);
@@ -165,14 +158,6 @@
   .icon-btn-danger:disabled { opacity: .5; cursor: default; }
   .icon-btn-danger:disabled:hover { background: transparent; }
 
-  .toast {
-    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(8px);
-    background: var(--text-primary); color: var(--page-plane); padding: 9px 16px; border-radius: 8px;
-    font-size: 13px; opacity: 0; pointer-events: none;
-    transition: opacity 180ms ease, transform 180ms ease; z-index: 50;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
   .report-desc { font-size: 12.5px; color: var(--text-secondary); margin: 0 0 12px; line-height: 1.5; }
 </style>
 </head>
@@ -264,7 +249,7 @@
 
 <script>window.AUTH_REQUIREMENTS = [];</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="auth-gate.js"></script>
+<script src="/shared/auth-gate.js"></script>
 <script src="/app-tabs.js" data-push></script>
 <script>
 (function () {

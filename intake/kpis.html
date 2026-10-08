@@ -25,9 +25,6 @@
     --status-info: #2a78d6;
     --status-muted: #999999;
   }
-
-
-  * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
     margin: 0;
@@ -37,26 +34,11 @@
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
   }
-  :focus-visible {
-    outline: 2px solid var(--series-1);
-    outline-offset: 2px;
-  }
-  button {
-    font-family: inherit;
-    cursor: pointer;
-  }
 
   .app {
     height: calc(100vh - 34px);
     display: flex;
     flex-direction: column;
-  }
-
-  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
-  .topbar .sub {
-    font-size: 12.5px;
-    color: var(--text-secondary);
-    margin-left: 10px;
   }
   .switch {
     display: inline-flex;
@@ -104,26 +86,6 @@
     font-size: 12px;
     color: var(--text-secondary);
     white-space: nowrap;
-  }
-
-  .toast {
-    position: fixed;
-    bottom: 22px;
-    left: 50%;
-    transform: translateX(-50%) translateY(8px);
-    background: var(--text-primary);
-    color: var(--page-plane);
-    padding: 9px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 180ms ease, transform 180ms ease;
-    z-index: 50;
-  }
-  .toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
   }
 
   .main {
@@ -278,7 +240,7 @@
   { project: 'roadmap-db', role: 'viewer' }
 ];</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="auth-gate.js"></script>
+<script src="/shared/auth-gate.js"></script>
 <script src="/app-tabs.js"></script>
 <script>
 (function () {
@@ -839,8 +801,16 @@
     });
   }
 
-  function buildStandaloneHtml(tilesHtml, priorTilesHtml, roadmapTilesHtml, imageDataUri) {
-    var css = document.querySelector("style").textContent;
+  // The page's own <style> no longer holds the shared colours and base rules,
+  // so the published file needs them copied in to stay standalone.
+  function fetchSharedCss() {
+    return Promise.all(["/shared/theme.css", "/shared/components.css"].map(function (url) {
+      return fetch(url).then(function (r) { return r.ok ? r.text() : ""; }).catch(function () { return ""; });
+    })).then(function (parts) { return parts.join("\n"); });
+  }
+
+  function buildStandaloneHtml(tilesHtml, priorTilesHtml, roadmapTilesHtml, imageDataUri, sharedCss) {
+    var css = (sharedCss || "") + "\n" + document.querySelector("style").textContent;
     var imgHtml = imageDataUri
       ? '<div style="display:flex;justify-content:center;padding:20px 24px 0;background:var(--surface-1);">' +
           '<img src="' + imageDataUri + '" alt="" style="max-height:240px;height:auto;width:auto;display:block;">' +
@@ -872,9 +842,12 @@
     if (!container.children.length) { toast("Nothing to publish yet"); return; }
     var priorContainer = document.getElementById("tiles-prior");
     var roadmapContainer = document.getElementById("tiles-roadmap");
-    embedThumbnail("kpis-thumbnail.jpg").then(function (imageSrc) {
+    Promise.all([embedThumbnail("kpis-thumbnail.jpg"), fetchSharedCss()]).then(function (res) {
+      var imageSrc = res[0];
+      var sharedCss = res[1];
       if (!imageSrc) toast("Publishing without thumbnail — kpis-thumbnail.jpg not found");
-      var html = buildStandaloneHtml(container.innerHTML, priorContainer.innerHTML, roadmapContainer.innerHTML, imageSrc);
+      if (!sharedCss) toast("Published file may be missing colours — shared CSS not found");
+      var html = buildStandaloneHtml(container.innerHTML, priorContainer.innerHTML, roadmapContainer.innerHTML, imageSrc, sharedCss);
       var filename = "how-well-are-we-doing-" + new Date().toISOString().slice(0, 10) + ".html";
       downloadText(filename, html, "text/html");
       toast("Published " + filename);
