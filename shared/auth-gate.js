@@ -1,7 +1,5 @@
-// Shared login gate for all claude-projects apps. Identical copy lives in
-// every project directory (comparison, implementation-forum, intake,
-// roadmap-db, schedule-a-db-v2) since these are plain static sites with no
-// shared build step.
+// Shared login gate for all claude-projects apps.  One file at
+// /shared/auth-gate.js, loaded by every gated page.
 //
 // Each page sets window.AUTH_REQUIREMENTS before this script runs, e.g.:
 //   window.AUTH_REQUIREMENTS = [{ project: 'roadmap-db', role: 'viewer' }];

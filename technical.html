@@ -139,7 +139,7 @@
     <pre><code>SUPABASE_URL = 'https://aczahhxneshsrnqsezzg.supabase.co'
 SUPABASE_KEY = 'sb_publishable_...'   (public anon-equivalent key — safe to expose client-side by design)</code></pre>
   </li>
-  <li><strong>Code sharing is duplication, not packaging.</strong> <code>auth-gate.js</code> is an identical file, copy-pasted into every gated app rather than centralized — a deliberate choice noted in the file's own header comment, since there's no shared build step to import from.  <code>shared/project-picker.js</code> is the one genuine shared module, consumed via <code>&lt;script src="/shared/project-picker.js"&gt;</code> by <code>intake</code> and <code>roadmap</code> only.</li>
+  <li><strong>Shared code lives in <code>/shared</code>.</strong> <code>shared/auth-gate.js</code> is one file loaded by every gated app, alongside <code>shared/theme.css</code> and <code>shared/components.css</code>.  <code>shared/project-picker.js</code> is loaded by <code>intake</code> and <code>roadmap</code> only.</li>
   <li><strong>Hosting.</strong> Hosting is on vercel.com via GitHub.</li>
   <li><strong>Domains.</strong> Primary domain ixiapps.co.uk, secondary domain vercel.app</li>
 </ul>
@@ -240,7 +240,7 @@ SUPABASE_KEY = 'sb_publishable_...'   (public anon-equivalent key — safe to ex
 <h2>5.  Authentication</h2>
 
 <ul>
-  <li>Every gated app loads its own copy of <strong><code>auth-gate.js</code></strong>, which:
+  <li>Every gated app loads the shared <strong><code>/shared/auth-gate.js</code></strong>, which:
     <ol>
       <li>Creates one Supabase client (<code>window.sbClient</code>).</li>
       <li>Uses <code>sbClient.auth.signInWithPassword({ email, password })</code> — email/password auth only, no OAuth/SSO/magic-link in evidence.</li>
