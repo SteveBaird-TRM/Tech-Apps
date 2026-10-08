@@ -42,6 +42,10 @@
   background: var(--surface-1);
   color: var(--text-primary);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
 }
 .btn:hover { background: var(--page-plane); }
 .btn:disabled { opacity: 0.5; cursor: default; }
@@ -179,4 +183,117 @@
   color: var(--text-primary);
   font: inherit;
   font-size: 13px;
+}
+
+/* Common page parts */
+* {
+  box-sizing: border-box;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--series-1);
+  outline-offset: 2px;
+}
+
+.topbar .sub {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin-left: 10px;
+}
+
+.file-status {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  margin-right: 2px;
+}
+
+.toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: var(--text-primary);
+  color: var(--page-plane);
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+  z-index: 50;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.panel-close {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 20px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 6px;
+  flex: none;
+}
+
+.panel-close:hover {
+  background: var(--panel-alt);
+  color: var(--text-primary);
+}
+
+.field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.field-group {
+  margin-bottom: 14px;
+}
+
+.field-divider {
+  border: none;
+  border-top: 1px solid var(--gridline);
+  margin: 18px 0;
+}
+
+.filter-search-row {
+  align-items: center;
+  border-top: 1px solid var(--gridline);
+  padding-top: 12px;
+}
+
+.filter-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  max-width: 320px;
+}
+
+.filter-search-result {
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filter-search-results[hidden] {
+  display: none;
 }

@@ -25,9 +25,6 @@
     --status-info: #2a78d6;
     --status-muted: #999999;
   }
-
-
-  * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
     margin: 0;
@@ -37,26 +34,11 @@
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
   }
-  :focus-visible {
-    outline: 2px solid var(--series-1);
-    outline-offset: 2px;
-  }
-  button {
-    font-family: inherit;
-    cursor: pointer;
-  }
 
   .app {
     height: calc(100vh - 34px);
     display: flex;
     flex-direction: column;
-  }
-
-  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
-  .topbar .sub {
-    font-size: 12.5px;
-    color: var(--text-secondary);
-    margin-left: 10px;
   }
   .switch {
     display: inline-flex;
@@ -104,26 +86,6 @@
     font-size: 12px;
     color: var(--text-secondary);
     white-space: nowrap;
-  }
-
-  .toast {
-    position: fixed;
-    bottom: 22px;
-    left: 50%;
-    transform: translateX(-50%) translateY(8px);
-    background: var(--text-primary);
-    color: var(--page-plane);
-    padding: 9px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 180ms ease, transform 180ms ease;
-    z-index: 50;
-  }
-  .toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
   }
 
   .main {
