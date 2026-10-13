@@ -1006,11 +1006,14 @@
       rightHandle.addEventListener('mousedown', (e) => startResize(e, task, 'right', range));
       bar.addEventListener('mousedown', (e) => {
         if (e.target === leftHandle || e.target === rightHandle) return;
+        // render() on every mouseup replaces the bar, so a native dblclick never fires;
+        // detect the second press via the click count instead.
+        if (e.detail === 2) {
+          e.preventDefault();
+          openEditDialog(task);
+          return;
+        }
         startMove(e, task, range);
-      });
-      bar.addEventListener('dblclick', (e) => {
-        if (e.target === leftHandle || e.target === rightHandle) return;
-        openEditDialog(task);
       });
     });
   }
