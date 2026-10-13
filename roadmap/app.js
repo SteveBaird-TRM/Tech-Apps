@@ -1008,6 +1008,10 @@
         if (e.target === leftHandle || e.target === rightHandle) return;
         startMove(e, task, range);
       });
+      bar.addEventListener('dblclick', (e) => {
+        if (e.target === leftHandle || e.target === rightHandle) return;
+        openEditDialog(task);
+      });
     });
   }
 
