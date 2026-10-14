@@ -23,7 +23,8 @@
   const style = document.createElement('style');
   style.textContent = `
     :root { --app-tabs-bg: #f1f1ee; --app-tabs-line: #c3c2b7; --app-tabs-text: #52514e;
-      --app-tabs-idle: rgba(252,252,251,.55); --app-tabs-active: #fcfcfb; }
+      --app-tabs-idle: rgba(252,252,251,.55); --app-tabs-active: #fcfcfb;
+      --app-tabs-current-bg: #1e7e34; --app-tabs-current-text: #ffffff; }
     #app-tabs { position: fixed; top: 0; left: 0; right: 0; height: 34px; z-index: 999997;
       display: flex; align-items: flex-end; gap: 0; padding: 0 0 0 12px; box-sizing: border-box;
       background: var(--app-tabs-bg);
@@ -33,8 +34,8 @@
       background: var(--app-tabs-idle); border: 1px solid var(--app-tabs-line); border-bottom: none;
       border-radius: 9px 9px 0 0; margin-right: -1px; white-space: nowrap; }
     #app-tabs a:hover { background: var(--app-tabs-active); }
-    #app-tabs a.active { background: var(--app-tabs-active);
-      position: relative; z-index: 1; }
+    #app-tabs a.active { background: var(--app-tabs-current-bg); color: var(--app-tabs-current-text);
+      border-color: var(--app-tabs-current-bg); font-weight: 600; position: relative; z-index: 1; }
     /* Let the auth bar (email / Sign out) sit on the strip instead of on its own white box. */
     #auth-gate-bar { background: transparent !important; backdrop-filter: none !important; }
     html.embed-mode #app-tabs { display: none; }
