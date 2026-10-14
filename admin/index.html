@@ -616,16 +616,8 @@
 
     btn.disabled = true;
 
-    Promise.all([
-      sb.from("intake_cards").delete().eq("project_id", project.id),
-      sb.from("roadmap_tasks").delete().eq("project_id", project.id),
-      sb.from("resource_allocations").delete().eq("project_id", project.id)
-    ]).then(function (results) {
-      if (results[0].error) throw results[0].error;
-      if (results[1].error) throw results[1].error;
-      if (results[2].error) throw results[2].error;
-      return sb.from("projects").delete().eq("id", project.id);
-    }).then(function (res) {
+    // One transaction on the server: either everything goes or nothing does.
+    sb.rpc("admin_delete_project", { p_project_id: project.id }).then(function (res) {
       if (res.error) throw res.error;
       toast('Deleted project "' + project.canonical_name + '"');
       loadProjects();

@@ -546,9 +546,11 @@
 
 <script>window.AUTH_REQUIREMENTS = [{ project: 'intake', role: 'viewer' }];</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/shared/util.js"></script>
 <script src="/shared/auth-gate.js"></script>
 <script src="/app-tabs.js"></script>
 <script src="/shared/intake-cards.js"></script>
+<script src="/shared/project-registry.js"></script>
 <script src="/shared/project-picker.js"></script>
 <script src="/shared/project-comments.js"></script>
 <script>
@@ -916,11 +918,6 @@
     return parts[1] + "/" + parts[2] + "/" + parts[0].slice(2);
   }
 
-  function escapeHtml(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
 
   function toast(msg) {
     var el = document.getElementById("toast");
@@ -1371,28 +1368,15 @@
       return;
     }
 
-    sb.from("projects").select("id, canonical_name, description").ilike("canonical_name", title).limit(1).then(function (res) {
+    window.ProjectRegistry.findOrCreate(sb, title, "intake", "id, canonical_name, description").then(function (res) {
       if (res.error) { console.error(res.error); return; }
       if (card.projectId) return; // a manual link may have landed while this was in flight
-      if (res.data && res.data.length) {
-        card.projectId = res.data[0].id;
-        card.projectName = res.data[0].canonical_name;
-        card.projectDescription = res.data[0].description || null;
-        persistCard(card);
-        refreshProjectLinkRow(card);
-        refreshProjectDescriptionField(card);
-        return;
-      }
-      sb.from("projects").insert({ canonical_name: title, origin_app: "intake" }).select("id, canonical_name").single().then(function (res2) {
-        if (res2.error) { console.error(res2.error); return; }
-        if (card.projectId) return;
-        card.projectId = res2.data.id;
-        card.projectName = res2.data.canonical_name;
-        card.projectDescription = null;
-        persistCard(card);
-        refreshProjectLinkRow(card);
-        refreshProjectDescriptionField(card);
-      });
+      card.projectId = res.data.id;
+      card.projectName = res.data.canonical_name;
+      card.projectDescription = res.data.description || null;
+      persistCard(card);
+      refreshProjectLinkRow(card);
+      refreshProjectDescriptionField(card);
     });
   }
 

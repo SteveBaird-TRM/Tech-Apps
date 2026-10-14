@@ -72,10 +72,6 @@
     };
   }
 
-  function escapeLike(s) {
-    return s.replace(/[%_\\]/g, '\\$&');
-  }
-
   function open(options) {
     options = options || {};
     var originApp = options.originApp;
@@ -182,7 +178,7 @@
         var token = ++searchToken;
         sb.from('projects')
           .select('id, canonical_name, status')
-          .ilike('canonical_name', '%' + escapeLike(trimmed) + '%')
+          .ilike('canonical_name', '%' + window.escapeLike(trimmed) + '%')
           .order('canonical_name')
           .limit(20)
           .then(function (res) {
@@ -201,10 +197,7 @@
 
       function createProject(name) {
         createRowEl.innerHTML = '<span class="pp-empty">Creating…</span>';
-        sb.from('projects')
-          .insert({ canonical_name: name, origin_app: originApp })
-          .select('id, canonical_name')
-          .single()
+        window.ProjectRegistry.findOrCreate(sb, name, originApp)
           .then(function (res) {
             if (res.error) {
               createRowEl.innerHTML = '';

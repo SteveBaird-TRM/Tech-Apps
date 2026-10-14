@@ -49,3 +49,11 @@ It also sets the corner sizes: `--radius-sm` 4px, `--radius` 6px, `--radius-lg` 
 - Keep app-only styles in the app's own CSS: row heights, bar sizes, data colours.
 - Do not add dark mode.
 - A page that builds a standalone file (Publish or email export) cannot use these files.  Copy the colour values into that page.
+
+## Scripts
+
+| File | What it gives you |
+|---|---|
+| `util.js` | `escapeHtml(value)` for text going into `innerHTML`; `escapeLike(value)` for `ilike` patterns. Load before the page's own script. |
+| `project-registry.js` | `ProjectRegistry.findByName(sb, name)` and `findOrCreate(sb, name, originApp)` for `public.projects`. Needs `util.js`. Handles two people creating the same name at once (unique index, error 23505). |
+| `project-picker.js` | The "link to project" dialog. Needs `util.js` and `project-registry.js`. |

@@ -240,6 +240,7 @@
   { project: 'roadmap-db', role: 'viewer' }
 ];</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/shared/util.js"></script>
 <script src="/shared/auth-gate.js"></script>
 <script src="/shared/intake-cards.js"></script>
 <script src="/app-tabs.js"></script>
@@ -582,11 +583,6 @@
     }
   ];
 
-  function escapeHtml(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
 
   function toast(msg) {
     var el = document.getElementById("toast");

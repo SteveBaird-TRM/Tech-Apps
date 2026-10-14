@@ -222,6 +222,7 @@
 
 <script>window.AUTH_REQUIREMENTS = [{ project: 'roadmap-db', role: 'viewer' }];</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/shared/util.js"></script>
 <script src="/shared/auth-gate.js"></script>
 <script src="/shared/project-comments.js"></script>
 <script>
@@ -358,11 +359,6 @@
     return !!(window.currentAccess && window.currentAccess["roadmap-db"] === "editor");
   }
 
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
 
   function buildHealthCell(health) {
     var td = document.createElement("td");

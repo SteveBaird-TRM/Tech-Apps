@@ -127,7 +127,7 @@
     projectListEl.innerHTML = projectsCatalog
       .filter(function (p) { return p.status !== 'delivered' && p.status !== 'rejected'; })
       .map(function (p) {
-        return '<option value="' + escapeAttr(p.canonical_name) + '"></option>';
+        return '<option value="' + escapeHtml(p.canonical_name) + '"></option>';
       }).join('');
   }
   function findCatalogProjectByName(name) {
@@ -750,7 +750,7 @@
     html += '<button type="button" class="filter-chip' + (isNone ? ' active' : '') + '" data-filter-none="1">None</button>';
     html += names.map(function (n) {
       var checked = isAll || filterState.indexOf(n) !== -1;
-      return '<button type="button" class="filter-chip' + (checked ? ' active' : '') + '" ' + dataAttr + '="' + escapeAttr(n) + '">' + escapeAttr(n) + '</button>';
+      return '<button type="button" class="filter-chip' + (checked ? ' active' : '') + '" ' + dataAttr + '="' + escapeHtml(n) + '">' + escapeHtml(n) + '</button>';
     }).join('');
     panelFilterChips.innerHTML = html;
   }
@@ -763,7 +763,7 @@
     html += '<button type="button" class="filter-chip' + (isNone ? ' active' : '') + '" data-filter-none="1">None</button>';
     html += names.map(function (n) {
       var checked = isAll || panelRolesFilter.indexOf(n) !== -1;
-      return '<button type="button" class="filter-chip' + (checked ? ' active' : '') + '" data-filter-panel-role="' + escapeAttr(n) + '">' + escapeAttr(n) + '</button>';
+      return '<button type="button" class="filter-chip' + (checked ? ' active' : '') + '" data-filter-panel-role="' + escapeHtml(n) + '">' + escapeHtml(n) + '</button>';
     }).join('');
     panelRolesFilterChips.innerHTML = html;
   }
@@ -772,8 +772,8 @@
     var overAllocated = flagOverAllocated && total > 100;
     return '<div class="panel-row">' +
       '<div class="panel-row-main">' +
-        '<div class="panel-row-name">' + escapeAttr(name) + '</div>' +
-        '<div class="panel-row-project">' + escapeAttr(subtitle) + '</div>' +
+        '<div class="panel-row-name">' + escapeHtml(name) + '</div>' +
+        '<div class="panel-row-project">' + escapeHtml(subtitle) + '</div>' +
         (rangeText ? '<div class="panel-row-range">' + rangeText + '</div>' : '') +
       '</div>' +
       '<div class="panel-row-alloc' + (overAllocated ? ' over-allocated' : '') + '">' + total + '%</div>' +
@@ -789,7 +789,7 @@
     html += '<button type="button" class="filter-chip' + (isNone ? ' active' : '') + '" data-filter-none="1">None</button>';
     html += names.map(function (n) {
       var checked = isAll || resourceFilter.indexOf(n) !== -1;
-      return '<button type="button" class="filter-chip' + (checked ? ' active' : '') + '" data-filter-resource="' + escapeAttr(n) + '">' + escapeAttr(n) + '</button>';
+      return '<button type="button" class="filter-chip' + (checked ? ' active' : '') + '" data-filter-resource="' + escapeHtml(n) + '">' + escapeHtml(n) + '</button>';
     }).join('');
     resourceFilterChips.innerHTML = html;
   }
@@ -803,7 +803,7 @@
     html += '<button type="button" class="filter-chip' + (isNone ? ' active' : '') + '" data-filter-none="1">None</button>';
     html += names.map(function (n) {
       var checked = isAll || projectFilter.indexOf(n) !== -1;
-      return '<button type="button" class="filter-chip' + (checked ? ' active' : '') + '" data-filter-project="' + escapeAttr(n) + '">' + escapeAttr(n) + '</button>';
+      return '<button type="button" class="filter-chip' + (checked ? ' active' : '') + '" data-filter-project="' + escapeHtml(n) + '">' + escapeHtml(n) + '</button>';
     }).join('');
     projectFilterChips.innerHTML = html;
   }
@@ -817,7 +817,7 @@
     html += '<button type="button" class="filter-chip' + (isNone ? ' active' : '') + '" data-filter-none="1">None</button>';
     html += names.map(function (n) {
       var checked = isAll || rolesFilter.indexOf(n) !== -1;
-      return '<button type="button" class="filter-chip' + (checked ? ' active' : '') + '" data-filter-roles="' + escapeAttr(n) + '">' + escapeAttr(n) + '</button>';
+      return '<button type="button" class="filter-chip' + (checked ? ' active' : '') + '" data-filter-roles="' + escapeHtml(n) + '">' + escapeHtml(n) + '</button>';
     }).join('');
     rolesFilterChips.innerHTML = html;
   }
@@ -1005,7 +1005,7 @@
     for (var w = 0; w < TOTAL_WEEKS; w++) {
       var isToday = (w === tIdx);
       var isSelected = selectedWeeks.indexOf(w) !== -1;
-      html += '<div class="cell week-cell' + (isToday ? ' today' : '') + (isSelected ? ' selected' : '') + '" data-week-index="' + w + '" title="' + escapeAttr(weekLabelLong(w)) + '">' +
+      html += '<div class="cell week-cell' + (isToday ? ' today' : '') + (isSelected ? ' selected' : '') + '" data-week-index="' + w + '" title="' + escapeHtml(weekLabelLong(w)) + '">' +
         weekCellLabel(w) +
         '</div>';
     }
@@ -1036,13 +1036,13 @@
         ? 'Rename resource (applies to every assignment for this person)'
         : 'Rename project (applies to every resource in it)';
 
-      html += '<div class="cell label-cell' + groupClass + '" data-project="' + escapeAttr(group.name) + '">' +
-        '<button type="button" class="collapse-toggle' + (isCollapsed ? ' collapsed' : '') + '" data-project="' + escapeAttr(group.name) + '" title="' + (isCollapsed ? 'Expand' : 'Collapse') + ' ' + groupNoun + '">▾</button>' +
-        '<input class="project-label-input" data-role="group-project" data-project="' + escapeAttr(group.name) + '" value="' + escapeAttr(group.name) + '" title="' + renameHint + '" style="color: var(--series-' + colorSlot + ')" />' +
-        '<button type="button" class="add-entry-btn" data-group="' + escapeAttr(group.name) + '" title="' + (viewMode === 'resource' ? 'Add assignment for ' + escapeAttr(group.name) : 'Add resource to ' + escapeAttr(group.name)) + '">+</button>' +
+      html += '<div class="cell label-cell' + groupClass + '" data-project="' + escapeHtml(group.name) + '">' +
+        '<button type="button" class="collapse-toggle' + (isCollapsed ? ' collapsed' : '') + '" data-project="' + escapeHtml(group.name) + '" title="' + (isCollapsed ? 'Expand' : 'Collapse') + ' ' + groupNoun + '">▾</button>' +
+        '<input class="project-label-input" data-role="group-project" data-project="' + escapeHtml(group.name) + '" value="' + escapeHtml(group.name) + '" title="' + renameHint + '" style="color: var(--series-' + colorSlot + ')" />' +
+        '<button type="button" class="add-entry-btn" data-group="' + escapeHtml(group.name) + '" title="' + (viewMode === 'resource' ? 'Add assignment for ' + escapeHtml(group.name) : 'Add resource to ' + escapeHtml(group.name)) + '">+</button>' +
         (isCollapsed ? '<span class="collapse-count">' + visibleResources.length + '</span>' : '') +
         '</div>';
-      html += '<div class="cell track-cell project-track' + groupClass + '" data-project="' + escapeAttr(group.name) + '" style="grid-column: span ' + TOTAL_WEEKS + '">';
+      html += '<div class="cell track-cell project-track' + groupClass + '" data-project="' + escapeHtml(group.name) + '" style="grid-column: span ' + TOTAL_WEEKS + '">';
       var anyBarVisible = false;
       ranges.forEach(function (seg) {
         var clippedSeg = clipRangeToView(seg.start, seg.end - seg.start);
@@ -1055,7 +1055,7 @@
           var pLeft = clippedRange.start * WEEK_WIDTH;
           var pWidth = (clippedRange.end - clippedRange.start) * WEEK_WIDTH;
           var weeks = run.end - run.start;
-          var pTitle = escapeAttr(group.name + ': ' + rangeLabelShortAnchor(run.start, run.end) + ' (' + weeks + 'w)');
+          var pTitle = escapeHtml(group.name + ': ' + rangeLabelShortAnchor(run.start, run.end) + ' (' + weeks + 'w)');
           var pTruncClass = clippedRange.truncatedLeft ? ' bar-truncated-left' : '';
           var pBg = run.isLow ? 'transparent' : 'color-mix(in srgb, var(--series-' + colorSlot + ') 22%, transparent)';
           html += '<div class="project-bar' + pTruncClass + '" title="' + pTitle + '" style="left:' + pLeft + 'px; width:' + pWidth + 'px; background-image: none; background-color: ' + pBg + '; border-color: var(--series-' + colorSlot + ')"></div>';
@@ -1076,14 +1076,14 @@
         var idList = sub.entries.map(function (e) { return e.id; }).join(',');
         var primaryId = sub.entries[0].id;
 
-        html += '<div class="cell label-cell resource-label' + rowClass + '" data-id="' + primaryId + '" data-project="' + escapeAttr(group.name) + '" data-subgroup="' + escapeAttr(sub.name) + '">' +
+        html += '<div class="cell label-cell resource-label' + rowClass + '" data-id="' + primaryId + '" data-project="' + escapeHtml(group.name) + '" data-subgroup="' + escapeHtml(sub.name) + '">' +
           '<div class="resource-label-top">' +
-            '<input class="name-input" data-ids="' + idList + '" data-role="subgroup-rename" value="' + escapeAttr(sub.name) + '" placeholder="' + entryPlaceholder + '" />' +
-            '<button type="button" class="add-entry-btn subgroup-add-btn" data-group="' + escapeAttr(group.name) + '" data-subgroup="' + escapeAttr(sub.name) + '" title="Add another date range for ' + escapeAttr(sub.name) + '">+</button>' +
+            '<input class="name-input" data-ids="' + idList + '" data-role="subgroup-rename" value="' + escapeHtml(sub.name) + '" placeholder="' + entryPlaceholder + '" />' +
+            '<button type="button" class="add-entry-btn subgroup-add-btn" data-group="' + escapeHtml(group.name) + '" data-subgroup="' + escapeHtml(sub.name) + '" title="Add another date range for ' + escapeHtml(sub.name) + '">+</button>' +
           '</div>' +
           '</div>';
 
-        html += '<div class="cell track-cell' + rowClass + '" data-track-for="' + primaryId + '" data-project="' + escapeAttr(group.name) + '" data-subgroup="' + escapeAttr(sub.name) + '" style="grid-column: span ' + TOTAL_WEEKS + '">';
+        html += '<div class="cell track-cell' + rowClass + '" data-track-for="' + primaryId + '" data-project="' + escapeHtml(group.name) + '" data-subgroup="' + escapeHtml(sub.name) + '" style="grid-column: span ' + TOTAL_WEEKS + '">';
         sub.entries.forEach(function (r) {
           var clipped = clipRangeToView(r.start, r.duration);
           if (!clipped) return;
@@ -1092,7 +1092,7 @@
           var truncClass = clipped.truncatedLeft ? ' bar-truncated-left' : '';
           var leftHandle = clipped.truncatedLeft ? '' : '<span class="handle left" data-id="' + r.id + '" data-mode="resize-left"></span>';
           html += '<div class="bar' + truncClass + '" data-id="' + r.id + '" style="left:' + left + 'px; width:' + width + 'px; background: var(--series-' + colorSlot + ')" title="' +
-            escapeAttr(barTitle(r)) + '">' +
+            escapeHtml(barTitle(r)) + '">' +
             leftHandle +
             '<input class="bar-alloc-input" type="number" min="0" data-id="' + r.id + '" data-role="alloc" value="' + r.allocation + '" />' +
             '<span class="alloc-unit">%</span>' +
@@ -1121,7 +1121,7 @@
     var resourceNameListEl = document.getElementById('resourceNameList');
     if (resourceNameListEl) {
       resourceNameListEl.innerHTML = uniqueResourceNames().map(function (n) {
-        return '<option value="' + escapeAttr(n) + '"></option>';
+        return '<option value="' + escapeHtml(n) + '"></option>';
       }).join('');
     }
 
@@ -1149,10 +1149,6 @@
     }
 
     renderPanel();
-  }
-
-  function escapeAttr(s) {
-    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   }
 
   function barTitle(r) {
@@ -1201,11 +1197,11 @@
     rolesResourceList.innerHTML = names.map(function (name) {
       var current = resourceRoles[name] || '';
       var options = '<option value="">— no role —</option>' + catalog.map(function (s) {
-        return '<option value="' + escapeAttr(s) + '"' + (s === current ? ' selected' : '') + '>' + escapeAttr(s) + '</option>';
+        return '<option value="' + escapeHtml(s) + '"' + (s === current ? ' selected' : '') + '>' + escapeHtml(s) + '</option>';
       }).join('');
       return '<div class="roles-resource-row">' +
-        '<span class="roles-resource-name">' + escapeAttr(name) + '</span>' +
-        '<select class="role-select" data-name="' + escapeAttr(name) + '">' + options + '</select>' +
+        '<span class="roles-resource-name">' + escapeHtml(name) + '</span>' +
+        '<select class="role-select" data-name="' + escapeHtml(name) + '">' + options + '</select>' +
         '</div>';
     }).join('');
   }
@@ -1277,10 +1273,10 @@
     cleanupList.innerHTML = finished.map(function (r) {
       return '<div class="cleanup-row">' +
         '<div class="cleanup-row-main">' +
-          '<div class="cleanup-row-project">' + escapeAttr(r.project || 'Untitled Project') + '</div>' +
-          '<div class="cleanup-row-resource">' + escapeAttr(r.name || 'Untitled') + '</div>' +
+          '<div class="cleanup-row-project">' + escapeHtml(r.project || 'Untitled Project') + '</div>' +
+          '<div class="cleanup-row-resource">' + escapeHtml(r.name || 'Untitled') + '</div>' +
         '</div>' +
-        '<div class="cleanup-row-date">' + escapeAttr(fmtLong(entryEndDate(r))) + '</div>' +
+        '<div class="cleanup-row-date">' + escapeHtml(fmtLong(entryEndDate(r))) + '</div>' +
         '</div>';
     }).join('');
   }
@@ -1344,13 +1340,12 @@
 
     // No exact match — create it, same as intake/roadmap do when a typed
     // title doesn't match anything in the registry yet.
-    supabaseClient.from('projects').insert({ canonical_name: typedProject, origin_app: 'schedule-a-db-v2' })
-      .select('id, canonical_name').single().then(function (res) {
+    window.ProjectRegistry.findOrCreate(supabaseClient, typedProject, 'schedule-a-db-v2').then(function (res) {
         if (res.error) {
           flashStatus('Could not create project — ' + res.error.message);
           return;
         }
-        projectsCatalog.push(res.data);
+        if (!projectsCatalog.some(function (p) { return p.id === res.data.id; })) projectsCatalog.push(res.data);
         populateProjectDatalist();
         finishAddResource(name, allocation, res.data.canonical_name, res.data.id);
       });
@@ -1677,7 +1672,7 @@
           if (!clippedRange) return;
           var pLeft = clippedRange.start * WEEK_WIDTH;
           var pWidth = (clippedRange.end - clippedRange.start) * WEEK_WIDTH;
-          var pTitle = escapeAttr(group.name + ': ' + rangeLabelShortAnchor(run.start, run.end) + ' (' + (run.end - run.start) + 'w)');
+          var pTitle = escapeHtml(group.name + ': ' + rangeLabelShortAnchor(run.start, run.end) + ' (' + (run.end - run.start) + 'w)');
           var pTruncClass = clippedRange.truncatedLeft ? ' bar-truncated-left' : '';
           var pBg = run.isLow ? 'transparent' : 'color-mix(in srgb, var(--series-' + colorSlot + ') 22%, transparent)';
           barsHtml += '<div class="project-bar' + pTruncClass + '" title="' + pTitle + '" style="left:' + pLeft + 'px; width:' + pWidth + 'px; background-image: none; background-color: ' + pBg + '; border-color: var(--series-' + colorSlot + ')"></div>';
