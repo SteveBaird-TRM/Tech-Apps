@@ -275,11 +275,11 @@
   }
 
   function fetchStatusCounts() {
-    return sb.from(CARDS_TABLE).select("data").then(function (res) {
+    return sb.from(CARDS_TABLE).select("status").then(function (res) {
       if (res.error) throw res.error;
       var counts = {};
       res.data.forEach(function (row) {
-        var status = row.data && row.data.status;
+        var status = row.status;
         if (!status) return;
         counts[status] = (counts[status] || 0) + 1;
       });

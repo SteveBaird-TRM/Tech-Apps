@@ -1461,15 +1461,15 @@
   async function markProjectDelivered(projectId) {
     const now = new Date().toISOString();
     const { data: cards, error } = await supabaseClient
-      .from('intake_cards').select('id, data').eq('project_id', projectId);
+      .from('intake_cards').select('id, release_date').eq('project_id', projectId);
     if (error) throw error;
     if (!cards || !cards.length) {
       window.alert('No intake card is linked to this project, so there was no intake status to update.');
     } else {
       for (const card of cards) {
-        const data = Object.assign({}, card.data, { status: 'delivered', updatedAt: now });
-        if (!data.releaseDate) data.releaseDate = formatISODate(new Date());
-        const res = await supabaseClient.from('intake_cards').update({ data }).eq('id', card.id);
+        const patch = { status: 'delivered' };
+        if (!card.release_date) patch.release_date = formatISODate(new Date());
+        const res = await supabaseClient.from('intake_cards').update(patch).eq('id', card.id);
         if (res.error) throw res.error;
       }
     }

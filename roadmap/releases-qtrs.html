@@ -798,14 +798,14 @@ async function loadFromSupabase() {
     if (projectIds.length) {
       const { data: cards, error: cardsError } = await supabaseClient
         .from("intake_cards")
-        .select("project_id, data")
+        .select("project_id, requestor_name")
         .in("project_id", projectIds);
       if (cardsError) {
         console.error(cardsError);
       } else {
         const requestorByProject = {};
         (cards || []).forEach(c => {
-          const name = c.data && c.data.requestorName;
+          const name = c.requestor_name;
           if (c.project_id && name && !requestorByProject[c.project_id]) {
             requestorByProject[c.project_id] = name;
           }
