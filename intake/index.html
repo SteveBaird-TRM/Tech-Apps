@@ -548,6 +548,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/shared/auth-gate.js"></script>
 <script src="/app-tabs.js"></script>
+<script src="/shared/intake-cards.js"></script>
 <script src="/shared/project-picker.js"></script>
 <script src="/shared/project-comments.js"></script>
 <script>
@@ -661,6 +662,9 @@
     }
   ];
 
+  var IC = window.IntakeCards;
+  var savedRows = {}; // last saved columns per card id, so saves send only what changed
+
   var state = {
     cards: [],
     selectedId: null,
@@ -695,14 +699,14 @@
   }
 
   function fetchCards() {
-    return sb.from(TABLE).select("id, data, project_id, projects(canonical_name, description)").then(function (res) {
+    return sb.from(TABLE).select(IC.SELECT).then(function (res) {
       if (res.error) throw res.error;
+      savedRows = {};
       var cards = res.data.map(function (row) {
-        var card = Object.assign({}, row.data);
-        card.id = row.id;
-        card.projectId = row.project_id || null;
-        card.projectName = (row.projects && row.projects.canonical_name) || null;
-        card.projectDescription = (row.projects && row.projects.description) || null;
+        var card = IC.rowToCard(row);
+        card.projectName = card.projectName || null;
+        card.projectDescription = card.projectDescription || null;
+        savedRows[card.id] = IC.cardToRow(card);
         return card;
       });
       cards.sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
@@ -747,21 +751,32 @@
     });
   }
 
-  // project_id/canonical name live in real columns (project_id here,
-  // projects.canonical_name via the FK), not in the data JSON blob, so they
-  // don't drift out of sync with each other.
-  function cardDataPayload(card) {
-    var data = Object.assign({}, card);
-    delete data.projectId;
-    delete data.projectName;
-    return data;
+  // Saves one card.  Existing cards send only the columns that changed, so two
+  // people editing different fields of the same card don't overwrite each other.
+  function saveCardRow(card) {
+    var next = IC.cardToRow(card);
+    var prev = savedRows[card.id];
+    var req;
+    if (!prev) {
+      req = sb.from(TABLE).upsert(next);
+    } else {
+      var changed = IC.changedColumns(prev, next);
+      if (!Object.keys(changed).length) return Promise.resolve();
+      req = sb.from(TABLE).update(changed).eq("id", card.id).select("id").then(function (res) {
+        if (res.error || (res.data && res.data.length)) return res;
+        return sb.from(TABLE).upsert(next); // row was deleted elsewhere, so recreate it
+      });
+    }
+    return req.then(function (res) {
+      if (res.error) throw res.error;
+      savedRows[card.id] = next;
+    });
   }
 
   function persistCard(card) {
     if (!canEdit()) return;
     setSyncStatus("saving");
-    sb.from(TABLE).upsert({ id: card.id, data: cardDataPayload(card), project_id: card.projectId || null }).then(function (res) {
-      if (res.error) throw res.error;
+    saveCardRow(card).then(function () {
       setSyncStatus("synced");
       cacheLocally();
     }).catch(function (err) {
@@ -775,6 +790,7 @@
     setSyncStatus("saving");
     sb.from(TABLE).delete().eq("id", id).then(function (res) {
       if (res.error) throw res.error;
+      delete savedRows[id];
       setSyncStatus("synced");
       cacheLocally();
     }).catch(function (err) {
@@ -786,10 +802,7 @@
   function persistAll(cards) {
     if (!canEdit()) return;
     setSyncStatus("saving");
-    var rows = cards.map(function (c) { return { id: c.id, data: cardDataPayload(c) }; });
-    if (rows.length === 0) { setSyncStatus("synced"); cacheLocally(); return; }
-    sb.from(TABLE).upsert(rows).then(function (res) {
-      if (res.error) throw res.error;
+    Promise.all(cards.map(saveCardRow)).then(function () {
       setSyncStatus("synced");
       cacheLocally();
     }).catch(function (err) {
@@ -798,16 +811,32 @@
     });
   }
 
+  // Adds or updates the imported cards first, then removes the rest.
+  // If the import is rejected, nothing is deleted.
   function replaceAllCards(cards) {
     if (!canEdit()) return Promise.reject(new Error("You don't have edit access to intake."));
     setSyncStatus("saving");
-    return sb.from(TABLE).delete().neq("id", "").then(function (res) {
+    cards.forEach(function (c) {
+      if (!c.id) c.id = uid();
+      if (!c.status) c.status = "received";
+      if (!c.projectType) c.projectType = "Feature";
+    });
+    var rows = cards.map(IC.cardToRow);
+    var keep = {};
+    cards.forEach(function (c) { keep[c.id] = true; });
+    var upserted = rows.length ? sb.from(TABLE).upsert(rows) : Promise.resolve({ error: null });
+    return upserted.then(function (res) {
       if (res.error) throw res.error;
-      if (cards.length === 0) return { error: null };
-      var rows = cards.map(function (c) { return { id: c.id, data: cardDataPayload(c), project_id: c.projectId || null }; });
-      return sb.from(TABLE).insert(rows);
+      return sb.from(TABLE).select("id");
     }).then(function (res) {
       if (res.error) throw res.error;
+      var stale = res.data.map(function (r) { return r.id; }).filter(function (id) { return !keep[id]; });
+      if (!stale.length) return { error: null };
+      return sb.from(TABLE).delete().in("id", stale);
+    }).then(function (res) {
+      if (res.error) throw res.error;
+      savedRows = {};
+      rows.forEach(function (r) { savedRows[r.id] = r; });
       setSyncStatus("synced");
       cacheLocally();
     }).catch(function (err) {

@@ -257,6 +257,7 @@
 <script>window.AUTH_REQUIREMENTS = [{ project: 'intake', role: 'viewer' }];</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/shared/auth-gate.js"></script>
+<script src="/shared/intake-cards.js"></script>
 <script>
 (function () {
   "use strict";
@@ -566,13 +567,9 @@
   }
 
   function fetchCardsFromSupabase() {
-    return sb.from(TABLE).select("id, data").then(function (res) {
+    return sb.from(TABLE).select(window.IntakeCards.SELECT).then(function (res) {
       if (res.error) throw res.error;
-      var cards = res.data.map(function (row) {
-        var card = Object.assign({}, row.data);
-        card.id = row.id;
-        return card;
-      });
+      var cards = res.data.map(window.IntakeCards.rowToCard);
       cards.sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
       return cards;
     });

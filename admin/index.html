@@ -250,6 +250,7 @@
 <script>window.AUTH_REQUIREMENTS = [];</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/shared/auth-gate.js"></script>
+<script src="/shared/intake-cards.js"></script>
 <script src="/app-tabs.js" data-push></script>
 <script>
 (function () {
@@ -739,7 +740,7 @@
   function loadProjectsReportData() {
     return Promise.all([
       sb.from("projects").select("id, canonical_name, origin_app, status, pm, ba, sme, description").order("canonical_name"),
-      sb.from("intake_cards").select("project_id, data").not("project_id", "is", null),
+      sb.from("intake_cards").select(window.IntakeCards.SELECT).not("project_id", "is", null),
       sb.from("roadmap_tasks").select("project_id, name, start_date, duration_weeks, phase, health, team, color, sort_order")
         .not("project_id", "is", null).order("project_id").order("sort_order"),
       sb.from("resource_allocations").select("project_id, resource_name, allocation_pct, start_week, duration_weeks")
@@ -756,7 +757,7 @@
 
       var intakeByProject = {};
       (intakeRes.data || []).forEach(function (row) {
-        intakeByProject[row.project_id] = buildIntakeFields(row.data);
+        intakeByProject[row.project_id] = buildIntakeFields(window.IntakeCards.rowToCard(row));
       });
 
       // A handful of projects have more than one roadmap_tasks row; the report

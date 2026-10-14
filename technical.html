@@ -184,8 +184,8 @@ SUPABASE_KEY = 'sb_publishable_...'   (public anon-equivalent key — safe to ex
     </tr>
     <tr>
       <td><strong>intake_cards</strong></td>
-      <td><code>id</code>, <code>data jsonb</code>, <code>project_id uuid → projects(id) on delete set null</code></td>
-      <td>Intake pipeline cards (free-form fields live in the <code>data</code> JSON blob).</td>
+      <td><code>id</code>, <code>project_id uuid → projects(id) on delete set null</code>, typed columns (<code>status → intake_columns(id)</code>, <code>project_type</code>, <code>project_title</code>, <code>intake_source</code>, <code>requestor_name</code>, dates, scores, <code>annual_value</code>, <code>position</code>, and so on), <code>created_at</code>, <code>updated_at</code>, <code>data jsonb</code> (legacy copy)</td>
+      <td>Intake pipeline cards.  The app reads and writes the typed columns (<code>shared/intake-cards.js</code> maps them to card objects).  A trigger keeps the legacy <code>data</code> blob in step until it is dropped.</td>
       <td>intake, roadmap/releases.html, admin</td>
     </tr>
     <tr>
