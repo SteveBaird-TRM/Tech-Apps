@@ -47,37 +47,6 @@ alter policy "project_comments insert by source app editors" on public.project_c
     and created_by = (select auth.uid())
   );
 
--- sprints: same rules, auth.uid() wrapped.  The key 'implementation-forum' is
--- not allowed by project_access's check constraint, so nobody can match these
--- policies today.  Left as is, flagged for a decision.
-alter policy "sprints_select_for_project_access" on public.sprints
-  using (exists (
-    select 1 from public.project_access pa
-    where pa.user_id = (select auth.uid()) and pa.project_key = 'implementation-forum'
-  ));
-
-alter policy "sprints_insert_for_editors" on public.sprints
-  with check (exists (
-    select 1 from public.project_access pa
-    where pa.user_id = (select auth.uid()) and pa.project_key = 'implementation-forum' and pa.role = 'editor'
-  ));
-
-alter policy "sprints_update_for_editors" on public.sprints
-  using (exists (
-    select 1 from public.project_access pa
-    where pa.user_id = (select auth.uid()) and pa.project_key = 'implementation-forum' and pa.role = 'editor'
-  ))
-  with check (exists (
-    select 1 from public.project_access pa
-    where pa.user_id = (select auth.uid()) and pa.project_key = 'implementation-forum' and pa.role = 'editor'
-  ));
-
-alter policy "sprints_delete_for_editors" on public.sprints
-  using (exists (
-    select 1 from public.project_access pa
-    where pa.user_id = (select auth.uid()) and pa.project_key = 'implementation-forum' and pa.role = 'editor'
-  ));
-
 -- 3. project_access had two permissive SELECT policies.  Merge into one:
 --    widen "self read" to include the admin check, then drop the admin one.
 alter policy "project_access self read" on public.project_access
